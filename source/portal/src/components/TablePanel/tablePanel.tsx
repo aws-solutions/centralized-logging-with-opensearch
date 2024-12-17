@@ -52,13 +52,16 @@ interface TablePanelProps {
   items: any[];
   pagination: ReactElement;
   loading?: boolean;
-  changeSelected: (item: any[]) => void;
+  changeSelected: (item: any[], selectItemsIds: string[]) => void;
   loadingText?: string;
   emptyText?: string;
   errorText?: string;
   hideFilterAndPagination?: boolean;
   hideTitle?: boolean;
   noPadding?: boolean;
+  /** support cross page multi-selection for checkbox */
+  crossPageSelection?: boolean;
+  variant?: "default" | "header-panel";
 }
 
 const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
@@ -82,6 +85,8 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
     hideFilterAndPagination,
     hideTitle,
     noPadding,
+    crossPageSelection,
+    variant,
   } = props;
   const { t } = useTranslation();
   const [dataList, setDataList] = useState<any>(items);
@@ -91,7 +96,6 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   const [checkAllStatus, setCheckAllStatus] = useState(UNCHECKED);
 
   useEffect(() => {
-    console.info("items:", items);
     setDataList(items);
     if (items.length === 0) {
       setCheckAllStatus(UNCHECKED);
@@ -106,18 +110,30 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
 
   const handleSelectAll = (e: any) => {
     console.info("e.target.checked:", e.target.checked);
+    // remove all current page item from selected items, prepare cross page multi selection
+    const reverseSelect = selectItemsIds.filter(
+      (selectedId) => !items.map(({ id }) => id).includes(selectedId)
+    );
+    console.log(e.target.checked);
     if (e.target.checked === true) {
       setCheckAllStatus(CHECKED);
-      setSelectItemsIds(
-        items.map((item) => {
-          if (!defaultDisabledIds?.includes(item.id)) {
-            return item.id;
-          }
-        })
-      );
+      const allSelectedIds = items.map((item) => {
+        if (!defaultDisabledIds?.includes(item.id)) {
+          return item.id;
+        }
+      });
+      if (crossPageSelection && selectType === SelectType.CHECKBOX) {
+        setSelectItemsIds(reverseSelect.concat(allSelectedIds));
+      } else {
+        setSelectItemsIds(allSelectedIds);
+      }
     } else {
       setCheckAllStatus(UNCHECKED);
-      setSelectItemsIds([]);
+      if (crossPageSelection && selectType === SelectType.CHECKBOX) {
+        setSelectItemsIds(reverseSelect);
+      } else {
+        setSelectItemsIds([]);
+      }
     }
   };
 
@@ -130,7 +146,13 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   };
 
   useEffect(() => {
-    if (selectItemsIds.length >= dataList.length && dataList.length !== 0) {
+    const currentPageSelectItems = dataList.filter(({ id }: any) =>
+      selectItemsIds.includes(id)
+    );
+    if (
+      currentPageSelectItems.length >= dataList.length &&
+      dataList.length !== 0
+    ) {
       setCheckAllStatus(CHECKED);
     } else {
       if (
@@ -151,7 +173,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
           }
         });
       }
-      changeSelected(tmpSelectedItemList);
+      changeSelected(tmpSelectedItemList, selectItemsIds);
     }
   }, [selectItemsIds, items]);
 
@@ -168,14 +190,18 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
       }
     >
       {!hideFilterAndPagination && !hideTitle && (
-        <div className="table-header">
-          {title && <div className="title">{title}</div>}
+        <div className={`table-header ${variant}`}>
+          <div>
+            {title && <div className="title">{title}</div>}
+            {desc && <div className="desc">{desc}</div>}
+          </div>
+
           <div className="action">{actions}</div>
         </div>
       )}
-      {desc && <div className="desc">{desc}</div>}
+
       {!hideFilterAndPagination && (
-        <div className="table-header">
+        <div className={`table-header ${variant}`}>
           <div className="filter">{filter}</div>
           <div className="pagination">{pagination}</div>
         </div>
@@ -197,6 +223,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                       <div>
                         {selectType === SelectType.CHECKBOX && (
                           <IndeterminateCheckbox
+                            data-testid="table-select-all"
                             disabled={loading || false}
                             value={checkAllStatus}
                             onChange={(event) => {
@@ -230,7 +257,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                         return;
                       }
                       if (selectType === SelectType.RADIO) {
-                        changeSelected([element]);
+                        changeSelected([element], [element.id]);
                         setDataList((prev: any) => {
                           const tmpList = JSON.parse(JSON.stringify(prev));
                           tmpList.forEach((tmpItem: any) => {
@@ -253,6 +280,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                         <div>
                           {selectType === SelectType.CHECKBOX && (
                             <Checkbox
+                              data-testid={`table-item-${element.id}`}
                               key={element[trackId] ?? element.id}
                               type="checkbox"
                               name={element.id}
@@ -273,6 +301,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                           {selectType === SelectType.RADIO && (
                             <input
                               disabled={element.disable}
+                              data-testid={`table-item-${element.id}`}
                               name="tableItem"
                               type="radio"
                               checked={

@@ -14,14 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import "source-map-support/register";
-import { App, Aspects, CfnCondition, Fn, IAspect, Stack, Tags } from "aws-cdk-lib";
+import 'source-map-support/register';
+import {
+  App,
+  Aspects,
+  CfnCondition,
+  Fn,
+  IAspect,
+  Stack,
+  Tags,
+} from 'aws-cdk-lib';
+import { CfnFunction, Function } from 'aws-cdk-lib/aws-lambda';
 import {
   AwsSolutionsChecks,
   NagPackSuppression,
   NagSuppressions,
 } from 'cdk-nag';
+import { IConstruct } from 'constructs';
 import { MainStack } from '../lib/main-stack';
+import { MicroBatchMainStack } from '../lib/microbatch/main/microbatch-main-stack';
+import { MicroBatchApplicationFluentBitPipelineStack } from '../lib/microbatch/pipeline/application-fluent-bit-stack';
+import { MicroBatchApplicationS3PipelineStack } from '../lib/microbatch/pipeline/application-s3-stack';
+import { MicroBatchAwsServicesAlbPipelineStack } from '../lib/microbatch/pipeline/aws-services-alb-stack';
+import { MicroBatchAwsServicesCloudFrontPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudfront-stack';
+import { MicroBatchAwsServicesCloudTrailPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudtrail-stack';
+import { MicroBatchAwsServicesRDSPipelineStack } from '../lib/microbatch/pipeline/aws-services-rds-stack';
+import { MicroBatchAwsServicesS3PipelineStack } from '../lib/microbatch/pipeline/aws-services-s3-stack';
+import { MicroBatchAwsServicesSESPipelineStack } from '../lib/microbatch/pipeline/aws-services-ses-stack';
+import { MicroBatchAwsServicesVpcFlowPipelineStack } from '../lib/microbatch/pipeline/aws-services-vpcflow-stack';
+import { MicroBatchAwsServicesWafPipelineStack } from '../lib/microbatch/pipeline/aws-services-waf-stack';
+import { MicroBatchLogIngestionStack } from '../lib/microbatch/pipeline/init-log-ingestion';
 import { AlarmForOpenSearchStack } from '../lib/opensearch/alarm-for-opensearch-stack';
 import { NginxForOpenSearchStack } from '../lib/opensearch/nginx-for-opensearch-stack';
 import { AppPipelineStack } from '../lib/pipeline/application/app-log-pipeline-stack';
@@ -31,22 +53,8 @@ import { CloudFrontRealtimeLogStack } from '../lib/pipeline/service/cloudfront-r
 import { CloudWatchLogStack } from '../lib/pipeline/service/cloudwatch-log-stack';
 import { ServiceLogPipelineStack } from '../lib/pipeline/service/service-log-pipeline-stack';
 import { CrossAccount } from '../lib/subaccount/cross-account-stack';
-import { MicroBatchMainStack } from '../lib/microbatch/main/microbatch-main-stack';
-import { MicroBatchAwsServicesWafPipelineStack } from '../lib/microbatch/pipeline/aws-services-waf-stack';
-import { MicroBatchAwsServicesAlbPipelineStack } from '../lib/microbatch/pipeline/aws-services-alb-stack';
-import { MicroBatchAwsServicesCloudFrontPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudfront-stack';
-import { MicroBatchAwsServicesCloudTrailPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudtrail-stack';
-import { MicroBatchAwsServicesVpcFlowPipelineStack } from '../lib/microbatch/pipeline/aws-services-vpcflow-stack';
-import { MicroBatchAwsServicesRDSPipelineStack } from '../lib/microbatch/pipeline/aws-services-rds-stack';
-import { MicroBatchAwsServicesS3PipelineStack } from '../lib/microbatch/pipeline/aws-services-s3-stack';
-import { MicroBatchAwsServicesSESPipelineStack } from '../lib/microbatch/pipeline/aws-services-ses-stack';
-import { MicroBatchApplicationFluentBitPipelineStack } from '../lib/microbatch/pipeline/application-fluent-bit-stack';
-import { MicroBatchApplicationS3PipelineStack } from '../lib/microbatch/pipeline/application-s3-stack';
-import { MicroBatchLogIngestionStack } from '../lib/microbatch/pipeline/init-log-ingestion';
-import { IConstruct } from "constructs";
-import { CfnFunction, Function } from 'aws-cdk-lib/aws-lambda';
 
-process.env.STACK_PREFIX = process.env.STACK_PREFIX || "CL"
+process.env.STACK_PREFIX = process.env.STACK_PREFIX || 'CL';
 
 const app = new App();
 
@@ -95,8 +103,8 @@ stackSuppressions(
       reason: 'these policies is used by CDK Customer Resource lambda',
     },
     { id: 'AwsSolutions-SF2', reason: 'we do not need xray' },
-    { id: 'AwsSolutions-S1', reason: 'these buckets dont need access log' },
-    { id: 'AwsSolutions-S10', reason: 'these buckets dont need SSL' },
+    { id: 'AwsSolutions-S1', reason: 'these buckets do not need access log' },
+    { id: 'AwsSolutions-S10', reason: 'these buckets do not need SSL' },
     {
       id: 'AwsSolutions-L1',
       reason: 'not applicable to use the latest lambda runtime version',
@@ -305,7 +313,6 @@ stackSuppressions(
 
 Aspects.of(app).add(new AwsSolutionsChecks());
 
-
 // Athena version
 
 const MicroBatch = new MicroBatchMainStack(app, 'MicroBatch', {
@@ -313,304 +320,432 @@ const MicroBatch = new MicroBatchMainStack(app, 'MicroBatch', {
   ...baseProps,
 });
 
-NagSuppressions.addResourceSuppressions(MicroBatch, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  { id: "AwsSolutions-SF2", reason: "we do not need xray" },
-  { id: "AwsSolutions-S1", reason: "these buckets dont need access log" },
-  { id: "AwsSolutions-S10", reason: "these buckets dont need SSL" },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatch,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    { id: 'AwsSolutions-SF2', reason: 'we do not need xray' },
+    { id: 'AwsSolutions-S1', reason: 'these buckets do not need access log' },
+    { id: 'AwsSolutions-S10', reason: 'these buckets do not need SSL' },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
-
-const MicroBatchFromExistingVPC = new MicroBatchMainStack(app, 'MicroBatchFromExistingVPC', {
-  stackPrefix: process.env.STACK_PREFIX,
-  existingVPC: true,
-  ...baseProps,
-});
-
-NagSuppressions.addResourceSuppressions(MicroBatchFromExistingVPC, [
+const MicroBatchFromExistingVPC = new MicroBatchMainStack(
+  app,
+  'MicroBatchFromExistingVPC',
   {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  { id: "AwsSolutions-SF2", reason: "we do not need xray" },
-  { id: "AwsSolutions-S1", reason: "these buckets dont need access log" },
-  { id: "AwsSolutions-S10", reason: "these buckets dont need SSL" },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+    stackPrefix: process.env.STACK_PREFIX,
+    existingVPC: true,
+    ...baseProps,
+  }
+);
 
+NagSuppressions.addResourceSuppressions(
+  MicroBatchFromExistingVPC,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    { id: 'AwsSolutions-SF2', reason: 'we do not need xray' },
+    { id: 'AwsSolutions-S1', reason: 'these buckets do not need access log' },
+    { id: 'AwsSolutions-S10', reason: 'these buckets do not need SSL' },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatch).add('Application', `${solutionName}`);
 Tags.of(MicroBatchFromExistingVPC).add('Application', `${solutionName}`);
 
+const MicroBatchLogIngestion = new MicroBatchLogIngestionStack(
+  app,
+  'MicroBatchLogIngestion',
+  {
+    ...baseProps,
+  }
+);
 
-const MicroBatchLogIngestion = new MicroBatchLogIngestionStack(app, 'MicroBatchLogIngestion', {
-  ...baseProps,
-});
-
-NagSuppressions.addResourceSuppressions(MicroBatchLogIngestion, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchLogIngestion,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchLogIngestion).add('Application', `${solutionName}`);
 
+const MicroBatchAwsServicesWafPipeline =
+  new MicroBatchAwsServicesWafPipelineStack(
+    app,
+    'MicroBatchAwsServicesWafPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-const MicroBatchAwsServicesWafPipeline = new MicroBatchAwsServicesWafPipelineStack(app, 'MicroBatchAwsServicesWafPipeline', {
-  ...baseProps,
-});
-
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesWafPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesWafPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchAwsServicesWafPipeline).add('Application', `${solutionName}`);
 
+const MicroBatchAwsServicesAlbPipeline =
+  new MicroBatchAwsServicesAlbPipelineStack(
+    app,
+    'MicroBatchAwsServicesAlbPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-const MicroBatchAwsServicesAlbPipeline = new MicroBatchAwsServicesAlbPipelineStack(app, 'MicroBatchAwsServicesAlbPipeline', {
-  ...baseProps,
-});
-
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesAlbPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesAlbPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchAwsServicesAlbPipeline).add('Application', `${solutionName}`);
 
-const MicroBatchAwsServicesCloudFrontPipeline = new MicroBatchAwsServicesCloudFrontPipelineStack(app, 'MicroBatchAwsServicesCloudFrontPipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesCloudFrontPipeline =
+  new MicroBatchAwsServicesCloudFrontPipelineStack(
+    app,
+    'MicroBatchAwsServicesCloudFrontPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesCloudFrontPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesCloudFrontPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
-Tags.of(MicroBatchAwsServicesCloudFrontPipeline).add('Application', `${solutionName}`);
+Tags.of(MicroBatchAwsServicesCloudFrontPipeline).add(
+  'Application',
+  `${solutionName}`
+);
 
-const MicroBatchAwsServicesCloudTrailPipeline = new MicroBatchAwsServicesCloudTrailPipelineStack(app, 'MicroBatchAwsServicesCloudTrailPipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesCloudTrailPipeline =
+  new MicroBatchAwsServicesCloudTrailPipelineStack(
+    app,
+    'MicroBatchAwsServicesCloudTrailPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesCloudTrailPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesCloudTrailPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
-Tags.of(MicroBatchAwsServicesCloudTrailPipeline).add('Application', `${solutionName}`);
+Tags.of(MicroBatchAwsServicesCloudTrailPipeline).add(
+  'Application',
+  `${solutionName}`
+);
 
-const MicroBatchAwsServicesVpcFlowPipeline = new MicroBatchAwsServicesVpcFlowPipelineStack(app, 'MicroBatchAwsServicesVpcFlowPipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesVpcFlowPipeline =
+  new MicroBatchAwsServicesVpcFlowPipelineStack(
+    app,
+    'MicroBatchAwsServicesVpcFlowPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesVpcFlowPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesVpcFlowPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
-Tags.of(MicroBatchAwsServicesVpcFlowPipeline).add('Application', `${solutionName}`);
+Tags.of(MicroBatchAwsServicesVpcFlowPipeline).add(
+  'Application',
+  `${solutionName}`
+);
 
-const MicroBatchAwsServicesRDSPipeline = new MicroBatchAwsServicesRDSPipelineStack(app, 'MicroBatchAwsServicesRDSPipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesRDSPipeline =
+  new MicroBatchAwsServicesRDSPipelineStack(
+    app,
+    'MicroBatchAwsServicesRDSPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesRDSPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesRDSPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchAwsServicesRDSPipeline).add('Application', `${solutionName}`);
 
-const MicroBatchAwsServicesS3Pipeline = new MicroBatchAwsServicesS3PipelineStack(app, 'MicroBatchAwsServicesS3Pipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesS3Pipeline =
+  new MicroBatchAwsServicesS3PipelineStack(
+    app,
+    'MicroBatchAwsServicesS3Pipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesS3Pipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesS3Pipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchAwsServicesS3Pipeline).add('Application', `${solutionName}`);
 
-const MicroBatchAwsServicesSESPipeline = new MicroBatchAwsServicesSESPipelineStack(app, 'MicroBatchAwsServicesSESPipeline', {
-  ...baseProps,
-});
+const MicroBatchAwsServicesSESPipeline =
+  new MicroBatchAwsServicesSESPipelineStack(
+    app,
+    'MicroBatchAwsServicesSESPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesSESPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchAwsServicesSESPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchAwsServicesSESPipeline).add('Application', `${solutionName}`);
 
-const MicroBatchApplicationFluentBitPipeline = new MicroBatchApplicationFluentBitPipelineStack(app, 'MicroBatchApplicationFluentBitPipeline', {
-  ...baseProps,
-});
+const MicroBatchApplicationFluentBitPipeline =
+  new MicroBatchApplicationFluentBitPipelineStack(
+    app,
+    'MicroBatchApplicationFluentBitPipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-NagSuppressions.addResourceSuppressions(MicroBatchApplicationFluentBitPipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchApplicationFluentBitPipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
-Tags.of(MicroBatchApplicationFluentBitPipeline).add('Application', `${solutionName}`);
+Tags.of(MicroBatchApplicationFluentBitPipeline).add(
+  'Application',
+  `${solutionName}`
+);
 
+const MicroBatchApplicationS3Pipeline =
+  new MicroBatchApplicationS3PipelineStack(
+    app,
+    'MicroBatchApplicationS3Pipeline',
+    {
+      ...baseProps,
+    }
+  );
 
-const MicroBatchApplicationS3Pipeline = new MicroBatchApplicationS3PipelineStack(app, 'MicroBatchApplicationS3Pipeline', {
-  ...baseProps,
-});
-
-NagSuppressions.addResourceSuppressions(MicroBatchApplicationS3Pipeline, [
-  {
-    id: "AwsSolutions-IAM5",
-    reason: "some policies need to get dynamic resources",
-  },
-  {
-    id: "AwsSolutions-IAM4",
-    reason: "these policies is used by CDK Customer Resource lambda",
-  },
-  {
-    id: "AwsSolutions-L1",
-    reason: "not applicable to use the latest lambda runtime version",
-  },
-], true);
+NagSuppressions.addResourceSuppressions(
+  MicroBatchApplicationS3Pipeline,
+  [
+    {
+      id: 'AwsSolutions-IAM5',
+      reason: 'some policies need to get dynamic resources',
+    },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason: 'these policies is used by CDK Customer Resource lambda',
+    },
+    {
+      id: 'AwsSolutions-L1',
+      reason: 'not applicable to use the latest lambda runtime version',
+    },
+  ],
+  true
+);
 
 Tags.of(MicroBatchApplicationS3Pipeline).add('Application', `${solutionName}`);
 
 class CNLambdaFunctionAspect implements IAspect {
-
   private conditionCache: { [key: string]: CfnCondition } = {};
 
   public visit(node: IConstruct): void {
     if (node instanceof Function) {
       const func = node.node.defaultChild as CfnFunction;
       if (func.loggingConfig) {
-        func.addPropertyOverride('LoggingConfig',
-          Fn.conditionIf(this.awsChinaCondition(Stack.of(node)).logicalId,
-            Fn.ref('AWS::NoValue'), {
-            LogFormat: (func.loggingConfig as CfnFunction.LoggingConfigProperty).logFormat,
-            ApplicationLogLevel: (func.loggingConfig as CfnFunction.LoggingConfigProperty).applicationLogLevel,
-            LogGroup: (func.loggingConfig as CfnFunction.LoggingConfigProperty).logGroup,
-            SystemLogLevel: (func.loggingConfig as CfnFunction.LoggingConfigProperty).systemLogLevel,
-          }));
+        func.addPropertyOverride(
+          'LoggingConfig',
+          Fn.conditionIf(
+            this.awsChinaCondition(Stack.of(node)).logicalId,
+            Fn.ref('AWS::NoValue'),
+            {
+              LogFormat: (
+                func.loggingConfig as CfnFunction.LoggingConfigProperty
+              ).logFormat,
+              ApplicationLogLevel: (
+                func.loggingConfig as CfnFunction.LoggingConfigProperty
+              ).applicationLogLevel,
+              LogGroup: (
+                func.loggingConfig as CfnFunction.LoggingConfigProperty
+              ).logGroup,
+              SystemLogLevel: (
+                func.loggingConfig as CfnFunction.LoggingConfigProperty
+              ).systemLogLevel,
+            }
+          )
+        );
       }
     }
   }

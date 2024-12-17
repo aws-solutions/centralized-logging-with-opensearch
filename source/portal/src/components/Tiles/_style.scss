@@ -34,6 +34,11 @@
     }
     &.disabled {
       cursor: not-allowed;
+      background-color: #e9ebed;
+      color: #9ba7b6;
+      .desc {
+        color: #9ba7b6;
+      }
     }
     &:first-child {
       margin-right: 8px;

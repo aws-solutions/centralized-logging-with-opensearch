@@ -71,15 +71,24 @@ class AppLogIngestionService:
                     "Cannot import this source, the log path is duplicated",
                 )
 
-    def create_app_log_ingestion(self, app_log_ingestion: AppLogIngestion):
+    def refresh_app_log_ingestion(self, **args):
+        result = self.list_app_log_ingestions(**args)
+        ingestion_list = result.get("appLogIngestions")
+        for item in ingestion_list:
+            app_log_ingestion: AppLogIngestion = AppLogIngestion.parse_obj(item)
+            self.create_app_log_ingestion(app_log_ingestion)
+
+    def create_app_log_ingestion(self, app_log_ingestion: AppLogIngestion):  # NOSONAR
         app_pipeline_id = app_log_ingestion.appPipelineId
         app_pipeline: AppPipeline = app_pipeline_dao.get_app_pipeline(app_pipeline_id)
-
+        is_refresh = True
+        if not app_log_ingestion.id:
+            app_log_ingestion.id = str(uuid.uuid4())
+            is_refresh = False
         log_config_id = app_pipeline.logConfigId
         log_config_version = app_pipeline.logConfigVersionNumber
         log_config = log_config_dao.get_log_config(log_config_id, log_config_version)
 
-        app_log_ingestion.id = str(uuid.uuid4())
         app_log_ingestion.logConfig = log_config
 
         log_source: LogSource = log_source_dao.get_log_source(
@@ -107,7 +116,8 @@ class AppLogIngestionService:
                 "sourceId": app_log_ingestion.sourceId,
                 "logPath": app_log_ingestion.logPath,
             }
-            self.validate_log_path(**args)
+            if not is_refresh:
+                self.validate_log_path(**args)
 
             # handle output
             output_dict = dict()

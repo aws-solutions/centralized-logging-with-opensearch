@@ -25,14 +25,30 @@ import {
 } from "assets/js/const";
 
 import Button from "components/Button";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import { identity } from "lodash";
 import { SelectAnalyticsEngine } from "pages/dataInjection/common/SelectAnalyticsEngine";
-import { PipelineType } from "API";
-import { AnalyticEngineTypes } from "types";
+import { DestinationType, PipelineType } from "API";
+import {
+  AmplifyConfigType,
+  AnalyticEngineTypes,
+  RDSIngestOption,
+  WAFIngestOption,
+} from "types";
 import CommonLayout from "pages/layout/CommonLayout";
+import ServicePipelineDesc from "./common/desc/ServicePipelineDesc";
+import { RootState } from "reducer/reducers";
+
+const disableLightEngineConditions: {
+  [key in ServiceLogType]?: DestinationType | WAFIngestOption;
+} = {
+  [ServiceLogType.Amazon_CloudFront]: DestinationType.KDS,
+  [ServiceLogType.Amazon_WAF]: WAFIngestOption.SampledRequest,
+  [ServiceLogType.Amazon_VPCLogs]: DestinationType.CloudWatch,
+  [ServiceLogType.Amazon_CloudTrail]: DestinationType.CloudWatch,
+};
 
 const CreateChooseType: React.FC = () => {
   const { t } = useTranslation();
@@ -46,14 +62,18 @@ const CreateChooseType: React.FC = () => {
   ];
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  const [logType, setLogType] = useState(ServiceLogType.Amazon_S3);
+  const amplifyConfig: AmplifyConfigType = useSelector(
+    (state: RootState) => state.app.amplifyConfig
+  );
+  const [logType, setLogType] = useState(ServiceLogType.Amazon_CloudFront);
   const [engineType, setEngineType] = useState(AnalyticEngineTypes.OPENSEARCH);
+  const [ingestLogType, setIngestLogType] = useState<string>(
+    DestinationType.S3
+  );
+  const [disableLightEngine, setDisableLightEngine] = useState(false);
   const goToCreatePage = () => {
-    console.info("ServiceLogTypeMap:", ServiceLogTypeMap);
-    console.info("logType:", logType);
     navigate(
-      `/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}?engineType=${engineType}`
+      `/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}?engineType=${engineType}&ingestLogType=${ingestLogType}`
     );
   };
 
@@ -64,7 +84,10 @@ const CreateChooseType: React.FC = () => {
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="m-w-1024">
-        <PagePanel title={t("servicelog:create.select")}>
+        <PagePanel
+          title={t("servicelog:create.select")}
+          desc={t("servicelog:create.desc")}
+        >
           <HeaderPanel title={t("servicelog:create.awsServices")}>
             <div>
               <div className="service-item-list">
@@ -79,13 +102,34 @@ const CreateChooseType: React.FC = () => {
                       >
                         <div className="name">
                           <input
+                            data-testid={`engine-type-${element.value}`}
                             disabled={element.disabled}
                             onChange={() => {
                               console.info("changed");
                             }}
                             onClick={() => {
+                              setDisableLightEngine(false);
                               setLogType(element.value);
                               setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                              switch (element.value) {
+                                case ServiceLogType.Amazon_CloudFront:
+                                  setIngestLogType(DestinationType.S3);
+                                  break;
+                                case ServiceLogType.Amazon_WAF:
+                                  setIngestLogType(WAFIngestOption.FullRequest);
+                                  break;
+                                case ServiceLogType.Amazon_VPCLogs:
+                                  setIngestLogType(DestinationType.S3);
+                                  break;
+                                case ServiceLogType.Amazon_CloudTrail:
+                                  setIngestLogType(DestinationType.S3);
+                                  break;
+                                case ServiceLogType.Amazon_RDS:
+                                  setIngestLogType(RDSIngestOption.MySQL);
+                                  break;
+                                default:
+                                  break;
+                              }
                             }}
                             checked={element.value === logType}
                             name="service"
@@ -105,6 +149,23 @@ const CreateChooseType: React.FC = () => {
                   );
                 })}
               </div>
+              <ServicePipelineDesc
+                region={amplifyConfig.aws_project_region}
+                logType={logType}
+                ingestLogType={ingestLogType}
+                changeIngestLogType={(type) => {
+                  const shouldDisableLightEngine =
+                    logType in disableLightEngineConditions &&
+                    type === disableLightEngineConditions[logType];
+                  if (shouldDisableLightEngine) {
+                    setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                    setDisableLightEngine(true);
+                  } else {
+                    setDisableLightEngine(false);
+                  }
+                  setIngestLogType(type);
+                }}
+              />
             </div>
           </HeaderPanel>
           <SelectAnalyticsEngine
@@ -112,10 +173,13 @@ const CreateChooseType: React.FC = () => {
             svcLogType={logType}
             engineType={engineType}
             setEngineType={setEngineType}
+            disableLightEngine={disableLightEngine}
+            ingestLogType={ingestLogType}
           />
         </PagePanel>
         <div className="button-action text-right">
           <Button
+            data-testid="cancel-button"
             btnType="text"
             onClick={() => {
               navigate(`/log-pipeline/service-log`);
@@ -124,6 +188,7 @@ const CreateChooseType: React.FC = () => {
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="next-button"
             btnType="primary"
             onClick={() => {
               goToCreatePage();

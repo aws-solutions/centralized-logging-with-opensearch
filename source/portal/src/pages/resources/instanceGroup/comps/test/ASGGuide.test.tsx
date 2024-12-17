@@ -52,22 +52,6 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
-// beforeEach(async () => {
-//   await (appSyncRequestQuery as any).mockResolvedValue({
-//     data: {
-//       getAutoScalingGroupConf: "Guide details here",
-//     },
-//   });
-// });
-
-// beforeAll(async () => {
-//   await (appSyncRequestQuery as any).mockResolvedValue({
-//     data: {
-//       getAutoScalingGroupConf: "Guide details here",
-//     },
-//   });
-// });
-
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
@@ -127,4 +111,6 @@ describe("ASGGuide", () => {
     });
     expect(screen.getByTestId("asg-group-container")).toBeInTheDocument();
   });
+
+  it("should render with data", async () => {});
 });

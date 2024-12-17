@@ -13,28 +13,24 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
 import IMAGE_SL_Amazon_EC2 from "assets/images/type/amazon_ec2.svg";
 import IMAGE_SL_Amazon_EKS from "assets/images/type/amazon_eks.svg";
-import IMAGE_SL_Amazon_EC2_LIGHT_ENGINE from "assets/images/type/amazon_ec2_light_engine_arch.png";
-import IMAGE_SL_Amazon_EKS_LIGHT_ENGINE from "assets/images/type/amazon_eks_light_engine_arch.png";
-import IMAGE_SL_Amazon_S3_2 from "assets/images/type/amazon_s3_2.svg";
 import IMAGE_SL_SYSLOG from "assets/images/type/syslog.svg";
-import IMAGE_SL_SYSLOG_ARCH from "assets/images/type/syslog_arch.svg";
-import IMAGE_SL_SYSLOG_ARCH_LIGHT_ENGINE from "assets/images/type/syslog_arch_light_engine.png";
-import IMAGE_SL_Amazon_EKS_ARCH from "assets/images/type/amazon_eks_arch.svg";
-import IMAGE_SL_Amazon_EC2_ARCH from "assets/images/type/amazon_ec2_arch.svg";
-import IMAGE_SL_Amazon_S3_ARCH_ONE_TIME from "assets/images/type/s3-source-one-time.svg";
-import IMAGE_SL_Amazon_S3_ARCH_ON_GOING from "assets/images/type/s3-source-on-going.svg";
-import IMAGE_SL_Amazon_S3_ARCH_ON_GOING_LIGHT_ENGINE from "assets/images/type/s3-source-on-going-light-engine.png";
+import IMAGE_SL_Amazon_S3 from "assets/images/type/amazon_s3.svg";
+import EC2_EKS_AOS from "assets/images/desc/EC2_EKS_AOS.svg";
+import EC2_EKS_LightEngine from "assets/images/desc/EC2_EKS_LightEngine.svg";
+import S3_AOS_OneTime from "assets/images/desc/S3_AOS_OneTime.svg";
+import S3_AOS_OnGoing from "assets/images/desc/S3_AOS_OnGoing.svg";
+import S3_LightEngine_OnGoing from "assets/images/desc/S3_LightEngine_OnGoing.svg";
+import Syslog_AOS from "assets/images/desc/Syslog_AOS.svg";
+import Syslog_LightEngine from "assets/images/desc/Syslog_LightEngine.svg";
 
 import { AppLogSourceType } from "assets/js/const";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
-import ExtLink from "components/ExtLink";
 import { useTranslation } from "react-i18next";
-import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import { AnalyticEngineTypes } from "types";
+import { IngestionMode } from "API";
 
 export const AppLogSourceMap = {
   [AppLogSourceType.EC2]: {
@@ -45,8 +41,8 @@ export const AppLogSourceMap = {
       i18nKey: "applog:logSourceDesc.ec2.instanceGroup",
     },
     img: IMAGE_SL_Amazon_EC2,
-    archImg: IMAGE_SL_Amazon_EC2_ARCH,
-    lightEngineImg: IMAGE_SL_Amazon_EC2_LIGHT_ENGINE,
+    archImg: EC2_EKS_AOS,
+    lightEngineImg: EC2_EKS_LightEngine,
     disabled: false,
   },
   [AppLogSourceType.EKS]: {
@@ -54,8 +50,8 @@ export const AppLogSourceMap = {
     name: "applog:logSourceDesc.eks.title",
     descLink: { href: "", i18nKey: "" },
     img: IMAGE_SL_Amazon_EKS,
-    archImg: IMAGE_SL_Amazon_EKS_ARCH,
-    lightEngineImg: IMAGE_SL_Amazon_EKS_LIGHT_ENGINE,
+    archImg: EC2_EKS_AOS,
+    lightEngineImg: EC2_EKS_LightEngine,
     disabled: false,
   },
   [AppLogSourceType.SYSLOG]: {
@@ -63,15 +59,15 @@ export const AppLogSourceMap = {
     name: "applog:logSourceDesc.syslog.title",
     descLink: { href: "", i18nKey: "" },
     img: IMAGE_SL_SYSLOG,
-    archImg: IMAGE_SL_SYSLOG_ARCH,
-    lightEngineImg: IMAGE_SL_SYSLOG_ARCH_LIGHT_ENGINE,
+    archImg: Syslog_AOS,
+    lightEngineImg: Syslog_LightEngine,
     disabled: false,
   },
   [AppLogSourceType.S3]: {
     value: AppLogSourceType.S3,
     name: "applog:logSourceDesc.s3.title",
     descLink: { href: "", i18nKey: "" },
-    img: IMAGE_SL_Amazon_S3_2,
+    img: IMAGE_SL_Amazon_S3,
     archImg: "",
     lightEngineImg: "",
     disabled: false,
@@ -81,54 +77,36 @@ export const AppLogSourceMap = {
 interface AppPipelineDescProps {
   type: AppLogSourceType;
   engineType: AnalyticEngineTypes;
+  ingestLogType?: string;
 }
 
 const AppPipelineDesc: React.FC<AppPipelineDescProps> = (
   props: AppPipelineDescProps
 ) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("onGoing");
-  const { type, engineType } = props;
+  const { type, engineType, ingestLogType } = props;
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
   );
 
+  console.info(
+    "type, engineType, ingestLogType:",
+    type,
+    engineType,
+    ingestLogType
+  );
+
   return (
     <div>
-      <div className="ingest-desc-title">
-        {t(`applog:logSourceDesc.${type}.title`)}
-      </div>
-      <div className="ingest-desc-desc"></div>
-      {AppLogSourceMap[type].descLink.i18nKey && (
-        <ExtLink to={AppLogSourceMap[type].descLink.href}>
-          {t(AppLogSourceMap[type].descLink.i18nKey)}
-        </ExtLink>
-      )}
-      {t(`applog:logSourceDesc.${type}.desc`)}
-      <div>
-        <ul>
-          <li>{t(`applog:logSourceDesc.${type}.li1`)}</li>
-          <li>{t(`applog:logSourceDesc.${type}.li2`)}</li>
-          <li>{t(`applog:logSourceDesc.${type}.li3`)}</li>
-        </ul>
-      </div>
-      <div className="ingest-desc-title">
-        {t(`applog:logSourceDesc.${type}.arch.title`)}
-      </div>
-      <div className="ingest-desc-desc">
-        {t(
-          `applog:logSourceDesc.${type}.arch.${
-            isLightEngine ? "descLightEngine" : "desc"
-          }`
-        )}
-      </div>
+      <div className="ingest-desc-title">{t("archName")}</div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       {type !== AppLogSourceType.S3 && (
         <div className="mt-10">
           <img
             className="img-border"
             alt="architecture"
-            width="80%"
+            width="100%"
             src={
               AppLogSourceMap[type][
                 isLightEngine ? "lightEngineImg" : "archImg"
@@ -141,49 +119,35 @@ const AppPipelineDesc: React.FC<AppPipelineDescProps> = (
         <React.Fragment>
           {!isLightEngine ? (
             <>
-              <AntTabs
-                value={activeTab}
-                onChange={(event, newTab) => {
-                  setActiveTab(newTab);
-                }}
-              >
-                <AntTab
-                  label={t("applog:logSourceDesc.s3.step1.onGoing")}
-                  value="onGoing"
-                />
-                <AntTab
-                  label={t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
-                  value="oneTime"
-                />
-              </AntTabs>
-              <TabPanel value={activeTab} index="onGoing">
+              {ingestLogType === IngestionMode.ON_GOING && (
                 <div className="mt-10">
                   <img
                     className="img-border"
                     alt="architecture"
-                    width="80%"
-                    src={IMAGE_SL_Amazon_S3_ARCH_ON_GOING}
+                    width="100%"
+                    src={S3_AOS_OnGoing}
                   />
                 </div>
-              </TabPanel>
-              <TabPanel value={activeTab} index="oneTime">
+              )}
+
+              {ingestLogType === IngestionMode.ONE_TIME && (
                 <div className="mt-10">
                   <img
                     className="img-border"
                     alt="architecture"
-                    width="80%"
-                    src={IMAGE_SL_Amazon_S3_ARCH_ONE_TIME}
+                    width="100%"
+                    src={S3_AOS_OneTime}
                   />
                 </div>
-              </TabPanel>
+              )}
             </>
           ) : (
             <div className="mt-10">
               <img
                 className="img-border"
                 alt="architecture"
-                width="80%"
-                src={IMAGE_SL_Amazon_S3_ARCH_ON_GOING_LIGHT_ENGINE}
+                width="100%"
+                src={S3_LightEngine_OnGoing}
               />
             </div>
           )}

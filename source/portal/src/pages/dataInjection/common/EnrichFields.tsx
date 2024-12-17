@@ -23,6 +23,7 @@ import Alert from "components/Alert";
 import { DestinationType, ServiceType } from "API";
 import { CloudFrontTaskProps } from "../serviceLog/create/cloudfront/CreateCloudFront";
 import { ELBTaskProps } from "../serviceLog/create/elb/CreateELB";
+import { AlertType } from "components/Alert/alert";
 
 interface LogProcessingProps {
   pipelineTask: CloudFrontTaskProps | ELBTaskProps | ApplicationLogType;
@@ -62,6 +63,9 @@ const EnrichedFields: React.FC<LogProcessingProps> = (
             />
             {t("servicelog:cloudfront.location")} <i>-{t("optional")}</i>
           </label>
+          <div className="description">
+            {t("servicelog:cloudfront.locationDesc")}
+          </div>
         </div>
         <div className="cf-check-list">
           {locationList.map((element, index) => {
@@ -99,6 +103,9 @@ const EnrichedFields: React.FC<LogProcessingProps> = (
             />
             {t("servicelog:cloudfront.osAgent")} <i>-{t("optional")}</i>
           </label>
+          <div className="description">
+            {t("servicelog:cloudfront.osAgentDesc")}
+          </div>
         </div>
         <div className="cf-check-list">
           {osList.map((element, index) => {
@@ -121,11 +128,18 @@ const EnrichedFields: React.FC<LogProcessingProps> = (
             );
           })}
         </div>
-        <div className="maxmind-copyright">
-          * {t("maxmindCopyRight")}
-          <ExtLink to="https://www.maxmind.com">
-            https://www.maxmind.com
-          </ExtLink>
+        <div className="mt-10">
+          <Alert
+            type={AlertType.Normal}
+            content={
+              <div>
+                {t("maxmindCopyRight")}
+                <ExtLink to="https://www.maxmind.com">
+                  https://www.maxmind.com
+                </ExtLink>
+              </div>
+            }
+          />
         </div>
       </div>
     </HeaderPanel>

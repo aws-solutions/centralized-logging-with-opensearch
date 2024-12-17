@@ -183,11 +183,12 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
     <div>
       <TablePanel
         trackId="id"
-        title={t("ekslog:detail.ingestions.sources")}
+        title={t("ekslog:detail.tab.applications")}
         loading={loadingData}
         actions={
           <div>
             <Button
+              data-testid="eks-ingestion-refresh-button"
               btnType="icon"
               disabled={loadingData}
               onClick={() => {
@@ -197,14 +198,16 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               <ButtonRefresh loading={loadingData} />
             </Button>
             <Button
+              data-testid="eks-ingestion-delete-button"
               disabled={disableDelete}
               onClick={() => {
                 setOpenDeleteModel(true);
               }}
             >
-              {t("button.delete")}
+              {t("button.remove")}
             </Button>
             <Button
+              data-testid="eks-ingestion-create-button"
               btnType="primary"
               disabled={loadingData}
               onClick={() => {
@@ -213,7 +216,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
                 );
               }}
             >
-              {t("button.createAnIngestion")}
+              {t("button.addApplication")}
             </Button>
           </div>
         }
@@ -267,6 +270,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="eks-ingestion-cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -276,6 +280,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="eks-ingestion-confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

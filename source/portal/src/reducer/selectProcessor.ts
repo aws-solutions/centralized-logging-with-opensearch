@@ -234,12 +234,15 @@ export const selectProcessorReducer = (
         action.concurrency,
         state.unreservedAccountConcurrency
       );
-
+      console.info("action.concurrency:", action.concurrency);
+      console.info("restConcurrency:", restConcurrency);
       return {
         ...state,
         logProcessorConcurrency: action.concurrency,
         logProcessorConcurrencyError:
-          parseInt(action.concurrency) > 0 && parseInt(restConcurrency) < 100
+          parseInt(state.unreservedAccountConcurrency) > 0 &&
+          parseInt(action.concurrency) > 0 &&
+          parseInt(restConcurrency) < 100
             ? "processor.concurrencyMinError"
             : "",
       };

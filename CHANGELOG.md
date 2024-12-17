@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2024-12-17
+
+### Added
+
+- Add the architecture diagram of sampled WAF logs when creating WAF log pipeline. #132
+- Add the support of ingesting Aurora/RDS PostgreSQL logs. #122
+
+### Changed
+
+- Replace Amazon SQS with Amazon EventBridge to mitigate the Amazon S3 Event Notifications creation failure. #12
+- Redesigned the log ingestion workflow to ingest logs from RDS without the dependency of CloudWatch Logs. #102
+- Reordered pipeline creation workflow: log type and analytics engine selection now occur first for AWS service log pipelines. #309
+
+### Fixed
+
+- Fix the sampling rate validation issue to allow only positive integers when creating CloudFront real-time logs. #302
+- Fix the issue that the pipeline cannot be created due to a lack of "iam:TagRole" permission in some AWS Accounts. #279
+- Fix the issue that the content of Log Config detail may exceed the maximum length of the window. #275
+- Fix the issue that the EKS DaemonSet Guide is not refreshed after editing the log config. #241
+- Fix the user interface issue that a wrong S3 bucket prefix is using when creating WAF log pipeline if the logging has already been enabled. #67
+
+
 ## [2.2.2] - 2024-08-23
 
 ### Changed
@@ -18,17 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove the redundant sign in alert dialog modal when user session expired. #303
 - Fixed the Grafana url validation failed with spaces when import a Grafana Server. #304
 
-## [2.2.1] - 2024-07-22
+## [2.2.1] - 2024-07-02
 
 ### Added
 
-- Optimised instance list performance. #76
-- Added support for using Unix epoch time format as the time key for single line text log type.
+- Optimise list instance performance.
 
 ### Fixed
 
-- Fixed an issue that missing time key when editing JSON config. #296
-- Fixed an issue that upgrading to v2.2.0 failed due to missing CMK permissions. #297
+- Fixed an issue that lost time key when edit JSON config. #296
+- Fixed an issue that upgrade to v2.2.0 failed because of the lack of permission of cmk. #297
 
 ## [2.2.0] - 2024-06-20
 
@@ -54,19 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that the maximum number of distributions that can be displayed is 100 when creating pipeline. #278
 - Fixed a bug that prevented instances from being listed when switching accounts on the Instance Group list page. #291
 - Fixed a bug where creating a Log Conf with JSON type, if the field type select float, can not create the index template. #293
-
-
-## [2.1.2] - 2024-03-19
-
-### Fixed
-
-- Resolved a bug where upgrading from versions earlier than 2.1.0 led to the loss of S3 notifications, preventing the proper collection of logs from the S3 buffer. #261
-- Addressed a problem where including the "@timestamp" field in log configurations caused failures in creating index_templates, leading to an inability to write data to OpenSearch. #262
-- Fixed a bug in the log processor Lambda due to the absence of the 'batch_size' variable, causing process failures. #242
-- Solved a deployment issue with the Log Analytics Pipeline, which previously could not deploy cross-account Lambda pipelines. #227
-- Corrected an issue with the ALB Service Log Parser that resulted in the omission of numerous log lines. #243
-- Amended an inaccurate warning message displayed during pipeline creation with an existing index in OpenSearch. #260
-- Amended an inaccurate error messaging when deleting an Instance Group in application log pipelines. #229
 
 ## [2.1.1] - 2023-12-05
 

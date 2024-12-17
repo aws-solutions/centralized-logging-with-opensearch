@@ -78,3 +78,118 @@ class APIException(Exception):
 
     def __str__(self) -> str:
         return f"[{self.type}] {self.message}"
+
+
+class Issue(type):
+    TYPE: str
+    CODE: str
+    DETAILS: str
+
+
+class YamlSyntaxError(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "YAML_SYNTAX_ERROR"
+    DETAILS = (
+        "The YAML file has syntax error, please fix all syntax error and upload again."
+    )
+
+
+class InvalidElement(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_ELEMENT"
+    DETAILS = (
+        "The element {element} is not valid, please include only supported element."
+    )
+
+
+class InvalidResource(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_RESOURCE"
+    DETAILS = "The resource {resource} is not found."
+
+
+class InvalidResourceStatus(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_RESOURCE_STATUS"
+    DETAILS = "The resource {resource} current status does not allow pipeline creation, please check the resource's status."
+
+
+class InvalidBucket(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_BUCKET"
+    DETAILS = "The bucket {bucket} is not exists or is not in the region where the Solution is deployed."
+
+
+class BucketNotificationOverlap(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "BUCKET_NOTIFICATION_OVERLAP"
+    DETAILS = "Configuration is ambiguously defined. Cannot have overlapping suffixes in two rules if the prefixes are overlapping for the same event type."
+
+
+class InvalidValue(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_VALUE"
+    DETAILS = "The Value {value} is not valid for the {key}."
+
+
+class InvalidEnum(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "INVALID_ENUM"
+    DETAILS = (
+        "The Value {value} is not valid for the {enum}, Supported values: {values}."
+    )
+
+
+class MissingElement(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "MISSING_ELEMENT"
+    DETAILS = (
+        "Element {element} is required, please add element {element} to the {parent}."
+    )
+
+
+class MismatchDataType(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "MISMATCH_DATA_TYPE"
+    DETAILS = "The value {value} does not match the expected data type {data_type}."
+
+
+class MissingVersion(metaclass=Issue):
+    TYPE = "SUGGESTION"
+    CODE = "MISSING_VERSION"
+    DETAILS = "We recommend that you specify element {element}. If not specified, the latest version will be used."
+
+
+class HTTPRequestError(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "HTTP_REQUEST_ERROR"
+    DETAILS = "{msg}"
+
+
+class UnsupportedLogSource(metaclass=Issue):
+    TYPE = "WARNING"
+    CODE = "UNSUPPORTED_LOG_SOURCE"
+    DETAILS = "Unsupported Log Source, will be ignored during pipeline creation."
+
+
+class OpenSearchIndexOverlap(metaclass=Issue):
+    TYPE = "ERROR"
+    CODE = "OPENSEARCH_INDEX_OVERLAP"
+    DETAILS = "{msg}"
+
+
+class IssueCode:
+    YAML_SYNTAX_ERROR = YamlSyntaxError
+    INVALID_ELEMENT = InvalidElement
+    INVALID_RESOURCE = InvalidResource
+    INVALID_RESOURCE_STATUS = InvalidResourceStatus
+    INVALID_BUCKET = InvalidBucket
+    BUCKET_NOTIFICATION_OVERLAP = BucketNotificationOverlap
+    INVALID_VALUE = InvalidValue
+    MISSING_ELEMENT = MissingElement
+    MISMATCH_DATA_TYPE = MismatchDataType
+    MISSING_VERSION = MissingVersion
+    INVALID_ENUM = InvalidEnum
+    HTTP_REQUEST_ERROR = HTTPRequestError
+    UNSUPPORTED_LOG_SOURCE = UnsupportedLogSource
+    OPENSEARCH_INDEX_OVERLAP = OpenSearchIndexOverlap

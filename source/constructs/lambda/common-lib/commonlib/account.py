@@ -47,6 +47,7 @@ class LinkAccountHelper:
         self._ddb_util = DynamoDBUtil(link_account_table_name)
         conn = AWSConnection()
         sts = conn.get_client("sts")
+        self.events_client = conn.get_client("events")
         self.iam_client = conn.get_client("iam")
         self.iam_res = conn.get_client("iam", client_type="resource")
         self._default_account_id = sts.get_caller_identity()["Account"]
@@ -127,6 +128,12 @@ class LinkAccountHelper:
         account["agentStatusCheckDoc"] = agent_status_check_doc
         account["agentInstallDoc"] = agent_install_doc
         account["updatedAt"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.events_client.put_permission(
+            EventBusName="default",
+            Action="events:PutEvents",
+            Principal=account_id,
+            StatementId=f"CLOAcceptFrom{account_id}",
+        )
         self._ddb_util.put_item(account)
         return "OK"
 
@@ -159,6 +166,13 @@ class LinkAccountHelper:
             logger.error(err)
             raise APIException(ErrorCode.UPDATE_CWL_ROLE_FAILED)
 
+        self.events_client.put_permission(
+            EventBusName="default",
+            Action="events:PutEvents",
+            Principal=account_id,
+            StatementId=f"CLOAcceptFrom{account_id}",
+        )
+
         item = extra_info
         item[self._pk] = account_id or self._default_account_id
         item[self._sk] = region or self._default_region
@@ -177,6 +191,15 @@ class LinkAccountHelper:
 
     def delete_sub_account_link(self, account_id: str, region=""):
         """Delete sub account link"""
+
+        try:
+            self.events_client.remove_permission(
+                StatementId=f"CLOAcceptFrom{account_id}",
+                EventBusName="default",
+                RemoveAllPermissions=False,
+            )
+        except self.events_client.exceptions.ResourceNotFoundException:
+            logger.info(f"Permission CLOAcceptFrom{account_id} not found")
         key = self._get_ddb_key(account_id, region)
         return self._ddb_util.delete_item(key)
 

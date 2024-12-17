@@ -29,20 +29,19 @@ import {
   aws_iam as iam,
   aws_s3 as s3,
   CfnMapping,
-} from "aws-cdk-lib";
-import { CfnSecurityGroup } from "aws-cdk-lib/aws-ec2";
-import { NagSuppressions } from "cdk-nag";
-import { SolutionStack } from "../common/solution-stack";
+} from 'aws-cdk-lib';
+import { CfnSecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import {
   CfnTaskDefinition,
   ContainerDefinition,
   TaskDefinition,
-} from "aws-cdk-lib/aws-ecs";
-import { Construct, IConstruct } from "constructs";
+} from 'aws-cdk-lib/aws-ecs';
+import { NagSuppressions } from 'cdk-nag';
+import { Construct, IConstruct } from 'constructs';
+import { SolutionStack } from '../common/solution-stack';
 
 const { VERSION } = process.env;
 const GB = 1024;
-const ECR_IMG_VERSION = "2.31.12";
 const NLB_MIN_PORT = 500;
 const NLB_MAX_PORT = 20000;
 
@@ -57,8 +56,8 @@ export class SyslogtoECSStack extends SolutionStack {
     super(scope, id, props);
 
     let solutionDesc =
-      props.solutionDesc || "Centralized Logging with OpenSearch";
-    let solutionId = props.solutionId || "SO8025";
+      props.solutionDesc || 'Centralized Logging with OpenSearch';
+    let solutionId = props.solutionId || 'SO8025';
     const stackPrefix = 'CL';
 
     this.setDescription(
@@ -67,41 +66,41 @@ export class SyslogtoECSStack extends SolutionStack {
 
     const nlbArn = this.newParam(`NlbArn`, {
       description:
-        "ECS Cluster Name to run ECS task (Please make sure the cluster exists)",
-      type: "String",
+        'ECS Cluster Name to run ECS task (Please make sure the cluster exists)',
+      type: 'String',
     });
 
     const ecsTaskRoleArn = this.newParam(`ECSTaskRoleArn`, {
       description:
-        "ECS Task Role Arn to run ECS task (Please make sure the role exists)",
-      type: "String",
+        'ECS Task Role Arn to run ECS task (Please make sure the role exists)',
+      type: 'String',
     });
 
     const ecsClusterName = this.newParam(`ECSClusterName`, {
       description:
-        "ECS Cluster Name to run ECS task (Please make sure the cluster exists)",
-      type: "String",
+        'ECS Cluster Name to run ECS task (Please make sure the cluster exists)',
+      type: 'String',
     });
 
-    const ecsVpcId = this.newParam("ECSVpcId", {
-      description: "VPC ID to run ECS task, e.g. vpc-bef13dc7",
-      default: "",
-      type: "AWS::EC2::VPC::Id",
+    const ecsVpcId = this.newParam('ECSVpcId', {
+      description: 'VPC ID to run ECS task, e.g. vpc-bef13dc7',
+      default: '',
+      type: 'AWS::EC2::VPC::Id',
     });
 
-    const ecsSubnets = this.newParam("ECSSubnets", {
+    const ecsSubnets = this.newParam('ECSSubnets', {
       description:
-        "Subnet IDs to run ECS task. Please provide two private subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32",
-      type: "List<AWS::EC2::Subnet::Id>",
+        'Subnet IDs to run ECS task. Please provide two private subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32',
+      type: 'List<AWS::EC2::Subnet::Id>',
     });
 
     const configS3BucketName = this.newParam(`ConfigS3BucketName`, {
       description:
-        "S3 bucket to store agent config files (Please make sure the bucket exists)",
-      type: "String",
+        'S3 bucket to store agent config files (Please make sure the bucket exists)',
+      type: 'String',
     });
     this.addToParamGroups(
-      "Base Params",
+      'Base Params',
       ecsTaskRoleArn.logicalId,
       ecsClusterName.logicalId,
       ecsVpcId.logicalId,
@@ -109,45 +108,45 @@ export class SyslogtoECSStack extends SolutionStack {
       configS3BucketName.logicalId
     );
 
-    const portNum = this.newParam("NlbPortParam", {
-      type: "Number",
+    const portNum = this.newParam('NlbPortParam', {
+      type: 'Number',
       description: `The nlb port to which your syslog are sent.`,
       default: 10000,
     });
 
-    const protocolType = this.newParam("NlbProtocolTypeParam", {
-      type: "String",
+    const protocolType = this.newParam('NlbProtocolTypeParam', {
+      type: 'String',
       description: `The nlb protocol type to which your syslog are sent.`,
-      allowedValues: ["UDP", "TCP"],
-      default: "UDP",
+      allowedValues: ['UDP', 'TCP'],
+      default: 'UDP',
     });
 
-    const configS3Key = this.newParam("ServiceConfigS3KeyParam", {
-      type: "String",
+    const configS3Key = this.newParam('ServiceConfigS3KeyParam', {
+      type: 'String',
       description: `The S3 folder path of Agent config file, e.g. app_log_config/syslog/10009/`,
-      default: "",
+      default: '',
     });
 
     this.addToParamGroups(
-      "NLB Port Params",
+      'NLB Port Params',
       portNum.logicalId,
       protocolType.logicalId,
       configS3Key.logicalId
     );
 
     // You should use lowercase in ECS task definition, but must use uppercase in ELB related definition
-    const protocolTable = new CfnMapping(this, "ProtocolTable", {
+    const protocolTable = new CfnMapping(this, 'ProtocolTable', {
       mapping: {
         TCP: {
-          protocolLowerCase: "tcp",
+          protocolLowerCase: 'tcp',
         },
         UDP: {
-          protocolLowerCase: "udp",
+          protocolLowerCase: 'udp',
         },
       },
     });
 
-    const vpc = ec2.Vpc.fromVpcAttributes(this, "EC2Vpc", {
+    const vpc = ec2.Vpc.fromVpcAttributes(this, 'EC2Vpc', {
       vpcId: ecsVpcId.valueAsString,
       availabilityZones: Fn.getAzs(),
       privateSubnetIds: ecsSubnets.valueAsList,
@@ -166,69 +165,69 @@ export class SyslogtoECSStack extends SolutionStack {
 
     const configS3Bucket = s3.Bucket.fromBucketName(
       this,
-      "ConfigS3Bucket",
+      'ConfigS3Bucket',
       configS3BucketName.valueAsString
     );
 
-    const ecsServiceSG = new ec2.SecurityGroup(this, "ECSServiceSG", {
+    const ecsServiceSG = new ec2.SecurityGroup(this, 'ECSServiceSG', {
       vpc,
       allowAllOutbound: false,
-      description: "security group for ECS Service",
+      description: 'security group for ECS Service',
     });
     ecsServiceSG.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.udpRange(NLB_MIN_PORT, NLB_MAX_PORT),
-      "allow UDP syslog traffic from anywhere"
+      'allow UDP syslog traffic from anywhere'
     );
     ecsServiceSG.addIngressRule(
-      ec2.Peer.anyIpv4(),
+      ec2.Peer.anyIpv4(), //NOSONAR
       ec2.Port.tcpRange(NLB_MIN_PORT, NLB_MAX_PORT),
-      "allow TCP syslog traffic from anywhere"
+      'allow TCP syslog traffic from anywhere'
     );
     ecsServiceSG.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(2022),
-      "allow HTTP traffic for Fluent-bit health check"
+      'allow HTTP traffic for Fluent-bit health check'
     );
     ecsServiceSG.addEgressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(443),
-      "allow Fluent-bit to access HTTPS."
+      'allow Fluent-bit to access HTTPS.'
     );
     NagSuppressions.addResourceSuppressions(ecsServiceSG, [
       {
-        id: "AwsSolutions-EC23",
+        id: 'AwsSolutions-EC23',
         reason:
-          "This security group is open to allow public https access, e.g. for ELB",
+          'This security group is open to allow public https access, e.g. for ELB',
       },
     ]);
     const cfnecsServiceSG = ecsServiceSG.node.defaultChild as CfnSecurityGroup;
-    cfnecsServiceSG.overrideLogicalId("ECSServiceSG");
+    cfnecsServiceSG.overrideLogicalId('ECSServiceSG');
     this.addCfnNagSuppressRules(cfnecsServiceSG, [
       {
-        id: "W9",
+        id: 'W9',
         reason:
-          "This security group is open to allow internal tcp/udp, e.g. for ELB",
+          'This security group is open to allow internal tcp/udp, e.g. for ELB',
       },
       {
-        id: "W2",
+        id: 'W2',
         reason:
-          "This security group is open to allow internal tcp/udp, e.g. for ELB",
+          'This security group is open to allow internal tcp/udp, e.g. for ELB',
       },
       {
-        id: "W5",
-        reason: "This security group is restricted to tcp/udp egress only",
+        id: 'W5',
+        reason: 'This security group is restricted to tcp/udp egress only',
       },
       {
-        id: "W27",
-        reason: "This security group is open to allow internal tcp/udp range",
+        id: 'W27',
+        reason: 'This security group is open to allow internal tcp/udp range',
       },
     ]);
 
     const syslogNlb =
       elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
         this,
-        "SyslogNLB",
+        'SyslogNLB',
         {
           loadBalancerArn: nlbArn.valueAsString,
           vpc: vpc,
@@ -237,19 +236,19 @@ export class SyslogtoECSStack extends SolutionStack {
 
     NagSuppressions.addResourceSuppressions(syslogNlb, [
       {
-        id: "AwsSolutions-ELB2",
-        reason: "config log enabled for ELB",
+        id: 'AwsSolutions-ELB2',
+        reason: 'config log enabled for ELB',
       },
     ]);
 
-    const serviceTaskRole = new iam.Role(this, "ECSServiceTaskRole", {
-      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+    const serviceTaskRole = new iam.Role(this, 'ECSServiceTaskRole', {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     });
 
     // Add the role to
     serviceTaskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
-        actions: ["sts:AssumeRole"],
+        actions: ['sts:AssumeRole'],
         resources: [`*`],
       })
     );
@@ -257,10 +256,10 @@ export class SyslogtoECSStack extends SolutionStack {
     serviceTaskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         actions: [
-          "s3:GetObject*",
-          "s3:GetBucket*",
-          "s3:List*",
-          "s3:PutObject*",
+          's3:GetObject*',
+          's3:GetBucket*',
+          's3:List*',
+          's3:PutObject*',
         ],
         resources: [
           `arn:${Aws.PARTITION}:s3:::${configS3Bucket.bucketName}/*`,
@@ -301,7 +300,7 @@ export class SyslogtoECSStack extends SolutionStack {
         minCapacity: 2, // This number must larger than the number of NLB AZs
         maxCapacity: 10,
       })
-      .scaleOnCpuUtilization("CpuScaling", {
+      .scaleOnCpuUtilization('CpuScaling', {
         targetUtilizationPercent: 50,
         scaleOutCooldown: Duration.seconds(10),
       });
@@ -311,19 +310,19 @@ export class SyslogtoECSStack extends SolutionStack {
       port: portNum.valueAsNumber,
     });
     const cfnListener = listener.node.defaultChild as elbv2.CfnListener;
-    cfnListener.addPropertyOverride("Protocol", protocolType.valueAsString);
+    cfnListener.addPropertyOverride('Protocol', protocolType.valueAsString);
 
     const targetGroup = listener.addTargets(`ECSTargeGroup`, {
       port: portNum.valueAsNumber,
       healthCheck: {
         enabled: true,
-        port: "2022",
+        port: '2022',
         protocol: elbv2.Protocol.TCP,
       },
     });
     const cfnTargetGroup = targetGroup.node
       .defaultChild as elbv2.CfnTargetGroup;
-    cfnTargetGroup.addPropertyOverride("Protocol", protocolType.valueAsString);
+    cfnTargetGroup.addPropertyOverride('Protocol', protocolType.valueAsString);
 
     class MyContainerDefinition extends ContainerDefinition {
       public renderContainerDefinition(
@@ -335,21 +334,32 @@ export class SyslogtoECSStack extends SolutionStack {
               containerPort: portNum.valueAsNumber,
               protocol: protocolTable.findInMap(
                 protocolType.valueAsString,
-                "protocolLowerCase"
+                'protocolLowerCase'
               ),
             },
           ],
         });
       }
     }
+    const { PUBLIC_ECR_REGISTRY, PUBLIC_ECR_TAG } = process.env;
+    if (
+      typeof PUBLIC_ECR_REGISTRY !== 'string' ||
+      PUBLIC_ECR_REGISTRY.trim() === ''
+    ) {
+      throw Error('PUBLIC_ECR_REGISTRY is missing.');
+    }
 
+    if (typeof PUBLIC_ECR_TAG !== 'string' || PUBLIC_ECR_TAG.trim() === '') {
+      throw Error('PUBLIC_ECR_TAG is missing.');
+    }
+    const imageRepository = 'clo-logging-syslog';
     taskDefinition.defaultContainer = new MyContainerDefinition(
       service,
       `ServiceContainer`,
       {
         taskDefinition: service.taskDefinition,
         image: ecs.ContainerImage.fromRegistry(
-          `public.ecr.aws/aws-gcr-solutions/logging-syslog:${ECR_IMG_VERSION}`
+          `${PUBLIC_ECR_REGISTRY}/${imageRepository}:${PUBLIC_ECR_TAG}`
         ),
         logging: ecs.LogDrivers.awsLogs({
           streamPrefix: id,
@@ -360,7 +370,7 @@ export class SyslogtoECSStack extends SolutionStack {
             CONFIG_S3_BUCKET: configS3BucketName.valueAsString,
             CONFIG_S3_KEY: configS3Key.valueAsString,
           },
-          scope.node.tryGetContext("env")
+          scope.node.tryGetContext('env')
         ),
         portMappings: [{ containerPort: portNum.valueAsNumber }],
       }
@@ -392,11 +402,9 @@ class InjectRemoveECSAlarm implements IAspect {
   public visit(node: IConstruct): void {
     if (
       node instanceof CfnResource &&
-      node.cfnResourceType === "AWS::ECS::Service"
+      node.cfnResourceType === 'AWS::ECS::Service'
     ) {
-      node.addDeletionOverride(
-        "Properties.DeploymentConfiguration.Alarms"
-      );
+      node.addDeletionOverride('Properties.DeploymentConfiguration.Alarms');
     }
   }
 }

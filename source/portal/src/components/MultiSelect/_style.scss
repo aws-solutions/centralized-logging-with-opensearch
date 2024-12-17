@@ -1,4 +1,6 @@
 .gsui-multi-select-wrap {
+  display: flex;
+  gap: 10px;
   .gsui-multi-select {
     position: relative;
     width: 100%;

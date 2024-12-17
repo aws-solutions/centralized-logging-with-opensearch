@@ -3,7 +3,7 @@
 
 import json
 import pytest
-from moto import mock_dynamodb
+from moto import mock_dynamodb, mock_secretsmanager
 import os
 import boto3
 from pytest_httpserver import HTTPServer
@@ -100,7 +100,38 @@ def check_grafana_event():
         return event
 
 
+@pytest.fixture
+def test_get_grafana_token(mocker):
+    import lambda_function
+
+    # Mock the secretsmanager and its method
+    mock_secrets_manager = mocker.patch("lambda_function.secretsmanager")
+    mock_secrets_manager.get_secret_value.return_value = {
+        "SecretString": '{"token":"mocked_token"}'
+    }
+    # Call the function under test
+    result = lambda_function.get_grafana_token()
+    # Assert the expected result
+    assert result == {"token": "mocked_token"}
+
+
+@pytest.fixture
+def mock_secretsmanager_client():
+    with mock_secretsmanager():
+        region = os.environ.get("AWS_REGION")
+        secrets_manager = boto3.client("secretsmanager", region_name=region)
+        mock_data = dict()
+        resp = secrets_manager.create_secret(
+            Name="mocked_grafana", SecretString=json.dumps(mock_data)
+        )
+
+        os.environ["GRAFANA_SECRET_ARN"] = resp.get("ARN")
+        yield
+
+
+@pytest.fixture
 def test_lambda_function(
+    mock_secretsmanager_client,
     ddb_client,
     create_event,
     list_event,
@@ -118,7 +149,6 @@ def test_lambda_function(
     id = lambda_function.lambda_handler(create_event, None)
     # Expect Execute successfully.
     assert id is not None
-
     # list again
     result = lambda_function.lambda_handler(list_event, None)
     assert result["total"] == 1
@@ -290,32 +320,144 @@ class TestGrafanaStatusCheck:
             )
         )
 
-    def test_check_grafana(self, httpserver: HTTPServer, check_grafana_event, create_event, ddb_client):
+    def test_check_grafana(
+        self,
+        mock_secretsmanager_client,
+        httpserver: HTTPServer,
+        check_grafana_event,
+        create_event,
+        ddb_client,
+    ):
         import lambda_function
+
         self.init_default_parameters(httpserver=httpserver)
-        
+
         # Test happy case
         httpserver.clear()
-        httpserver.expect_oneshot_request(uri='/api/datasources/name/TestCreateAthenaDatasource', method='GET').respond_with_data(response_data=json.dumps({'message': 'Data source not found'}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 98, 'uid': 'BasXA4g_ar', 'name': 'Athena', 'type': 'grafana-athena-datasource'}, 'id': 98, 'message': 'Datasource added', 'name': 'TestCreateAthenaDatasource'}))
-        httpserver.expect_oneshot_request(uri='/api/datasources/uid/BasXA4g_ar', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/name/TestCreateAthenaDatasource", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps({"message": "Data source not found"}), status=404
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "datasource": {
+                        "id": 98,
+                        "uid": "BasXA4g_ar",
+                        "name": "Athena",
+                        "type": "grafana-athena-datasource",
+                    },
+                    "id": 98,
+                    "message": "Datasource added",
+                    "name": "TestCreateAthenaDatasource",
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/uid/BasXA4g_ar", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/user/preferences', method='GET').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/user/preferences", method="GET"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_request(uri='/api/plugins/grafana-athena-datasource/settings', method='GET').respond_with_data(response_data=json.dumps({'name': 'Amazon Athena', 'type': 'datasource', 'id': 'grafana-athena-datasource', 'enabled': False, 'pinned': False}))
+        httpserver.expect_request(
+            uri="/api/plugins/grafana-athena-datasource/settings", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "name": "Amazon Athena",
+                    "type": "datasource",
+                    "id": "grafana-athena-datasource",
+                    "enabled": False,
+                    "pinned": False,
+                }
+            )
+        )
 
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
-        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="GET"
+        ).respond_with_data(response_data=json.dumps([]))
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 19,
+                    "uid": "zypaSkX4k",
+                    "title": "clo",
+                    "url": "/dashboards/f/zypaSkX4k/clo",
+                    "hasAcl": False,
+                    "canSave": True,
+                    "canEdit": True,
+                    "canAdmin": True,
+                    "canDelete": True,
+                    "createdBy": "Anonymous",
+                    "updatedBy": "Anonymous",
+                    "version": 1,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/zypaSkX4k", method="DELETE"
+        ).respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/test-folder-permission", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 19,
+                    "uid": "test-folder-permission",
+                    "title": "clo",
+                    "url": "/dashboards/f/test-folder-permission/clo",
+                    "hasAcl": False,
+                    "canSave": True,
+                    "canEdit": True,
+                    "canAdmin": True,
+                    "canDelete": True,
+                    "createdBy": "Anonymous",
+                    "updatedBy": "Anonymous",
+                    "version": 1,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/test-folder-permission", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/db", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "slug": "TestDashboardsPermission",
+                    "status": "success",
+                    "uid": "0HklGl_Vz",
+                    "url": "/d/0HklGl_Vz/TestDashboardsPermission",
+                    "version": 58,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/uid/0HklGl_Vz", method="DELETE"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "message": "Dashboard Production Overview deleted",
+                    "title": "Production Overview",
+                }
+            )
+        )
 
         check_grafana_event["arguments"]["url"] = self.grafana_url
         check_grafana_event["arguments"]["token"] = self.grafana_token
         response = lambda_function.lambda_handler(check_grafana_event, None)
+        print("88888888888888888888888888")
         print(response)
         assert response["status"] == "PASSED"
         assert response["details"][0]["status"] == "PASSED"
@@ -326,20 +468,104 @@ class TestGrafanaStatusCheck:
         # Test bad case - token invalid
         httpserver.clear()
 
-        httpserver.expect_oneshot_request(uri='/api/datasources/name/TestCreateAthenaDatasource', method='GET').respond_with_data(response_data=json.dumps({'message': 'Data source not found'}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 98, 'uid': 'BasXA4g_ar', 'name': 'Athena', 'type': 'grafana-athena-datasource'}, 'id': 98, 'message': 'Datasource added', 'name': 'TestCreateAthenaDatasource'}))
-        httpserver.expect_oneshot_request(uri='/api/datasources/uid/BasXA4g_ar', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/name/TestCreateAthenaDatasource", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps({"message": "Data source not found"}), status=404
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "datasource": {
+                        "id": 98,
+                        "uid": "BasXA4g_ar",
+                        "name": "Athena",
+                        "type": "grafana-athena-datasource",
+                    },
+                    "id": 98,
+                    "message": "Datasource added",
+                    "name": "TestCreateAthenaDatasource",
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/uid/BasXA4g_ar", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/user/preferences', method='GET').respond_with_data(status=401)  # token invalid
+        httpserver.expect_oneshot_request(
+            uri="/api/user/preferences", method="GET"
+        ).respond_with_data(
+            status=401
+        )  # token invalid
 
-        httpserver.expect_request(uri='/api/plugins/grafana-athena-datasource/settings', method='GET').respond_with_data(response_data=json.dumps({'name': 'Amazon Athena', 'type': 'datasource', 'id': 'grafana-athena-datasource', 'enabled': False, 'pinned': False}))
+        httpserver.expect_request(
+            uri="/api/plugins/grafana-athena-datasource/settings", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "name": "Amazon Athena",
+                    "type": "datasource",
+                    "id": "grafana-athena-datasource",
+                    "enabled": False,
+                    "pinned": False,
+                }
+            )
+        )
 
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="GET"
+        ).respond_with_data(response_data=json.dumps([]))
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 19,
+                    "uid": "zypaSkX4k",
+                    "title": "clo",
+                    "url": "/dashboards/f/zypaSkX4k/clo",
+                    "hasAcl": False,
+                    "canSave": True,
+                    "canEdit": True,
+                    "canAdmin": True,
+                    "canDelete": True,
+                    "createdBy": "Anonymous",
+                    "updatedBy": "Anonymous",
+                    "version": 1,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/zypaSkX4k", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/db", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "slug": "TestDashboardsPermission",
+                    "status": "success",
+                    "uid": "0HklGl_Vz",
+                    "url": "/d/0HklGl_Vz/TestDashboardsPermission",
+                    "version": 58,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/uid/0HklGl_Vz", method="DELETE"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "message": "Dashboard Production Overview deleted",
+                    "title": "Production Overview",
+                }
+            )
+        )
 
         response = lambda_function.lambda_handler(check_grafana_event, None)
         print(response)
@@ -351,20 +577,102 @@ class TestGrafanaStatusCheck:
         # Test bad case - url connect failed
         httpserver.clear()
 
-        httpserver.expect_oneshot_request(uri='/api/datasources/name/TestCreateAthenaDatasource', method='GET').respond_with_data(response_data=json.dumps({'message': 'Data source not found'}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 98, 'uid': 'BasXA4g_ar', 'name': 'Athena', 'type': 'grafana-athena-datasource'}, 'id': 98, 'message': 'Datasource added', 'name': 'TestCreateAthenaDatasource'}))
-        httpserver.expect_oneshot_request(uri='/api/datasources/uid/BasXA4g_ar', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/name/TestCreateAthenaDatasource", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps({"message": "Data source not found"}), status=404
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "datasource": {
+                        "id": 98,
+                        "uid": "BasXA4g_ar",
+                        "name": "Athena",
+                        "type": "grafana-athena-datasource",
+                    },
+                    "id": 98,
+                    "message": "Datasource added",
+                    "name": "TestCreateAthenaDatasource",
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/uid/BasXA4g_ar", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/user/preferences', method='GET').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/user/preferences", method="GET"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_request(uri='/api/plugins/grafana-athena-datasource/settings', method='GET').respond_with_data(response_data=json.dumps({'name': 'Amazon Athena', 'type': 'datasource', 'id': 'grafana-athena-datasource', 'enabled': False, 'pinned': False}))
+        httpserver.expect_request(
+            uri="/api/plugins/grafana-athena-datasource/settings", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "name": "Amazon Athena",
+                    "type": "datasource",
+                    "id": "grafana-athena-datasource",
+                    "enabled": False,
+                    "pinned": False,
+                }
+            )
+        )
 
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="GET"
+        ).respond_with_data(response_data=json.dumps([]))
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 19,
+                    "uid": "zypaSkX4k",
+                    "title": "clo",
+                    "url": "/dashboards/f/zypaSkX4k/clo",
+                    "hasAcl": False,
+                    "canSave": True,
+                    "canEdit": True,
+                    "canAdmin": True,
+                    "canDelete": True,
+                    "createdBy": "Anonymous",
+                    "updatedBy": "Anonymous",
+                    "version": 1,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/zypaSkX4k", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/db", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "slug": "TestDashboardsPermission",
+                    "status": "success",
+                    "uid": "0HklGl_Vz",
+                    "url": "/d/0HklGl_Vz/TestDashboardsPermission",
+                    "version": 58,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/uid/0HklGl_Vz", method="DELETE"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "message": "Dashboard Production Overview deleted",
+                    "title": "Production Overview",
+                }
+            )
+        )
 
         check_grafana_event["arguments"]["url"] = "localhost:404"  # url connect failed
         check_grafana_event["arguments"]["token"] = self.grafana_token
@@ -378,20 +686,102 @@ class TestGrafanaStatusCheck:
 
         # Test check status by grafana id - bad case (url connect failed)
         httpserver.clear()
-        httpserver.expect_oneshot_request(uri='/api/datasources/name/TestCreateAthenaDatasource', method='GET').respond_with_data(response_data=json.dumps({'message': 'Data source not found'}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 98, 'uid': 'BasXA4g_ar', 'name': 'Athena', 'type': 'grafana-athena-datasource'}, 'id': 98, 'message': 'Datasource added', 'name': 'TestCreateAthenaDatasource'}))
-        httpserver.expect_oneshot_request(uri='/api/datasources/uid/BasXA4g_ar', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/name/TestCreateAthenaDatasource", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps({"message": "Data source not found"}), status=404
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "datasource": {
+                        "id": 98,
+                        "uid": "BasXA4g_ar",
+                        "name": "Athena",
+                        "type": "grafana-athena-datasource",
+                    },
+                    "id": 98,
+                    "message": "Datasource added",
+                    "name": "TestCreateAthenaDatasource",
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/datasources/uid/BasXA4g_ar", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/user/preferences', method='GET').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/user/preferences", method="GET"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_request(uri='/api/plugins/grafana-athena-datasource/settings', method='GET').respond_with_data(response_data=json.dumps({'name': 'Amazon Athena', 'type': 'datasource', 'id': 'grafana-athena-datasource', 'enabled': False, 'pinned': False}))
+        httpserver.expect_request(
+            uri="/api/plugins/grafana-athena-datasource/settings", method="GET"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "name": "Amazon Athena",
+                    "type": "datasource",
+                    "id": "grafana-athena-datasource",
+                    "enabled": False,
+                    "pinned": False,
+                }
+            )
+        )
 
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="GET"
+        ).respond_with_data(response_data=json.dumps([]))
+        httpserver.expect_oneshot_request(
+            uri="/api/folders", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 19,
+                    "uid": "zypaSkX4k",
+                    "title": "clo",
+                    "url": "/dashboards/f/zypaSkX4k/clo",
+                    "hasAcl": False,
+                    "canSave": True,
+                    "canEdit": True,
+                    "canAdmin": True,
+                    "canDelete": True,
+                    "createdBy": "Anonymous",
+                    "updatedBy": "Anonymous",
+                    "version": 1,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/folders/zypaSkX4k", method="DELETE"
+        ).respond_with_data(status=200)
 
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/db", method="POST"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "slug": "TestDashboardsPermission",
+                    "status": "success",
+                    "uid": "0HklGl_Vz",
+                    "url": "/d/0HklGl_Vz/TestDashboardsPermission",
+                    "version": 58,
+                }
+            )
+        )
+        httpserver.expect_oneshot_request(
+            uri="/api/dashboards/uid/0HklGl_Vz", method="DELETE"
+        ).respond_with_data(
+            response_data=json.dumps(
+                {
+                    "id": 17,
+                    "message": "Dashboard Production Overview deleted",
+                    "title": "Production Overview",
+                }
+            )
+        )
 
         id = lambda_function.lambda_handler(create_event, None)
         check_grafana_event["arguments"]["id"] = id

@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from .rds import RDSSource as rds
+from .waf_sampled import WAFSampledSource as wafsampled

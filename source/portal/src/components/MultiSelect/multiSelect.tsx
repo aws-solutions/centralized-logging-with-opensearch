@@ -92,7 +92,6 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
   );
 
   const handleChange = (event: any) => {
-    console.info("AAABBB:event:", event.target.value);
     setSelected(event.target.value);
     onChange(event.target.value);
   };
@@ -173,7 +172,9 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
                   </div>
                   {!defaultSelectItems?.includes(item) && (
                     <div
+                      role="none"
                       className="icon-remove"
+                      data-testid="remove-icon"
                       onClick={() => {
                         const tmpSelected = JSON.parse(
                           JSON.stringify(selected)
@@ -195,6 +196,7 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
       {hasRefresh && (
         <div className="refresh-button">
           <Button
+            data-testid="refresh-icon"
             disabled={loading}
             btnType="icon"
             onClick={() => {

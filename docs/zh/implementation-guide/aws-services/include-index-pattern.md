@@ -1,3 +1,0 @@
-- 转到左侧边栏中的 **Stack Management** 部分，然后选择 **Index Patterns**。
-- 选择 **Create index pattern**，输入要创建的索引。 选择 **Next step**。
-- 在 **Time field** 的下拉列表中指定时间，选择 **Create index pattern**。

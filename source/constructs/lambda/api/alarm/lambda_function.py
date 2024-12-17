@@ -10,7 +10,7 @@ from commonlib.exception import APIException, ErrorCode
 from commonlib.logging import get_logger
 from util.alarm_helper import AlarmHelper
 
-logger = get_logger('alarm')
+logger = get_logger("alarm")
 
 conn = AWSConnection()
 router = AppSyncRouter()

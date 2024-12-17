@@ -1,6 +1,8 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import List
+from commonlib.dao import OpenSearchDomainDao
 from commonlib.logging import get_logger
 import os
 import time
@@ -10,7 +12,7 @@ import boto3
 import ipaddr
 from botocore.exceptions import ClientError
 
-from commonlib.model import ResourceStatus
+from commonlib.model import DomainImportStatusEnum, Resource, ResourceStatus
 from commonlib import AWSConnection
 from commonlib.exception import APIException, ErrorCode
 from commonlib.model import DomainRelatedResourceEnum
@@ -874,13 +876,15 @@ class ClusterAutoImportManager:
             )
         return item["Item"].get("resources", [])
 
-    def reverse_domain_related_resources(self, id, is_reverse, cluster_table):
+    def reverse_domain_related_resources(
+        self, id, is_reverse, aos_domain_dao: OpenSearchDomainDao
+    ):
         """
         Reverse domain related resources
         Args:
             id: str
             is_reverse: bool
-            cluster_table: boto3.resource.Table
+            aos_domain_dao: OpenSearchDomainDao
         Returns:
             error_code: str | null,
             error_message: str | null,
@@ -891,82 +895,51 @@ class ClusterAutoImportManager:
             ]
         """
         # Get all the domain related resources from ddb
-        resources = self.get_domain_related_resources(id, cluster_table)
+        aos_domain = aos_domain_dao.get_domain_by_id(id)
+        resources = aos_domain.resources
 
         # Set all resources status to UNCHANGED first,
         # it will be changed in the following steps
         for resource in resources:
-            resource["status"] = ResourceStatus.UNCHANGED
+            resource.status = ResourceStatus.UNCHANGED
 
         if not is_reverse:
-            cluster_table.update_item(
-                Key={"id": id},
-                UpdateExpression="SET #s = :status, #updatedAt= :uDt",
-                ExpressionAttributeNames={
-                    "#s": "status",
-                    "#updatedAt": "updatedAt",
-                },
-                ExpressionAttributeValues={
-                    ":status": "INACTIVE",
-                    ":uDt": datetime.utcnow().strftime(data_format),
-                },
-            )
+            aos_domain_dao.update_status(id, DomainImportStatusEnum.INACTIVE)
 
             logger.info(resources)
             return None, "", resources
         else:
             error_occur_flag = 0
             error_message = ""
-            reversed_resources = []
+            reversed_resources: List[Resource] = []
             for resource in resources:
                 try:
                     reverse_status = self.reverse_resource(resource)
-                    resource["status"] = reverse_status
+                    resource.status = str(reverse_status)
                     reversed_resources.append(resource)
                 except Exception as err:
                     error_occur_flag += 1
                     error_message += str(err) + " \n"
-                    resource["status"] = ResourceStatus.ERROR
+                    resource.status = ResourceStatus.ERROR
                     reversed_resources.append(resource)
 
             if error_occur_flag == 0:
-                cluster_table.update_item(
-                    Key={"id": id},
-                    UpdateExpression="SET #s = :status, #uDt= :uDt",
-                    ExpressionAttributeNames={
-                        "#s": "status",
-                        "#uDt": "updatedAt",
-                    },
-                    ExpressionAttributeValues={
-                        ":status": "INACTIVE",
-                        ":uDt": datetime.utcnow().strftime(data_format),
-                    },
-                )
-                return None, "", reversed_resources
+                aos_domain_dao.update_status(id, DomainImportStatusEnum.INACTIVE)
+                return None, "", [each.dict() for each in reversed_resources]
             else:
-                cluster_table.update_item(
-                    Key={"id": id},
-                    UpdateExpression="SET #s = :s, #updatedAt= :uDt, #err=:error, #resources = :resources",
-                    ExpressionAttributeNames={
-                        "#s": "status",
-                        "#updatedAt": "updatedAt",
-                        "#err": "error",
-                        "#resources": "resources",
-                    },
-                    ExpressionAttributeValues={
-                        ":s": "FAILED",
-                        ":uDt": datetime.utcnow().strftime(data_format),
-                        ":error": str(error_message),
-                        ":resources": reversed_resources,
-                    },
+                aos_domain_dao.update_resources_status(
+                    id,
+                    DomainImportStatusEnum.FAILED,
+                    reversed_resources,
+                    str(error_message),
                 )
                 return (
                     ErrorCode.REMOVE_OPENSEARCH_DOMAIN_FAILED.name,
                     error_message,
-                    reversed_resources,
+                    [each.dict() for each in reversed_resources],
                 )
 
-    def reverse_resource(self, resource):
+    def reverse_resource(self, resource: Resource):
         """Reverse the specific resource
         Args:
             resource: {
@@ -977,20 +950,20 @@ class ClusterAutoImportManager:
         Returns:
             resource_status: str
         """
-        if resource["name"] == DomainRelatedResourceEnum.VPC_PEERING:
-            self.delete_vpc_peering_connection(resource["values"][0])
+        if resource.name == DomainRelatedResourceEnum.VPC_PEERING:
+            self.delete_vpc_peering_connection(resource.values[0])
             return ResourceStatus.DELETED
-        elif resource["name"] == DomainRelatedResourceEnum.AOS_ROUTES:
+        elif resource.name == DomainRelatedResourceEnum.AOS_ROUTES:
             self.delete_aos_route()
             return ResourceStatus.REVERSED
-        elif resource["name"] == DomainRelatedResourceEnum.SOLUTION_ROUTES:
+        elif resource.name == DomainRelatedResourceEnum.SOLUTION_ROUTES:
             self.delete_solution_route()
             return ResourceStatus.REVERSED
-        elif resource["name"] == DomainRelatedResourceEnum.AOS_SECURITY_GROUP:
+        elif resource.name == DomainRelatedResourceEnum.AOS_SECURITY_GROUP:
             self.delete_sg_rule()
             return ResourceStatus.REVERSED
-        elif resource["name"] == DomainRelatedResourceEnum.AOS_NACL:
-            self.delete_nacl_entry(resource["values"][0])
+        elif resource.name == DomainRelatedResourceEnum.AOS_NACL:
+            self.delete_nacl_entry(resource.values[0])
             return ResourceStatus.REVERSED
 
     def record_updated_resource(self, resource_type):

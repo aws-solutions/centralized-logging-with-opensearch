@@ -1,35 +1,36 @@
 {
-  "name": "EKS Clusters",
-  "clusters": "Clusters",
+  "name": "EKS clusters",
   "list": {
-    "clusterName": "Cluster Name",
+    "clusterName": "Name",
     "account": "Account",
-    "pattern": "Pattern",
+    "pattern": "Deployment option",
     "os": "OpenSearch",
-    "created": "Created Time"
+    "created": "Created"
   },
-  "delete": "Remove imported EKS Cluster",
-  "deleteTips": "Are you sure you want to remove the imported EKS Cluster ",
+  "delete": "Remove imported EKS cluster",
+  "deleteTips": "Are you sure you want to remove the imported EKS cluster ",
   "create": {
     "name": "Create",
-    "step": {
-      "specifyEksSource": "Specify EKS Log Source",
-      "specifyOS": "Specify OpenSearch domain settings",
-      "createTags": "Alarms and Tags"
-    },
     "eksSource": {
-      "eks": "Amazon EKS",
-      "eksCluster": "EKS Cluster",
-      "eksClusterDesc": "Select an existing EKS cluster from ",
-      "eksClusterError": "Please select an EKS Cluster",
-      "chooseEksCluster": "Select an EKS Cluster",
+      "importCluster": "Import an EKS cluster",
+      "importClusterDesc": "Ingest application logs from EKS clusters.",
+      "eksSettings": "EKS cluster Settings",
+      "prerequisites": "Prerequisites",
+      "prerequisitesDesc": "Please review the following prerequisites before import an EKS cluster.",
+      "prerequisitesTip1": "Fluent Bit agent is used to ingest logs from EKS cluster in this solution.",
+      "prerequisitesTip2": "You can choose to deploy Fluent Bit log agent using either DaemonSet or Sidecar mode, but not both.",
+      "prerequisitesTip3": " This solution will generate the YAML file used configure the Fluent Bit agents, you need to run the YAML using tools like kubectl.",
+      "eksCluster": "EKS cluster",
+      "eksClusterDesc": "Select an existing EKS cluster from the selected AWS account.",
+      "eksClusterError": "Please select an EKS cluster",
+      "chooseEksCluster": "Select an EKS cluster",
       "curAccount": "current AWS account",
       "agent": "Agent",
-      "eksAgentPattern": "Pattern",
-      "eksAgentPatternDesc": "Please choose the collection mode which will be used to deploy logging agent.",
-      "networkConfig": "Network Configuration",
-      "networkConfigDesc": "If you plan to ingest EKS logs to OpenSearch directly (i.e., without using Amazon S3 or Kinesis Data Streams as buffer layer), please make sure the VPC of your EKS cluster and the VPC of OpenSearch are connected. If they are not connected, you can follow the below steps to create VPC peering. (Note, VPC peering will incur additional cost).",
-      "vpc1": "1. Create and accept VPC peering follow ",
+      "eksAgentPattern": "Deployment option",
+      "eksAgentPatternDesc": "Choose the log agent deployment option.",
+      "networkConfig": "Network configuration",
+      "networkConfigDesc": "If you plan to ingest EKS logs to OpenSearch directly (i.e., without using Amazon S3 or Kinesis Data Streams as buffer layer), please make sure the VPC of your EKS cluster and the VPC of OpenSearch are connected. If they are not connected, you can follow the below steps to create VPC Peering Connection. (Note, VPC Peering Connection will incur additional cost).",
+      "vpc1": "1. Create and accept VPC Peering Connection follow ",
       "vpc2": "2. Update route table follow ",
       "vpc3": "3. Update security group follow ",
       "guide": "this guide",
@@ -38,26 +39,25 @@
     }
   },
   "detail": {
-    "config": "General Configurations",
-    "clusterName": "EKS Cluster",
-    "deploymentPattern": "Pattern",
+    "config": "General configurations",
+    "name": "Name",
+    "deploymentPattern": "Deployment option",
     "aos": "OpenSearch",
-    "iamRole": "IAM Role ARN",
+    "iamRole": "IAM Role",
     "created": "Created",
     "tab": {
-      "ingestions": "Log Sources",
-      "daemonsetGuide": "DaemonSet Guide",
-      "tags": "Tags"
+      "applications": "Applications",
+      "daemonsetGuide": "DaemonSet guide"
     },
     "ingestions": {
-      "osIndex": "OpenSearch Index",
-      "pipeline": "App Log Pipeline",
+      "osIndex": "Index/Table name",
+      "pipeline": "Pipeline",
       "logConfig": "Log Config",
       "sources": "Sources",
       "created": "Created",
       "status": "Status",
-      "delete": "Delete Log Source",
-      "deleteTips": "Are you sure you want to delete the log log source(s)? Note: the App Log Pipeline will not be deleted. "
+      "delete": "Delete log source",
+      "deleteTips": "Are you sure you want to delete the log source(s)? Note: the Application Log Pipeline will not be deleted. "
     },
     "daemonsetGuide": {
       "alert": "",
@@ -67,30 +67,29 @@
       "createIngestion": "Please create an log source first"
     }
   },
-  "select": "Select an EKS Cluster",
+  "select": "Select an EKS cluster",
   "ingest": {
     "ingest": "Ingest",
     "step": {
-      "specifyPipeline": "Specify Pipeline Settings",
-      "specifyConfig": "Specify Log Config",
-      "createTags": "Create Tags"
+      "specifyPipeline": "Pipeline settings",
+      "specifyConfig": "Log Config"
     },
     "specifyPipeline": {
       "alert": "The pipeline you are creating or choosing form are connected with Amazon OpenSearch domain:",
-      "creationMethod": "Creation Method",
+      "creationMethod": "Creation method",
       "createNew": "Create new",
       "createNewDesc": "Create a new Application Log Pipeline",
       "chooseExists": "Choose exists",
-      "chooseExistsDesc": "Choose existing Application Log Pipeline",
+      "chooseExistsDesc": "Choose an existing Application Log Pipeline",
       "index": "Index",
-      "indexPrefix": "Index Prefix",
+      "indexPrefix": "Index name",
       "indexPrefixDesc": "Enter the index of the log saved in OpenSearch",
-      "choosePipeline": "Choose Pipeline",
+      "choosePipeline": "Choose pipeline",
       "pipeline": "Pipeline",
       "filterPipeline": "Filter the existing pipeline",
       "selectPipeline": "Select a pipeline",
       "pipelineConfig": "Pipeline Configuration",
-      "osIndexPrefix": "OpenSearch Index Prefix",
+      "osIndexPrefix": "OpenSearch index name",
       "aos": "OpenSearch",
       "kds": "Kinesis Data Streams",
       "created": "Created",
@@ -100,9 +99,9 @@
       "config": "Log Config"
     },
     "detail": {
-      "ingestionDetail": "Log Source Detail",
-      "osIndexPrefix": "OpenSearch Index Prefix",
-      "bufferLayer": "Buffer Layer",
+      "ingestionDetail": "Log source detail",
+      "osIndexPrefix": "OpenSearch index name",
+      "bufferLayer": "Buffer",
       "kds": "Kinesis Data Streams",
       "pipeline": "Pipeline",
       "created": "Created",
@@ -111,8 +110,10 @@
       "logConfig": "Log Config",
       "tag": "Tags",
       "sidecarTab": {
-        "guide": "Sidecar Guide",
-        "alert": "You will need to deploy Fluent Bit agent as a sidecar in your pod and please ensure that all log source(s) you have created are in the Created state before proceeding."
+        "guide": "Sidecar guide",
+        "guideDesc": "Deploy the log agent with Sidecar deployment option. ",
+        "howTo": "How to deploy",
+        "alert": "Please incorporate the YAML configuration into the pod containing the target application for log ingestion."
       },
       "daemonsetTab": {
         "guide": "DaemonSet Guide",
@@ -122,7 +123,9 @@
         "config": "Log Config",
         "name": "Name",
         "type": "Type",
-        "created": "Created"
+        "revision": "Revision",
+        "created": "Created",
+        "update": "Update"
       }
     }
   }

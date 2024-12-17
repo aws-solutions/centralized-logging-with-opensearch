@@ -22,7 +22,6 @@ import {
 } from "API";
 import { PIPELINE_TASK_ES_USER_DEFAULT } from "assets/js/const";
 import { appSyncRequestQuery } from "assets/js/request";
-import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import Select, { SelectItem } from "components/Select/select";
 import {
@@ -32,6 +31,7 @@ import {
 } from "graphql/queries";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 interface SelectOpenSearchDomainProps {
   changeLoadingDomain: (loading: boolean) => void;
@@ -142,9 +142,9 @@ const SelectOpenSearchDomain: React.FC<SelectOpenSearchDomainProps> = (
       optionDesc={
         <div>
           {t("applog:create.specifyOS.aosDomainDesc1")}
-          <ExtLink to="/clusters/import-opensearch-cluster">
+          <Link to="/clusters/import-opensearch-cluster">
             {t("applog:create.specifyOS.aosDomainDesc2")}
-          </ExtLink>
+          </Link>
           {t("applog:create.specifyOS.aosDomainDesc3")}
         </div>
       }

@@ -26,6 +26,7 @@ import { createServicePipeline } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   LAMBDA_TASK_GROUP_PREFIX,
   ServiceLogType,
 } from "assets/js/const";
@@ -37,7 +38,6 @@ import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -51,6 +51,7 @@ import {
 } from "assets/js/utils";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -136,7 +137,7 @@ const CreateLambda: React.FC = () => {
   const [lambdaIsChanging, setLambdaIsChanging] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const openSearch = useOpenSearch();
   const appDispatch = useDispatch<AppDispatch>();
@@ -199,6 +200,9 @@ const CreateLambda: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   const isNextDisabled = () => {
@@ -223,24 +227,17 @@ const CreateLambda: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-lambda">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: t("servicelog:create.step.specifyDomain"),
-              },
-              {
-                name: t("processor.logProcessorSettings"),
-              },
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               lambdaEmptyError={lambdaEmptyError}
@@ -306,6 +303,7 @@ const CreateLambda: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="lambda-cancel-button"
               disabled={loadingCreate}
               btnType="text"
               onClick={() => {
@@ -316,6 +314,7 @@ const CreateLambda: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="lambda-previous-button"
                 disabled={loadingCreate}
                 onClick={() => {
                   setCurStep((curStep) => {
@@ -329,6 +328,7 @@ const CreateLambda: React.FC = () => {
 
             {curStep < 3 && (
               <Button
+                data-testid="lambda-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -362,6 +362,7 @@ const CreateLambda: React.FC = () => {
             )}
             {curStep === 3 && (
               <Button
+                data-testid="lambda-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

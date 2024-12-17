@@ -1,0 +1,15 @@
+#set($contentString = $ctx.args.contentString)
+#set($isValidBase64 = false)
+
+#set($isValidBase64 = $util.matches('^[A-Za-z0-9+/=]+$', $contentString))
+
+#if($isValidBase64)
+  #set($length = $contentString.length())
+  #set($isValidBase64 = ($length % 4 == 0) && !$util.matches('={3,}', $contentString))
+#end
+
+#if(!$isValidBase64)
+  $util.error("Input value is not a valid Base64 encoded string.", "Invalid Base64 Input")
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

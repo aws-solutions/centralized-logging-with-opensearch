@@ -75,12 +75,12 @@ const SIDE_MENU_LIST = [
     link: "/containers",
     subMenu: [
       {
-        name: "menu.eksLog",
-        link: "/containers/eks-log",
-      },
-      {
         name: "menu.instanceGroup",
         link: "/resources/instance-group",
+      },
+      {
+        name: "menu.eksLog",
+        link: "/containers/eks-log",
       },
     ],
     open: true,
@@ -108,9 +108,7 @@ const SIDE_MENU_LIST = [
 
 export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
   const { className } = props;
-  const openMenu = useSelector(
-    (state: RootState) => state.app.openSideMenu
-  );
+  const openMenu = useSelector((state: RootState) => state.app.openSideMenu);
   const { t } = useTranslation();
   const [sideMenuList, setSideMenuList] = useState(SIDE_MENU_LIST);
   const dispatch = useDispatch();
@@ -123,6 +121,7 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
     >
       {!openMenu && (
         <div
+          data-testid="open-menu"
           className="collapse-menu"
           onClick={() => {
             localStorage.setItem(SIDE_BAR_OPEN_STORAGE_ID, "open");
@@ -136,6 +135,7 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
         <div className="flex-1">
           <div>
             <CloseIcon
+              data-testid="close-menu"
               onClick={() => {
                 localStorage.setItem(SIDE_BAR_OPEN_STORAGE_ID, "close");
                 dispatch({ type: ActionType.CLOSE_SIDE_MENU });

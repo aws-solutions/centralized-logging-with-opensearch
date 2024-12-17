@@ -18,8 +18,20 @@ import React from "react";
 import SelectDomain from "../SelectDomain";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
-import { domainMockImportedCluster } from "test/domain.mock";
-import { AppStoreMockData } from "test/store.mock";
+import {
+  domainMockImportedCluster,
+  mockDomainNames,
+  mockDomainStatusCheckData,
+} from "test/domain.mock";
+import { appSyncRequestQuery } from "assets/js/request";
+import {
+  act,
+  waitFor,
+  screen,
+  fireEvent,
+  within,
+} from "@testing-library/react";
+import { DomainStatusCheckType } from "API";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -36,29 +48,175 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
 });
 
 describe("SelectDomain", () => {
   const mockChangeDomain = jest.fn();
   const mockChangeDomainStatus = jest.fn();
-  it("renders without errors", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <SelectDomain
-          importedCluster={domainMockImportedCluster}
-          changeDomain={mockChangeDomain}
-          changeDomainStatus={mockChangeDomainStatus}
-        />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+  it("renders with domain success status", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        domainStatusCheck: mockDomainStatusCheckData,
+        listDomainNames: {
+          domainNames: mockDomainNames,
         },
-      }
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with domain status checking", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        domainStatusCheck: {
+          ...mockDomainStatusCheckData,
+          status: DomainStatusCheckType.CHECKING,
+        },
+        listDomainNames: {
+          domainNames: mockDomainNames,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with domain status warning", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        domainStatusCheck: {
+          ...mockDomainStatusCheckData,
+          status: DomainStatusCheckType.WARNING,
+        },
+        listDomainNames: {
+          domainNames: mockDomainNames,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with domain status failed", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        domainStatusCheck: {
+          ...mockDomainStatusCheckData,
+          status: DomainStatusCheckType.FAILED,
+        },
+        listDomainNames: {
+          domainNames: mockDomainNames,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with select domain", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        domainStatusCheck: mockDomainStatusCheckData,
+        listDomainNames: {
+          domainNames: mockDomainNames,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectDomain
+            importedCluster={domainMockImportedCluster}
+            changeDomain={mockChangeDomain}
+            changeDomainStatus={mockChangeDomainStatus}
+          />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("gsui-loading")).not.toBeInTheDocument();
+    });
+
+    // select domain
+    const selectDomain = screen.getByPlaceholderText(
+      "cluster:import.selectDomain.selectDomain"
     );
+    // click actual select button
+    const previousSibling = selectDomain.previousSibling;
+    if (previousSibling) fireEvent.mouseDown(previousSibling);
+
+    await waitFor(() => {
+      expect(screen.queryByText("test-us-domain")).toBeInTheDocument();
+    });
+
+    const listboxVPC = within(document.body).getByRole("listbox");
+    const domain1 = await within(listboxVPC).findByText("test-us-domain");
+    fireEvent.click(domain1);
   });
 });

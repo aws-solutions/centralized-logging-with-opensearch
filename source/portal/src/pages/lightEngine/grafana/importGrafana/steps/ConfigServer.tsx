@@ -65,7 +65,7 @@ export const ConfigServer = (
         />
       </FormItem>
     ),
-    [grafanaState.grafanaName]
+    [grafanaState.grafanaName, props.grafanaNameError]
   );
 
   const urlInput = useMemo(
@@ -83,7 +83,7 @@ export const ConfigServer = (
         />
       </FormItem>
     ),
-    [grafanaState.grafanaUrl]
+    [grafanaState.grafanaUrl, props.grafanaUrlError]
   );
 
   const tokenInput = useMemo(
@@ -101,13 +101,13 @@ export const ConfigServer = (
         />
       </FormItem>
     ),
-    [grafanaState.grafanaToken]
+    [grafanaState.grafanaToken, props.grafanaTokenError]
   );
 
   return (
     <div>
-      <HeaderPanel title={t("lightengine:grafana.create.server")}>
-        {nameInput}
+      <HeaderPanel title={t("lightengine:grafana.settings")}>
+        <>{!props.isNameReadOnly && nameInput}</>
         {urlInput}
         {tokenInput}
         <GrafanaCheckList />

@@ -18,6 +18,10 @@ import React from "react";
 import EditLogConfig from "../EditLogConfig";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter, useParams } from "react-router-dom";
+import { appSyncRequestQuery } from "assets/js/request";
+import { mockConfigData } from "test/config.mock";
+import { act } from "@testing-library/react";
+import { LogConfFilterCondition } from "API";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,6 +43,10 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+}));
+
 beforeEach(() => {
   const mockParams = { id: "xx-xx-xx" };
   // Make useParams return the mock parameters
@@ -53,5 +61,33 @@ describe("EditLogConfig", () => {
         <EditLogConfig />
       </MemoryRouter>
     );
+  });
+
+  it("renders  with config  data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: {
+          ...mockConfigData,
+          filterConfigMap: {
+            enabled: true, // Add the 'enabled' property with a value of true
+            filters: [
+              {
+                key: "field",
+                condition: LogConfFilterCondition.Exclude,
+                value: "value",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+          <EditLogConfig />
+        </MemoryRouter>
+      );
+    });
   });
 });

@@ -45,6 +45,7 @@ import {
   isWindowsEvent,
   multiLineParserChanged,
   regexChanged,
+  setDescription,
   sysLogParserChanged,
   userLogFormatChanged,
   validateLogConfig,
@@ -52,7 +53,7 @@ import {
   validateWindowsHasCookie,
 } from "reducer/createLogConfig";
 import { defaultStr, displayI18NMessage } from "assets/js/utils";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "reducer/store";
 import Select from "components/Select";
 import {
@@ -72,6 +73,7 @@ import cloneDeep from "lodash.clonedeep";
 import SampleLogParsing from "./SampleLogParsing";
 import ConfigFilter from "./ConfigFilter";
 import Modal from "components/Modal";
+import { RootState } from "reducer/reducers";
 
 export interface ProcessorFilterRegexInputExt
   extends Omit<ProcessorFilterRegexInput, "filters"> {
@@ -114,6 +116,7 @@ const LogConfigComp = (props: LogConfigCompProps) => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const logConfigState = useSelector((state: RootState) => state.logConfig);
 
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [showCookieAlert, setShowCookieAlert] = useState(false);
@@ -129,7 +132,6 @@ const LogConfigComp = (props: LogConfigCompProps) => {
       return;
     }
     const createLogConfigParam = cloneDeep(logConfig.data);
-    console.info("createLogConfigParam:", createLogConfigParam);
 
     // trim regular expression and user log format
     if (
@@ -156,6 +158,9 @@ const LogConfigComp = (props: LogConfigCompProps) => {
     } else {
       createLogConfigParam.jsonSchema = undefined;
     }
+
+    // override description for new revision
+    createLogConfigParam.description = logConfigState.description;
 
     try {
       setLoadingUpdate(true);
@@ -195,6 +200,21 @@ const LogConfigComp = (props: LogConfigCompProps) => {
                   dispatch(configNameChanged(event.target.value));
                 }}
                 placeholder="log-example-config"
+              />
+            </FormItem>
+
+            <FormItem
+              optionTitle={t("resource:config.common.description")}
+              optionDesc={t("resource:config.common.descriptionDesc")}
+            >
+              <TextInput
+                maxLength={120}
+                className="m-w-75p"
+                value={logConfigState.description}
+                placeholder={t("resource:config.common.descriptionHint")}
+                onChange={(event) => {
+                  dispatch(setDescription(event.target.value));
+                }}
               />
             </FormItem>
 
@@ -382,6 +402,7 @@ const LogConfigComp = (props: LogConfigCompProps) => {
 
         <div className="button-action text-right">
           <Button
+            data-testid="cancel-button"
             btnType="text"
             onClick={() => {
               if (pageType === PageType.New) {
@@ -394,6 +415,7 @@ const LogConfigComp = (props: LogConfigCompProps) => {
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="mutation-button"
             btnType="primary"
             loading={loadingUpdate}
             onClick={() => {

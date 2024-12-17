@@ -6,11 +6,11 @@ class User:
 
     def __init__(self, api):
         self.api = api
-        
+
     def preferences(self) -> dict:
-        """  
-        
+        """
+
         :return:
         """
-        preferences_path = '/user/preferences'
+        preferences_path = "/user/preferences"
         return self.api.get(path=preferences_path)

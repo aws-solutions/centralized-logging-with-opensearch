@@ -6,11 +6,13 @@
     margin-right: 0 !important;
     .dropdown-icon {
       position: absolute;
+      right: 6px;
       margin-top: -2px;
     }
   }
   .drop-down-items {
-    width: 100%;
+    min-width: 100%;
+    width: auto !important;
     position: absolute;
     z-index: 99;
     border: 1px solid #ccc;
@@ -20,11 +22,20 @@
     text-align: left;
     .menu-item {
       cursor: pointer;
+      white-space: nowrap;
       border: 1px solid transparent;
       padding: 8px 12px;
       &:hover {
         border: 1px solid #999;
         background-color: #efefef;
+      }
+      &.disabled {
+        cursor: not-allowed;
+        opacity: $btn-disabled-opacity;
+        box-shadow: none;
+        > * {
+          pointer-events: none;
+        }
       }
       // &:last-child {
       //   &:hover {

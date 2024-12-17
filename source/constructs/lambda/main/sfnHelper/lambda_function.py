@@ -38,14 +38,11 @@ def lambda_handler(event, _):
     }
     """
 
-    # print("Received event: " + json.dumps(event["arguments"], indent=2))
-
     try:
         token = event["token"]
-        args = event["args"]
         result = event["result"]
         output = {
-            "stackId": args.get("stackId", ""),
+            "stackId": result.get("stackId", ""),
             "stackStatus": result.get("stackStatus", "UNKNOWN"),
             "error": result.get("error", ""),
             "outputs": result.get("outputs", []),

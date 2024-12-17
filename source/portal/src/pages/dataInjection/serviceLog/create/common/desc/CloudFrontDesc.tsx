@@ -13,28 +13,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo, useState } from "react";
-import ExtLink from "components/ExtLink";
-import cloudFrontSArch from "assets/images/desc/cloudFrontArch.webp";
-import cloudFrontSArchRealtime from "assets/images/desc/cloudFrontArch_Realtime.webp";
-import cloudfrontLightEngineArch from "assets/images/desc/cloudfrontLightEngineArch.webp";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import RadioGroup from "@material-ui/core/RadioGroup";
+import { DestinationType } from "API";
+import FormItem from "components/FormItem";
+import Radio from "components/Radio";
+import React from "react";
 
-import { CLOUDFRONT_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
-import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes } from "types";
 
 export interface CloudFrontDescProps {
-  engineType: AnalyticEngineTypes;
+  ingestLogType: string;
+  changeIngestLogType: (ingestLogType: string) => void;
+  region: string;
 }
 
-const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
+const CloudFrontDesc: React.FC<CloudFrontDescProps> = (
+  props: CloudFrontDescProps
+) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("standard");
-  const isLightEngine = useMemo(
-    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
-    [engineType]
-  );
+  const { ingestLogType, changeIngestLogType, region } = props;
   return (
     <div>
       <div className="ingest-desc-title">
@@ -42,65 +40,34 @@ const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
       </div>
       <div className="ingest-desc-desc">
         {t("servicelog:cloudfront.desc.ingest")}
-        <ExtLink to={CLOUDFRONT_LOG_LINK}>
-          {t("servicelog:cloudfront.desc.cloudfrontLog")}
-        </ExtLink>
-        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
       </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:cloudfront.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">
-        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
-      </div>
-      {!isLightEngine ? (
-        <>
-          <AntTabs
-            value={activeTab}
-            onChange={(event, newTab) => {
-              setActiveTab(newTab);
+      <div className="mt-10">
+        <FormItem
+          optionTitle={t("servicelog:create.ingestLogType")}
+          optionDesc={t("servicelog:create.ingestLogTypeDesc")}
+        >
+          <RadioGroup
+            className="radio-group"
+            value={ingestLogType}
+            onChange={(e) => {
+              changeIngestLogType(e.target.value);
             }}
           >
-            <AntTab
-              label={t("servicelog:cloudfront.standardLogs")}
-              value="standard"
+            <FormControlLabel
+              value={DestinationType.S3}
+              control={<Radio />}
+              label={t(`servicelog:create.ingestType${DestinationType.S3}`)}
             />
-            <AntTab
-              label={t("servicelog:cloudfront.realtimeLogs")}
-              value="realtime"
-            />
-          </AntTabs>
-          <TabPanel value={activeTab} index="standard">
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={cloudFrontSArch}
+            {!region.startsWith("cn") && (
+              <FormControlLabel
+                value={DestinationType.KDS}
+                control={<Radio />}
+                label={t(`servicelog:create.ingestType${DestinationType.KDS}`)}
               />
-            </div>
-          </TabPanel>
-          <TabPanel value={activeTab} index="realtime">
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={cloudFrontSArchRealtime}
-              />
-            </div>
-          </TabPanel>
-        </>
-      ) : (
-        <div className="mt-10">
-          <img
-            className="img-border"
-            alt="architecture"
-            width="80%"
-            src={cloudfrontLightEngineArch}
-          />
-        </div>
-      )}
+            )}
+          </RadioGroup>
+        </FormItem>
+      </div>
     </div>
   );
 };

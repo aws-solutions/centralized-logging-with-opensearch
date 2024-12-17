@@ -20,11 +20,17 @@ import Tiles from "components/Tiles";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLogSourceType, ServiceLogType } from "assets/js/const";
-import { PipelineType } from "API";
-import { ServicePipelineDesc } from "../serviceLog/create/common/desc/ServicePipelineDesc";
+import { DestinationType, PipelineType } from "API";
 import AppPipelineDesc from "../applicationLog/common/AppPipelineDesc";
-import { AnalyticEngineTypes } from "types";
-
+import { AnalyticEngineTypes, WAFIngestOption } from "types";
+import Common_AOS from "assets/images/desc/Common_AOS.svg";
+import Common_LightEngine from "assets/images/desc/Common_LightEngine.svg";
+import CloudFront_KDS from "assets/images/desc/CloudFront_KDS.svg";
+import CloudTrail_VPC_AOS from "assets/images/desc/CloudTrail_VPC_AOS.svg";
+import Lambda_KDF_AOS from "assets/images/desc/Lambda_KDF_AOS.svg";
+import RDS_AOS from "assets/images/desc/RDS_AOS.svg";
+import RDS_LightEngine from "assets/images/desc/RDS_LightEngine.svg";
+// Latest image was missing, so I added it here
 const LIGHT_ENGINE_SUPPORTED_LOG_TYPES = [
   ServiceLogType.Amazon_WAF,
   ServiceLogType.Amazon_CloudFront,
@@ -47,14 +53,18 @@ export interface SelectAnalyticsEngineProps {
   svcLogType?: ServiceLogType;
   appLogType?: AppLogSourceType;
   setEngineType: (engineType: AnalyticEngineTypes) => void;
+  disableLightEngine?: boolean;
+  ingestLogType?: string;
 }
 
-export const SelectAnalyticsEngine = ({
+export const SelectAnalyticsEngine: React.FC<SelectAnalyticsEngineProps> = ({
   engineType,
   setEngineType,
   pipelineType,
   svcLogType,
   appLogType,
+  disableLightEngine,
+  ingestLogType,
 }: SelectAnalyticsEngineProps) => {
   const { t } = useTranslation();
   const isLightEngineSupported = useMemo(
@@ -63,43 +73,248 @@ export const SelectAnalyticsEngine = ({
       LIGHT_ENGINE_SUPPORTED_APP_LOG_TYPES.includes(appLogType ?? ""),
     [svcLogType, appLogType]
   );
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
   return (
-    <HeaderPanel title={t("lightengine:engine.selectEngineSectionTitle")}>
-      <FormItem>
-        <Tiles
-          value={engineType}
-          onChange={(event) => {
-            setEngineType(event.target.value as AnalyticEngineTypes);
-          }}
-          items={[
-            {
-              label: t("lightengine:engine.optionOpenSearch"),
-              description: t("lightengine:engine.descOpenSearch"),
-              value: AnalyticEngineTypes.OPENSEARCH,
-            },
-            ...(isLightEngineSupported
-              ? [
-                  {
-                    label: t("lightengine:engine.optionLightEngine"),
-                    description: t("lightengine:engine.descLightEngine"),
-                    value: AnalyticEngineTypes.LIGHT_ENGINE,
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </FormItem>
-      {pipelineType === PipelineType.SERVICE ? (
-        <ServicePipelineDesc
-          logType={svcLogType ?? ServiceLogType.Amazon_CloudFront}
-          engineType={engineType}
-        />
-      ) : (
-        <AppPipelineDesc
-          type={appLogType ?? AppLogSourceType.EC2}
-          engineType={engineType}
-        />
-      )}
+    <HeaderPanel
+      title={t("lightengine:engine.selectEngineSectionTitle")}
+      desc={t("lightengine:engine.selectEngineDesc")}
+    >
+      <>
+        <FormItem>
+          <Tiles
+            value={engineType}
+            onChange={(event) => {
+              setEngineType(event.target.value as AnalyticEngineTypes);
+            }}
+            items={[
+              {
+                label: t("lightengine:engine.optionOpenSearch"),
+                description: t("lightengine:engine.descOpenSearch"),
+                value: AnalyticEngineTypes.OPENSEARCH,
+              },
+              {
+                disabled: !isLightEngineSupported || disableLightEngine,
+                label: t("lightengine:engine.optionLightEngine"),
+                description: t("lightengine:engine.descLightEngine"),
+                value: AnalyticEngineTypes.LIGHT_ENGINE,
+              },
+            ]}
+          />
+        </FormItem>
+        {pipelineType === PipelineType.SERVICE ? (
+          <div>
+            <div className="ingest-desc-title">{t("archName")}</div>
+            <div className="ingest-desc-desc">{t("archDesc")}</div>
+            {svcLogType === ServiceLogType.Amazon_S3 && (
+              <div className="mt-10">
+                <img
+                  className="img-border"
+                  alt="architecture"
+                  width="100%"
+                  src={Common_AOS}
+                />
+              </div>
+            )}
+            {svcLogType === ServiceLogType.Amazon_CloudFront && (
+              <>
+                {!isLightEngine ? (
+                  <>
+                    {ingestLogType === DestinationType.S3 && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={Common_AOS}
+                        />
+                      </div>
+                    )}
+                    {ingestLogType === DestinationType.KDS && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={CloudFront_KDS}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="mt-10">
+                    <img
+                      className="img-border"
+                      alt="architecture"
+                      width="100%"
+                      src={Common_LightEngine}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            {svcLogType === ServiceLogType.Amazon_CloudTrail && (
+              <>
+                {!isLightEngine ? (
+                  <>
+                    {ingestLogType === DestinationType.S3 && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={Common_AOS}
+                        />
+                      </div>
+                    )}
+                    {ingestLogType === DestinationType.CloudWatch && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={CloudTrail_VPC_AOS}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="mt-10">
+                    <img
+                      className="img-border"
+                      alt="architecture"
+                      width="100%"
+                      src={Common_LightEngine}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            {svcLogType === ServiceLogType.Amazon_Config && (
+              <div className="mt-10">
+                <img
+                  className="img-border"
+                  alt="architecture"
+                  width="100%"
+                  src={Common_AOS}
+                />
+              </div>
+            )}
+            {svcLogType === ServiceLogType.Amazon_ELB && (
+              <div className="mt-10">
+                <img
+                  className="img-border"
+                  alt="architecture"
+                  width="100%"
+                  src={isLightEngine ? Common_LightEngine : Common_AOS}
+                />
+              </div>
+            )}
+            {svcLogType === ServiceLogType.Amazon_Lambda && (
+              <div className="mt-10">
+                <img
+                  className="img-border"
+                  alt="architecture"
+                  width="100%"
+                  src={Lambda_KDF_AOS}
+                />
+              </div>
+            )}
+            {svcLogType === ServiceLogType.Amazon_RDS && (
+              <div className="mt-10">
+                <img
+                  className="img-border"
+                  alt="architecture"
+                  width="100%"
+                  src={isLightEngine ? RDS_LightEngine : RDS_AOS}
+                />
+              </div>
+            )}
+            {svcLogType === ServiceLogType.Amazon_VPCLogs && (
+              <>
+                {!isLightEngine ? (
+                  <>
+                    {ingestLogType === DestinationType.S3 && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={Common_AOS}
+                        />
+                      </div>
+                    )}
+                    {ingestLogType === DestinationType.CloudWatch && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={CloudTrail_VPC_AOS}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="mt-10">
+                    <img
+                      className="img-border"
+                      alt="architecture"
+                      width="100%"
+                      src={Common_LightEngine}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            {svcLogType === ServiceLogType.Amazon_WAF && (
+              <>
+                {!isLightEngine ? (
+                  <>
+                    {ingestLogType === WAFIngestOption.FullRequest && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={Common_AOS}
+                        />
+                      </div>
+                    )}
+                    {ingestLogType === WAFIngestOption.SampledRequest && (
+                      <div className="mt-10">
+                        <img
+                          className="img-border"
+                          alt="architecture"
+                          width="100%"
+                          src={RDS_AOS}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="mt-10">
+                    <img
+                      className="img-border"
+                      alt="architecture"
+                      width="100%"
+                      src={Common_LightEngine}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <AppPipelineDesc
+            ingestLogType={ingestLogType}
+            type={appLogType ?? AppLogSourceType.EC2}
+            engineType={engineType}
+          />
+        )}
+      </>
     </HeaderPanel>
   );
 };

@@ -129,7 +129,6 @@ def verify_s3_bucket_prefix_overlap_for_event_notifications(
             ErrorCode.S3_BUCKET_CHECK_FAILED,
             r"${common:error.s3BucketCheckFailed}",
         )
-
     all_configs = []
 
     for key in [
@@ -210,7 +209,7 @@ class DynamoDBUtil:
         # query by partition key (with any sort key)
         items = query_items({"pk": "pk-value"})
 
-        # query with limit (e.g. get latest record, sort by sort_key decending)
+        # query with limit (e.g. get latest record, sort by sort_key descending)
         items = query_items({"pk": "pk-value"}, limit=1)
 
         # query index

@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct } from "constructs";
 import {
   Stack,
   RemovalPolicy,
   Duration,
   aws_cognito as cognito,
-} from "aws-cdk-lib";
-import { constructFactory } from "../util/stack-helper";
+} from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { constructFactory } from '../util/stack-helper';
 export interface AuthProps {
   /**
    * Username to create an initial Admin user in Cognito User Pool
@@ -45,7 +45,7 @@ export class AuthStack extends Construct {
     const stackPrefix = 'CL';
 
     // Create Cognito User Pool
-    const userPool = new cognito.UserPool(this, "UserPool", {
+    const userPool = new cognito.UserPool(this, 'UserPool', {
       selfSignUpEnabled: false,
       signInCaseSensitive: false,
       signInAliases: {
@@ -63,11 +63,11 @@ export class AuthStack extends Construct {
 
     const cfnUserPool = userPool.node.defaultChild as cognito.CfnUserPool;
     cfnUserPool.userPoolAddOns = {
-      advancedSecurityMode: "ENFORCED",
+      advancedSecurityMode: 'ENFORCED',
     };
 
     // Create User Pool Client
-    const userPoolClient = new cognito.UserPoolClient(this, "APIClient", {
+    const userPoolClient = new cognito.UserPoolClient(this, 'APIClient', {
       userPool: userPool,
       accessTokenValidity: Duration.minutes(15),
       idTokenValidity: Duration.minutes(15),
@@ -76,19 +76,19 @@ export class AuthStack extends Construct {
     });
 
     // Create an Admin User
-    constructFactory(cognito.CfnUserPoolUser)(this, "AdminUser", {
+    constructFactory(cognito.CfnUserPoolUser)(this, 'AdminUser', {
       userPoolId: userPool.userPoolId,
       username: props.username,
       userAttributes: [
         {
-          name: "email",
+          name: 'email',
           value: props.username,
         },
       ],
     });
 
     // Create an unique cognito domain
-    const userPoolDomain = new cognito.UserPoolDomain(this, "UserPoolDomain", {
+    const userPoolDomain = new cognito.UserPoolDomain(this, 'UserPoolDomain', {
       userPool: userPool,
       cognitoDomain: {
         domainPrefix: `${stackPrefix.toLowerCase()}-portal-${Stack.of(this).account}`,

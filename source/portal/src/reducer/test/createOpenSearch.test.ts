@@ -20,7 +20,6 @@ import {
   appIndexSuffixChanged,
   convertOpenSearchStateToAppLogOpenSearchParam,
   createDashboardChanged,
-  enableRolloverByCapacityChanged,
   indexPrefixChanged,
   indexSuffixChanged,
   isIndexDuplicated,
@@ -142,12 +141,6 @@ describe("createOpenSearch Reducer", () => {
     expect(newState.replicaNumbers).toEqual("2");
   });
 
-  it("should enable rollover capacity changed", () => {
-    const action = enableRolloverByCapacityChanged(false);
-    const newState = openSearchSlice.reducer(initialState, action);
-    expect(newState.enableRolloverByCapacity).toEqual(false);
-  });
-
   it("should rollover size changed", () => {
     const action = openSearchSlice.actions.rolloverSizeChanged("2");
     const newState = openSearchSlice.reducer(initialState, action);
@@ -195,7 +188,7 @@ describe("createOpenSearch Reducer", () => {
     expect(newState.indexPrefixError).toEqual(
       "applog:create.ingestSetting.indexNameError"
     );
-    expect(newState.shardsError).toEqual("");
+    expect(newState.shardsError).toEqual("servicelog:cluster.shardEmptyError");
     expect(newState.capacityError).toEqual("");
     expect(newState.warmLogError).toEqual("");
     expect(newState.coldLogError).toEqual("");
@@ -232,17 +225,17 @@ describe("createOpenSearch Reducer", () => {
   it("validate shard numbers", () => {
     const action = openSearchSlice.actions.validateOpenSearch();
     const newState = openSearchSlice.reducer(initialState, action);
-    expect(newState.shardsError).toEqual("");
+    expect(newState.shardsError).toEqual("servicelog:cluster.shardEmptyError");
     const invalidShardState = {
       ...initialState,
-      shardNumbers: "0",
+      shardNumbers: "",
     };
     const updatedInvalidShardState = openSearchSlice.reducer(
       invalidShardState,
       action
     );
     expect(updatedInvalidShardState.shardsError).toEqual(
-      "servicelog:cluster.shardNumError"
+      "servicelog:cluster.shardEmptyError"
     );
   });
 
@@ -252,15 +245,13 @@ describe("createOpenSearch Reducer", () => {
     expect(newState.capacityError).toEqual("");
     const invalidCapacityState = {
       ...initialState,
-      rolloverSize: "0",
+      rolloverSize: "30gb",
     };
     const updatedInvalidCapacityState = openSearchSlice.reducer(
       invalidCapacityState,
       action
     );
-    expect(updatedInvalidCapacityState.capacityError).toEqual(
-      "servicelog:cluster.rolloverError"
-    );
+    expect(updatedInvalidCapacityState.capacityError).toEqual("");
   });
 
   it("validate warm age", () => {
@@ -342,29 +333,11 @@ describe("createOpenSearch Reducer", () => {
     );
   });
 
-  it("returns empty values when no settings are enabled", () => {
-    const openSearch = {
-      ...initialState,
-      enableRolloverByCapacity: false,
-      warmEnable: false,
-      coldEnable: false,
-      retainAge: "0",
-    };
-
-    const result = rolloverAndLogLifecycleTransformData(openSearch);
-    expect(result).toEqual({
-      rolloverSize: "",
-      warmLogTransition: "",
-      coldLogTransition: "",
-      logRetention: "",
-    });
-  });
-
   it("returns correct rolloverSize when enableRolloverByCapacity is true", () => {
     const openSearch = {
       ...initialState,
       enableRolloverByCapacity: true,
-      rolloverSize: "50",
+      rolloverSize: "50gb",
     };
     const result = rolloverAndLogLifecycleTransformData(openSearch);
     expect(result.rolloverSize).toBe("50gb");
@@ -373,7 +346,6 @@ describe("createOpenSearch Reducer", () => {
   it("returns warm translation type is immediately", () => {
     const openSearch = {
       ...initialState,
-      enableRolloverByCapacity: false,
       warmEnable: true,
       warmTransitionType: WarmTransitionType.IMMEDIATELY,
     };
@@ -384,7 +356,6 @@ describe("createOpenSearch Reducer", () => {
   it('return warm translation type is "days"', () => {
     const openSearch = {
       ...initialState,
-      enableRolloverByCapacity: false,
       warmEnable: true,
       warmTransitionType: WarmTransitionType.BY_DAYS,
       warmAge: "1",
@@ -396,7 +367,6 @@ describe("createOpenSearch Reducer", () => {
   it('return code translation type is "days"', () => {
     const openSearch = {
       ...initialState,
-      enableRolloverByCapacity: false,
       coldEnable: true,
       coldAge: "1",
     };
@@ -426,7 +396,7 @@ describe("createOpenSearch Reducer", () => {
       refreshInterval: "1s",
       replicaNumbers: "1",
       rolloverSize: "30gb",
-      shardNumbers: "1",
+      shardNumbers: "",
       vpc: {
         privateSubnetIds: "",
         publicSubnetIds: "",

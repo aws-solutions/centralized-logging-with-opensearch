@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import awsConfigArch from "assets/images/desc/awsConfigArch.webp";
-import ExtLink from "components/ExtLink";
-import { AWS_CONFIG_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 const ConfigDesc: React.FC = () => {
   const { t } = useTranslation();
@@ -27,22 +24,6 @@ const ConfigDesc: React.FC = () => {
       </div>
       <div className="ingest-desc-desc">
         {t("servicelog:config.desc.ingest")}
-        <ExtLink to={AWS_CONFIG_LOG_LINK}>
-          {t("servicelog:config.desc.configLog")}
-        </ExtLink>{" "}
-        {t("intoDomain")}
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:config.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
-      <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={awsConfigArch}
-        />
       </div>
     </div>
   );

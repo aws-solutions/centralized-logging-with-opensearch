@@ -12,7 +12,6 @@
 
 [ "$DEBUG" == 'true' ] && set -x
 set -e
-
 t() {
   # count elapsed time for a command
   local start=$(date +%s)
@@ -81,7 +80,8 @@ setup_python_env() {
 
     echo "Installing python packages"
     # install test dependencies in the python virtual environment
-	t pip install --upgrade pip pytest-xdist
+	t pip install --upgrade pip==23.3 
+	t pip install --upgrade pytest-xdist
 	t pip3 install --no-cache-dir -r test/requirements-test.txt
 	t pip3 install -e $source_dir/constructs/lambda/common-lib
 	# pip3 install -r requirements.txt --target .
@@ -304,6 +304,9 @@ tests_to_run+=($!)
 t run_frontend_project_test $portal_dir
 tests_to_run+=($!)
 
+t run_python_test_concurrently $construct_dir/lambda/microbatch microbatch
+tests_to_run+=($!)
+
 # Test the attached Lambda function
 t run_python_test $construct_dir/lambda/common-lib common-lib &
 tests_to_run+=($!)
@@ -343,13 +346,13 @@ t run_python_test $construct_dir/lambda/api/cwl cloudwatch_api &
 tests_to_run+=($!)
 t run_python_test $construct_dir/lambda/api/alarm alarm_api &
 tests_to_run+=($!)
-t run_python_test_concurrently $construct_dir/lambda/microbatch microbatch &
-tests_to_run+=($!)
-t run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
-tests_to_run+=($!)
 t run_python_test $construct_dir/lib/kinesis/lambda lambda &
 tests_to_run+=($!)
 t run_python_test $construct_dir/lambda/api/grafana grafana &
+tests_to_run+=($!)
+cd $construct_dir/../../deployment/ecr/clo-s3-list-objects
+rm -rf common-lib
+t run_python_test $construct_dir/../../deployment/ecr/clo-s3-list-objects s3-list-objects &
 tests_to_run+=($!)
 
 function wait_all_python_test() {

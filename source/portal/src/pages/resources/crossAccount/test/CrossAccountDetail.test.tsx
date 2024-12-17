@@ -15,9 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter, useParams } from "react-router-dom";
 import CrossAccountDetail from "../CrossAccountDetail";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { MockMemberAccountData } from "test/store.mock";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,27 +41,134 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
-  const mockParams = { id: "i-xxxxxxxx" };
+  const mockParams = { id: "test" };
   // Make useParams return the mock parameters
   (useParams as any).mockReturnValue(mockParams);
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("CrossAccountDetail", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/link-account/xx"]}>
-        <CrossAccountDetail />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+    expect(screen.getByText(/resource:crossAccount.name/i)).toBeInTheDocument();
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getSubAccountLink: MockMemberAccountData,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("should click the cancel button", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+    const cancelButton = screen.getByTestId("cancel-button");
+    expect(cancelButton).toBeInTheDocument();
+    cancelButton.click();
+  });
+
+  it("should click the update button when data valid", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getSubAccountLink: MockMemberAccountData,
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { updateSubAccountLink: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+
+    const saveButton = screen.getByTestId("save-button");
+    expect(saveButton).toBeInTheDocument();
+    fireEvent.click(saveButton);
+  });
+
+  it("should click the update button when data bucket invalid", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getSubAccountLink: {
+          ...MockMemberAccountData,
+          subAccountBucketName: "Invalid Bucket Name",
         },
-      }
-    );
-    expect(getByText(/resource:crossAccount.name/i)).toBeInTheDocument();
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { updateSubAccountLink: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+
+    const saveButton = screen.getByTestId("save-button");
+    expect(saveButton).toBeInTheDocument();
+    fireEvent.click(saveButton);
+  });
+
+  it("should click the update button when data account id invalid", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getSubAccountLink: {
+          ...MockMemberAccountData,
+          subAccountId: "invalid-account-id",
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { updateSubAccountLink: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountDetail />
+        </MemoryRouter>
+      );
+    });
+
+    const saveButton = screen.getByTestId("save-button");
+    expect(saveButton).toBeInTheDocument();
+    fireEvent.click(saveButton);
   });
 });

@@ -12,6 +12,7 @@ def default_environment_variables():
     os.environ["AWS_ACCESS_KEY_ID"] = "mocked-aws-access-key-id"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "mocked-aws-secret-access-key"
     os.environ["AWS_SESSION_TOKEN"] = "mocked-aws-session-token"
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
@@ -28,6 +29,7 @@ def default_environment_variables():
     os.environ["DEFAULT_LOGGING_BUCKET"] = "solution-bucket"
     os.environ["ACCESS_LOGGING_BUCKET"] = "solution-logging-bucket"
     os.environ["OPENSEARCH_MASTER_ROLE_ARN"] = "OPENSEARCH_MASTER_ROLE_ARN"
+    os.environ["ACCESS_LOGGING_BUCKET"] = "solution-logging-bucket"
     os.environ["OPENSEARCH_DOMAIN_TABLE"] = "OPENSEARCH_DOMAIN_TABLE"
 
     os.environ["EKS_DEPLOY_KIND_TABLE"] = "LogAgentEKSDeploymentKindTable"

@@ -41,34 +41,25 @@ const SelectBuffer: React.FC<SelectBufferProps> = (
     engineType = AnalyticEngineTypes.OPENSEARCH,
   } = props;
   const selectionItems = useMemo(
-    () =>
-      engineType === AnalyticEngineTypes.LIGHT_ENGINE
-        ? [
-            {
-              value: BufferType.S3,
-              label: t("applog:create.ingestSetting.bufferS3"),
-              description: t(
-                "applog:create.ingestSetting.bufferS3LightEngineDesc"
-              ),
-            },
-          ]
-        : [
-            {
-              value: BufferType.S3,
-              label: t("applog:create.ingestSetting.bufferS3"),
-              description: t("applog:create.ingestSetting.bufferS3Desc"),
-            },
-            {
-              value: BufferType.KDS,
-              label: t("applog:create.ingestSetting.bufferKDS"),
-              description: t("applog:create.ingestSetting.bufferKDSDesc"),
-            },
-            {
-              value: BufferType.NONE,
-              label: t("applog:create.ingestSetting.bufferNone"),
-              description: t("applog:create.ingestSetting.bufferNoneDesc"),
-            },
-          ],
+    () => [
+      {
+        value: BufferType.S3,
+        label: t("applog:create.ingestSetting.bufferS3"),
+        description: t("applog:create.ingestSetting.bufferS3Desc"),
+      },
+      {
+        disabled: engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+        value: BufferType.KDS,
+        label: t("applog:create.ingestSetting.bufferKDS"),
+        description: t("applog:create.ingestSetting.bufferKDSDesc"),
+      },
+      {
+        disabled: engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+        value: BufferType.NONE,
+        label: t("applog:create.ingestSetting.bufferNone"),
+        description: t("applog:create.ingestSetting.bufferNoneDesc"),
+      },
+    ],
     [engineType]
   );
 
@@ -76,7 +67,6 @@ const SelectBuffer: React.FC<SelectBufferProps> = (
     <div className="mb-10">
       <FormItem optionTitle="" optionDesc="">
         <Tiles
-          displayInRow
           value={currentBufferLayer}
           onChange={(event) => {
             changeActiveLayer(event.target.value);

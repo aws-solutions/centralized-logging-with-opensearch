@@ -14,26 +14,55 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint-disable react/display-name */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { AnalyticEngineType, AppPipeline, PipelineStatus } from "API";
+import {
+  AnalyticEngineType,
+  AppPipeline,
+  BatchExportAppPipelinesQueryVariables,
+  PipelineStatus,
+  ResumePipelineMutationVariables,
+} from "API";
 import Modal from "components/Modal";
-import { listAppPipelines } from "graphql/queries";
-import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { deleteAppPipeline } from "graphql/mutations";
-import { defaultStr, formatLocalTime } from "assets/js/utils";
+import { batchExportAppPipelines, listAppPipelines } from "graphql/queries";
+import {
+  ApiResponse,
+  appSyncRequestMutation,
+  appSyncRequestQuery,
+} from "assets/js/request";
+import { deleteAppPipeline, resumePipeline } from "graphql/mutations";
+import {
+  defaultStr,
+  downloadFileByLink,
+  formatLocalTime,
+} from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
 import { handleErrorMessage } from "assets/js/alert";
 import PipelineStatusComp from "../common/PipelineStatus";
 import ButtonRefresh from "components/ButtonRefresh";
 import CommonLayout from "pages/layout/CommonLayout";
+import ButtonDropdown from "components/ButtonDropdown";
+import MuiAlert from "@material-ui/lab/Alert";
+import ExtButton from "components/ExtButton";
+import { makeStyles } from "@material-ui/core";
 
 const PAGE_SIZE = 10;
+
+const useStyles = makeStyles(() => ({
+  dropDown: {
+    width: "110px",
+    textAlign: "left",
+  },
+}));
+
+interface ExtAppPipeline extends AppPipeline {
+  id: string;
+}
 
 const ApplicationLog: React.FC = () => {
   const { t } = useTranslation();
@@ -42,6 +71,8 @@ const ApplicationLog: React.FC = () => {
     { name: t("applog:name") },
   ];
 
+  const classes = useStyles();
+
   const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
@@ -49,19 +80,40 @@ const ApplicationLog: React.FC = () => {
   const [curTipsApplicationLog, setCurTipsApplicationLog] =
     useState<AppPipeline>();
   const [applicationLogs, setApplicationLogs] = useState<AppPipeline[]>([]);
-  const [selectedApplicationLog, setSelectedApplicationLog] = useState<any[]>(
-    []
-  );
-  const [disabledDetail, setDisabledDetail] = useState(false);
-  const [disabledDelete, setDisabledDelete] = useState(false);
-  const [totoalCount, setTotoalCount] = useState(0);
+  const [selectedApplicationLog, setSelectedApplicationLog] = useState<
+    ExtAppPipeline[]
+  >([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showExportAlert, setShowExportAlert] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportedFileUrl, setExportedFileUrl] = useState("");
   const [curPage, setCurPage] = useState(1);
+
+  const exportPipelines = async () => {
+    setExportedFileUrl("");
+    setExportLoading(true);
+    setShowExportAlert(true);
+    try {
+      const res: ApiResponse<"batchExportAppPipelines", string> =
+        await appSyncRequestMutation(batchExportAppPipelines, {
+          appPipelineIds: selectedIds,
+        } as BatchExportAppPipelinesQueryVariables);
+      const fileUrl = res.data.batchExportAppPipelines;
+      setExportedFileUrl(res.data.batchExportAppPipelines);
+      downloadFileByLink(fileUrl);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   // Get Application Log List
   const getApplicationLogList = async (hideLoading = false) => {
     try {
       if (!hideLoading) {
-        setSelectedApplicationLog([]);
         setApplicationLogs([]);
         setLoadingData(true);
       }
@@ -72,7 +124,7 @@ const ApplicationLog: React.FC = () => {
       console.info("resData:", resData);
       const dataAppLogs: AppPipeline[] =
         resData.data.listAppPipelines.appPipelines;
-      setTotoalCount(resData.data.listAppPipelines.total);
+      setTotalCount(resData.data.listAppPipelines.total);
       setApplicationLogs(
         dataAppLogs.map((each) => ({ ...each, id: each.pipelineId }))
       );
@@ -93,7 +145,7 @@ const ApplicationLog: React.FC = () => {
   };
 
   // Confirm to Remove Application Log By ID
-  const confimRemoveApplicationLog = async () => {
+  const confirmRemoveApplicationLog = async () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteAppPipeline, {
@@ -103,7 +155,14 @@ const ApplicationLog: React.FC = () => {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getApplicationLogList();
-      setSelectedApplicationLog([]);
+      setSelectedApplicationLog(
+        selectedApplicationLog.filter(
+          ({ id }) => id !== curTipsApplicationLog?.pipelineId
+        )
+      );
+      setSelectedIds(
+        selectedIds.filter((id) => id !== curTipsApplicationLog?.pipelineId)
+      );
     } catch (error: any) {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
@@ -112,39 +171,20 @@ const ApplicationLog: React.FC = () => {
     }
   };
 
+  // Click Edit Button Redirect to edit page
+  const clickToEdit = () => {
+    navigate(`/log-pipeline/application-log/edit/${selectedIds[0]}`);
+  };
+
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    navigate(
-      `/log-pipeline/application-log/detail/${selectedApplicationLog[0]?.id}`
-    );
+    navigate(`/log-pipeline/application-log/detail/${selectedIds[0]}`);
   };
 
   // Get Application log list when page rendered.
   useEffect(() => {
     getApplicationLogList();
   }, [curPage]);
-
-  // Disable delete button and view detail button when no row selected.
-  useEffect(() => {
-    console.info("selectedApplicationLog:", selectedApplicationLog);
-    if (selectedApplicationLog.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
-    if (selectedApplicationLog.length > 0) {
-      if (
-        selectedApplicationLog[0].status === PipelineStatus.ACTIVE ||
-        selectedApplicationLog[0].status === PipelineStatus.ERROR
-      ) {
-        setDisabledDelete(false);
-      } else {
-        setDisabledDelete(true);
-      }
-    } else {
-      setDisabledDelete(true);
-    }
-  }, [selectedApplicationLog]);
 
   // Auto Refresh List
   useEffect(() => {
@@ -183,19 +223,82 @@ const ApplicationLog: React.FC = () => {
     );
   };
 
+  const refreshList = () => {
+    if (curPage === 1) {
+      getApplicationLogList();
+    } else {
+      setCurPage(1);
+    }
+  };
+
+  const handleResumePipeline = async () => {
+    await appSyncRequestMutation(resumePipeline, {
+      id: selectedIds[0],
+    } as ResumePipelineMutationVariables);
+    refreshList();
+  };
+
+  const isMultipleSelection = useMemo(
+    () => selectedIds.length > 1,
+    [selectedIds]
+  );
+
+  const deleteDisabled = useMemo(() => {
+    return (
+      (selectedApplicationLog[0]?.status !== PipelineStatus.ACTIVE &&
+        selectedApplicationLog[0]?.status !== PipelineStatus.ERROR) ||
+      isMultipleSelection
+    );
+  }, [selectedApplicationLog, isMultipleSelection]);
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
+      {showExportAlert ? (
+        <MuiAlert
+          elevation={6}
+          variant="filled"
+          severity={exportedFileUrl ? "success" : "info"}
+          className="mb-20"
+          action={
+            <>
+              <ExtButton
+                to={exportedFileUrl}
+                className="mr-10"
+                loading={exportLoading}
+                loadingColor="gray"
+              >
+                {t("button.download")}
+              </ExtButton>
+              <Button
+                loadingColor="gray"
+                onClick={() => setShowExportAlert(false)}
+              >
+                {t("button.close")}
+              </Button>
+            </>
+          }
+        >
+          {exportedFileUrl
+            ? t("applog:list.exported")
+            : t("applog:list.exporting")}
+        </MuiAlert>
+      ) : (
+        <></>
+      )}
       <div className="table-data">
         <TablePanel
           trackId="pipelineId"
           title={t("applog:title")}
           defaultSelectItem={selectedApplicationLog}
-          changeSelected={(item) => {
-            console.info("item:", item);
+          changeSelected={(item, ids) => {
+            console.info("selected item:", item);
             setSelectedApplicationLog(item);
+            console.info("selected ids:", ids);
+            setSelectedIds(ids);
           }}
           loading={loadingData}
-          selectType={SelectType.RADIO}
+          selectType={SelectType.CHECKBOX}
+          crossPageSelection
           columnDefinitions={[
             {
               id: "id",
@@ -250,35 +353,83 @@ const ApplicationLog: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
-                onClick={() => {
-                  if (curPage === 1) {
-                    getApplicationLogList();
-                  } else {
-                    setCurPage(1);
-                  }
-                }}
+                onClick={refreshList}
               >
                 <ButtonRefresh loading={loadingData} />
               </Button>
-              <Button
-                disabled={disabledDetail}
-                onClick={() => {
-                  clickToReviewDetail();
+              <ButtonDropdown
+                data-testid="app-log-actions"
+                items={[
+                  {
+                    id: "edit",
+                    text: t("button.edit"),
+                    disabled:
+                      selectedApplicationLog.length !== 1 ||
+                      selectedApplicationLog[0].status !==
+                        PipelineStatus.ACTIVE,
+                    testId: "edit-button",
+                  },
+                  {
+                    id: "delete",
+                    text: t("button.delete"),
+                    disabled: deleteDisabled,
+                    testId: "delete-button",
+                  },
+                  {
+                    id: "export",
+                    text: t("button.export"),
+                    disabled: exportLoading || selectedIds.length === 0,
+                  },
+                  {
+                    id: "resume",
+                    text: t("button.resume"),
+                    disabled: (() => {
+                      if (selectedApplicationLog.length === 1) {
+                        return (
+                          selectedApplicationLog[0].status !==
+                          PipelineStatus.PAUSED
+                        );
+                      }
+                      return true;
+                    })(),
+                  },
+                ]}
+                className={classes.dropDown}
+                btnType="default"
+                disabled={loadingData || selectedIds.length === 0}
+                onItemClick={(item) => {
+                  switch (item.id) {
+                    case "edit":
+                      return clickToEdit();
+                    case "detail":
+                      return clickToReviewDetail();
+                    case "delete":
+                      return removeApplicationLog();
+                    case "export":
+                      return exportPipelines();
+                    case "resume":
+                      return handleResumePipeline();
+                    default:
+                      break;
+                  }
+                  console.log(item);
                 }}
               >
-                {t("button.viewDetail")}
-              </Button>
+                {t("button.actions")}
+              </ButtonDropdown>
               <Button
-                disabled={disabledDelete}
+                className="ml-10"
                 onClick={() => {
-                  removeApplicationLog();
+                  navigate("/log-pipeline/application-log/import");
                 }}
               >
-                {t("button.delete")}
+                {t("applog:import.import")}
               </Button>
               <Button
+                data-testid="create-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/log-pipeline/application-log/create");
@@ -290,7 +441,7 @@ const ApplicationLog: React.FC = () => {
           }
           pagination={
             <Pagination
-              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              count={Math.ceil(totalCount / PAGE_SIZE)}
               page={curPage}
               onChange={handlePageChange}
               size="small"
@@ -308,6 +459,7 @@ const ApplicationLog: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -317,10 +469,11 @@ const ApplicationLog: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {
-                confimRemoveApplicationLog();
+                confirmRemoveApplicationLog();
               }}
             >
               {t("button.delete")}

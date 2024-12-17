@@ -66,9 +66,6 @@ export class VpcStack extends Construct {
       this.vpc = props.vpc;
       this.subnetIds = [];
     } else {
-      // Create new VPC
-      // const vpcStack = new VpcStack(this, `${solutionName}VPC`);
-      // this.vpc = vpcStack.vpc
       const vpcLogGroup = new LogGroup(this, 'VPCLogGroup', {
         retention: RetentionDays.TWO_WEEKS,
         removalPolicy: RemovalPolicy.RETAIN,
@@ -84,7 +81,7 @@ export class VpcStack extends Construct {
 
       // Create a new VPC
       this.vpc = new Vpc(this, 'DefaultVPC', {
-        ipAddresses: IpAddresses.cidr('10.255.0.0/16'),
+        ipAddresses: IpAddresses.cidr('10.255.0.0/16'), //NOSONAR
         enableDnsHostnames: true,
         enableDnsSupport: true,
         subnetConfiguration: [

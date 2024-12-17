@@ -14,8 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RemovalPolicy, aws_dynamodb as ddb } from 'aws-cdk-lib';
+import {
+  RemovalPolicy,
+  aws_dynamodb as ddb,
+  aws_kms as kms,
+} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
+export class AppTableProps {
+  readonly encryptionKey: kms.IKey;
+}
 
 export class AppTableStack extends Construct {
   readonly logConfTable: ddb.Table;
@@ -25,7 +33,7 @@ export class AppTableStack extends Construct {
   readonly appLogIngestionTable: ddb.Table;
   readonly instanceIngestionDetailTable: ddb.Table;
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: AppTableProps) {
     super(scope, id);
 
     // Create a table to store logging logConf info
@@ -40,7 +48,8 @@ export class AppTableStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
     });
 
@@ -59,7 +68,8 @@ export class AppTableStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
       stream: ddb.StreamViewType.NEW_IMAGE,
     });
@@ -82,7 +92,8 @@ export class AppTableStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
     });
     const cfnLogSourceTable = this.logSourceTable.node
@@ -97,7 +108,8 @@ export class AppTableStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
     });
 
@@ -113,7 +125,8 @@ export class AppTableStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
     });
 
@@ -128,19 +141,26 @@ export class AppTableStack extends Construct {
     cfnAppLogIngestionTable.overrideLogicalId('AppLogIngestion');
 
     // Create a table to store logging instanceIngestionDetail info
-    this.instanceIngestionDetailTable = new ddb.Table(this, 'InstanceIngestionDetail', {
-      partitionKey: {
-        name: 'id',
-        type: ddb.AttributeType.STRING,
-      },
-      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
-      pointInTimeRecovery: true,
-    });
+    this.instanceIngestionDetailTable = new ddb.Table(
+      this,
+      'InstanceIngestionDetail',
+      {
+        partitionKey: {
+          name: 'id',
+          type: ddb.AttributeType.STRING,
+        },
+        billingMode: ddb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: RemovalPolicy.DESTROY,
+        encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+        encryptionKey: props.encryptionKey,
+        pointInTimeRecovery: true,
+      }
+    );
 
-    const cfnInstanceIngestionDetailTable = this.instanceIngestionDetailTable.node
-      .defaultChild as ddb.CfnTable;
-    cfnInstanceIngestionDetailTable.overrideLogicalId('InstanceIngestionDetail');
+    const cfnInstanceIngestionDetailTable = this.instanceIngestionDetailTable
+      .node.defaultChild as ddb.CfnTable;
+    cfnInstanceIngestionDetailTable.overrideLogicalId(
+      'InstanceIngestionDetail'
+    );
   }
 }

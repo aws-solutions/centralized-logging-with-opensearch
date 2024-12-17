@@ -15,9 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import ChooseInstanceGroupTable from "../ChooseInstanceGroupTable";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { appSyncRequestQuery } from "assets/js/request";
+import { MockInstanceLogSources } from "test/instance.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,13 +36,18 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("ChooseInstanceGroupTable", () => {
   it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MemoryRouter>
         <ChooseInstanceGroupTable
           value={[]}
@@ -54,17 +61,69 @@ describe("ChooseInstanceGroupTable", () => {
             } as any
           }
         />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
+      </MemoryRouter>
     );
+
     expect(
-      getByText("applog:ingestion.chooseInstanceGroup.list.name")
+      screen.getByText("applog:ingestion.chooseInstanceGroup.list.name")
     ).toBeInTheDocument();
+  });
+
+  it("renders with windows log", () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <ChooseInstanceGroupTable
+          isIngestion={true}
+          isWindowsLog={true}
+          value={[]}
+          setValue={jest.fn()}
+          validator={
+            {
+              error: "",
+              validate: jest.fn(),
+              setError: jest.fn(),
+              onValidate: jest.fn(),
+            } as any
+          }
+        />
+      </MemoryRouter>
+    );
+
+    expect(
+      screen.getByText("applog:ingestion.chooseInstanceGroup.list.name")
+    ).toBeInTheDocument();
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogSources: { logSources: MockInstanceLogSources, total: 2 },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ChooseInstanceGroupTable
+            value={[]}
+            setValue={jest.fn()}
+            validator={
+              {
+                error: "",
+                validate: jest.fn(),
+                setError: jest.fn(),
+                onValidate: jest.fn(),
+              } as any
+            }
+          />
+        </MemoryRouter>
+      );
+    });
+
+    // click refresh button
+    const refreshButton = screen.getByTestId("refresh-button");
+    await act(async () => {
+      fireEvent.click(refreshButton);
+    });
   });
 });

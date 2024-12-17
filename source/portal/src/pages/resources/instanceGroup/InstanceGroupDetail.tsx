@@ -21,11 +21,7 @@ import ValueWithLabel from "components/ValueWithLabel";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getLogSource } from "graphql/queries";
 import { EC2GroupType, LogSource, LogSourceType } from "API";
-import {
-  ASG_SELECTION,
-  DEFAULT_INSTANCE_SELECTION,
-  ResourceStatus,
-} from "assets/js/const";
+import { ResourceStatus } from "assets/js/const";
 import { buildASGLink, defaultStr, formatLocalTime } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
@@ -36,7 +32,6 @@ import DetailEC2 from "./comps/DetailEC2";
 import DetailASG from "./comps/DetailASG";
 import ExtLink from "components/ExtLink";
 import { useParams } from "react-router-dom";
-import InstancePermission from "pages/dataInjection/applicationLog/common/InstancePermission";
 import { RootState } from "reducer/reducers";
 import CommonLayout from "pages/layout/CommonLayout";
 
@@ -95,23 +90,20 @@ const InstanceGroupDetail: React.FC = () => {
                   <ValueWithLabel label={t("resource:group.detail.name")}>
                     <div>{curInstanceGroup?.ec2?.groupName}</div>
                   </ValueWithLabel>
-                  {curInstanceGroup?.accountId && (
-                    <ValueWithLabel label={t("resource:crossAccount.account")}>
-                      <AccountName
-                        accountId={curInstanceGroup?.accountId}
-                        region={amplifyConfig.aws_project_region}
-                      />
-                    </ValueWithLabel>
-                  )}
+                  <ValueWithLabel label={t("resource:group.detail.created")}>
+                    <div>
+                      {formatLocalTime(defaultStr(curInstanceGroup?.createdAt))}
+                    </div>
+                  </ValueWithLabel>
                 </div>
                 <div className="flex-1 border-left-c">
                   <ValueWithLabel
-                    label={t("resource:group.detail.instanceSelection")}
+                    label={t("resource:group.detail.instanceGroupType")}
                   >
                     <div>
                       {curInstanceGroup?.ec2?.groupType === EC2GroupType.ASG
-                        ? ASG_SELECTION
-                        : DEFAULT_INSTANCE_SELECTION}
+                        ? t("resource:group.asg")
+                        : t("resource:group.manual")}
                     </div>
                   </ValueWithLabel>
                   {curInstanceGroup?.ec2?.groupType === EC2GroupType.ASG && (
@@ -133,11 +125,14 @@ const InstanceGroupDetail: React.FC = () => {
                   </ValueWithLabel>
                 </div>
                 <div className="flex-1 border-left-c">
-                  <ValueWithLabel label={t("resource:group.detail.created")}>
-                    <div>
-                      {formatLocalTime(defaultStr(curInstanceGroup?.createdAt))}
-                    </div>
-                  </ValueWithLabel>
+                  {curInstanceGroup?.accountId && (
+                    <ValueWithLabel label={t("resource:group.detail.account")}>
+                      <AccountName
+                        accountId={curInstanceGroup?.accountId}
+                        region={amplifyConfig.aws_project_region}
+                      />
+                    </ValueWithLabel>
+                  )}
                 </div>
               </div>
             </HeaderPanel>
@@ -154,8 +149,6 @@ const InstanceGroupDetail: React.FC = () => {
                   }}
                 />
               ))}
-
-            <InstancePermission />
           </>
         </PagePanel>
       </div>

@@ -18,6 +18,33 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import CreateS3 from "../CreateS3";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import {
+  MockResourceLoggingBucketData,
+  MockS3List,
+  MockSelectProcessorState,
+} from "test/servicelog.mock";
+import { mockOpenSearchStateData } from "test/domain.mock";
+import { screen, act, fireEvent } from "@testing-library/react";
+
+// Mock SelectLogProcessor
+jest.mock("pages/comps/processor/SelectLogProcessor", () => {
+  return {
+    __esModule: true,
+    default: () => <div>SelectLogProcessor</div>,
+  };
+});
+
+jest.mock(
+  "pages/dataInjection/serviceLog/create/common/ConfigLightEngine",
+  () => {
+    return {
+      __esModule: true,
+      default: () => <div>ConfigLightEngine</div>,
+      covertSvcTaskToLightEngine: jest.fn(),
+    };
+  }
+);
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -43,24 +70,178 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("CreateS3", () => {
-  it("renders without errors", () => {
-    const { getByTestId } = renderWithProviders(
-      <MemoryRouter
-        initialEntries={[
-          "/log-pipeline/service-log/create/s3?engineType=OPENSEARCH",
-        ]}
-      >
-        <CreateS3 />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
+describe("CreateServiceS3", () => {
+  it("renders with data for openSearch Automatic", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listResources: MockS3List,
+        checkOSIAvailability: true,
+        getAccountUnreservedConurrency: 1000,
+        getResourceLoggingBucket: {
+          ...MockResourceLoggingBucketData,
+          enabled: true,
         },
-      }
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { createPipelineParams: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateS3 />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            openSearch: {
+              ...mockOpenSearchStateData,
+            },
+            selectProcessor: {
+              ...MockSelectProcessorState,
+            },
+          },
+        }
+      );
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    const autocomplete = screen.getByPlaceholderText(
+      "servicelog:s3.selectBucket"
     );
-    expect(getByTestId("test-create-s3")).toBeInTheDocument();
+    autocomplete.focus();
+    // the value here can be any string you want, so you may also consider to
+    // wrapper it as a function and pass in inputValue as parameter
+    fireEvent.change(autocomplete, { target: { value: "c" } });
+    fireEvent.keyDown(autocomplete, { key: "ArrowDown" });
+    fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // input shard number
+    const shardNum = screen.getByPlaceholderText(
+      "servicelog:cluster.inputShardNum"
+    );
+    fireEvent.change(shardNum, { target: { value: 1 } });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // click create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-create-button"));
+    });
+  });
+
+  it("renders with data for openSearch Manual", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listResources: MockS3List,
+        checkOSIAvailability: true,
+        getAccountUnreservedConurrency: 1000,
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { createPipelineParams: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateS3 />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            openSearch: {
+              ...mockOpenSearchStateData,
+            },
+            selectProcessor: {
+              ...MockSelectProcessorState,
+            },
+          },
+        }
+      );
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // change to manual mode
+    const manualModeOption = screen.getByText("servicelog:create.manual");
+    fireEvent.click(manualModeOption);
+
+    // input manual distribution id
+    const manualDistributionId = screen.getByPlaceholderText(
+      "servicelog:s3.inputBucket"
+    );
+    fireEvent.change(manualDistributionId, {
+      target: { value: "s3-1" },
+    });
+
+    // input s3 log bucket name
+    const logBucketName = screen.getByPlaceholderText("s3://bucket/prefix");
+    fireEvent.change(logBucketName, {
+      target: { value: "s3://test-bucket/prefix" },
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // input shard number
+    const shardNum = screen.getByPlaceholderText(
+      "servicelog:cluster.inputShardNum"
+    );
+    fireEvent.change(shardNum, { target: { value: 1 } });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-next-button"));
+    });
+
+    // click create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("s3-create-button"));
+    });
   });
 });

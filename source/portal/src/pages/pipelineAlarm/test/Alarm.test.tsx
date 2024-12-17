@@ -18,16 +18,28 @@ import React from "react";
 import Alarm from "../Alarm";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
-import { PipelineType } from "API";
+import { PipelineAlarmStatus, PipelineType } from "API";
 import { AppStoreMockData } from "test/store.mock";
-import { appSyncRequestQuery } from "assets/js/request";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { MockAppLogDetailData, MockCreateAlarmData } from "test/applog.mock";
+import { fireEvent, screen } from "@testing-library/react";
+import { mockS3ServicePipelineData } from "test/servicelog.mock";
 
-jest.mock("assets/js/request", () => {
+jest.mock("aws-appsync-auth-link", () => {
   return {
-    appSyncRequestQuery: jest.fn(),
-    refineErrorMessage: jest.fn(),
+    AUTH_TYPE: {
+      OPENID_CONNECT: "OPENID_CONNECT",
+      AMAZON_COGNITO_USER_POOLS: "AMAZON_COGNITO_USER_POOLS",
+    },
+    createAuthLink: jest.fn(),
   };
 });
+
+jest.mock("assets/js/request", () => ({
+  refineErrorMessage: jest.fn(),
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -49,18 +61,231 @@ beforeEach(() => {
 });
 
 describe("Alarm", () => {
-  it("renders without errors", async () => {
+  beforeEach(async () => {
     await (appSyncRequestQuery as any).mockResolvedValue({
       data: {
-        listInstances: {
-          instances: [],
+        listResources: [
+          {
+            id: "arn:aws:sns:us-example-2:111111111111:xxxx",
+            name: "AppDevOps_8fe9f402",
+            parentId: null,
+            description: null,
+            __typename: "Resource",
+          },
+        ],
+        getServicePipeline: { ...mockS3ServicePipelineData },
+        getAppPipeline: { ...MockAppLogDetailData },
+        getPipelineAlarm: {
+          alarms: [
+            {
+              name: "OLDEST_MESSAGE_AGE_ALARM",
+              status: "INSUFFICIENT_DATA",
+              resourceId: "xx-e068-4f24-xx-xxx",
+              __typename: "AlarmMetricDetail",
+            },
+          ],
+          __typename: "PipelineAlarm",
         },
       },
     });
+    await (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        createPipelineAlarm: "OK",
+        deletePipelineAlarm: "OK",
+        updatePipelineAlarm: "OK",
+      },
+    });
+  });
 
+  it("renders without errors for create app pipeline", async () => {
     renderWithProviders(
       <MemoryRouter>
-        <Alarm pageType={"create"} type={PipelineType.APP} />
+        <Alarm
+          pageType={"create"}
+          type={PipelineType.APP}
+          pipelineInfo={{ ...MockAppLogDetailData }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders without errors for create service pipeline", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.SERVICE}
+          pipelineInfo={{ ...mockS3ServicePipelineData }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders without errors for create service pipeline", async () => {
+    const { container } = renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"create"}
+          type={PipelineType.SERVICE}
+          servicePipeline={{ ...mockS3ServicePipelineData }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+          createAlarm: { ...MockCreateAlarmData },
+        },
+      }
+    );
+
+    const checkbox = container.querySelector(".react-switch-checkbox");
+    expect(checkbox).toBeInTheDocument();
+    if (checkbox) {
+      fireEvent.click(checkbox);
+    }
+  });
+
+  it("renders without errors for detail app pipeline", async () => {
+    const { container } = renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.APP}
+          pipelineInfo={{
+            ...MockAppLogDetailData,
+            monitor: {
+              ...MockAppLogDetailData.monitor,
+              pipelineAlarmStatus: PipelineAlarmStatus.DISABLED,
+            },
+          }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+          createAlarm: { ...MockCreateAlarmData },
+        },
+      }
+    );
+
+    const checkbox = container.querySelector(".react-switch-checkbox");
+    expect(checkbox).toBeInTheDocument();
+
+    const radioCreateTopic = screen.getByLabelText(/common:alarm.createTopic/i);
+    expect(radioCreateTopic).toBeInTheDocument();
+    fireEvent.click(radioCreateTopic);
+
+    const topicInput = screen.getByPlaceholderText("MyTopic");
+    await fireEvent.change(topicInput, { target: { value: "NewTopicName" } });
+
+    const emailInput = screen.getByPlaceholderText("ops@example.com");
+    await fireEvent.change(emailInput, {
+      target: { value: "test@example.com" },
+    });
+
+    expect(screen.getByTestId("create-button")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("create-button"));
+  });
+
+  it("renders without errors for detail app pipeline", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.APP}
+          pipelineInfo={{
+            ...MockAppLogDetailData,
+          }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+
+    expect(screen.getByTestId("edit-button")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("edit-button"));
+
+    expect(screen.getByTestId("save-button")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("save-button"));
+  });
+
+  it("renders without errors for detail service pipeline", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.SERVICE}
+          servicePipeline={{
+            ...mockS3ServicePipelineData,
+          }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders without errors for detail service pipeline disabled", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.APP}
+          pipelineInfo={{
+            ...MockAppLogDetailData,
+            status: PipelineAlarmStatus.DISABLED,
+          }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders without errors for detail app pipeline disabled", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Alarm
+          pageType={"detail"}
+          type={PipelineType.SERVICE}
+          servicePipeline={{
+            ...mockS3ServicePipelineData,
+            status: PipelineAlarmStatus.DISABLED,
+          }}
+        />
       </MemoryRouter>,
       {
         preloadedState: {

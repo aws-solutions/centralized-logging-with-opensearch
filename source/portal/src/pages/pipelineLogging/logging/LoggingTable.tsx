@@ -24,7 +24,7 @@ import { LogStream, PipelineType } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { Link } from "react-router-dom";
 import { LoggingProps } from "../Logging";
-import { formatTimeStamp } from "assets/js/utils";
+import { defaultStr, formatTimeStamp } from "assets/js/utils";
 import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
@@ -87,8 +87,8 @@ const LoggingTable: React.FC<LoggingTableProps> = (
       <Link
         target="_blank"
         to={buildLogEventsLink(
-          data.logStreamName ?? "",
-          data.firstEventTimestamp ?? ""
+          defaultStr(data.logStreamName),
+          defaultStr(data.firstEventTimestamp)
         )}
       >
         {data.logStreamName}
@@ -99,8 +99,8 @@ const LoggingTable: React.FC<LoggingTableProps> = (
   return (
     <div>
       <TablePanel
+        variant="header-panel"
         trackId="logStreamName"
-        noPadding
         loading={loadingData}
         changeSelected={(e) => {
           console.info(e);
@@ -116,25 +116,24 @@ const LoggingTable: React.FC<LoggingTableProps> = (
             id: "creationTime",
             header: t("common:logging.creationTime"),
             cell: (e: LogStream) => {
-              return formatTimeStamp(parseInt(e?.creationTime || ""));
+              return formatTimeStamp(parseInt(defaultStr(e?.creationTime)));
             },
           },
           {
             id: "lastEventTime",
             header: t("common:logging.lastEventTime"),
             cell: (e: LogStream) => {
-              return formatTimeStamp(parseInt(e?.lastEventTimestamp || ""));
+              return formatTimeStamp(
+                parseInt(defaultStr(e?.lastEventTimestamp))
+              );
             },
           },
         ]}
-        title={
-          <div style={{ fontSize: "14px", fontWeight: "normal" }}>
-            {t("common:logging.logStreams")}
-          </div>
-        }
+        title={t("common:logging.logStreams")}
         actions={
           <div>
             <Button
+              data-testid="refresh-button"
               btnType="icon"
               disabled={loadingData}
               onClick={() => {

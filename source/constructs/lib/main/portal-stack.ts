@@ -76,7 +76,6 @@ export class PortalStack extends Construct {
   readonly portalUrl: string;
   readonly cloudFrontDistributionId: string;
   readonly webUILoggingBucket: s3.Bucket;
-
   constructor(scope: Construct, id: string, props: PortalProps) {
     super(scope, id);
 
@@ -93,7 +92,7 @@ export class PortalStack extends Construct {
         Fn.conditionEquals(Aws.REGION, 'il-central-1'),
         Fn.conditionEquals(Aws.REGION, 'ca-west-1'),
         Fn.conditionEquals(Aws.REGION, 'eu-south-2'),
-        Fn.conditionEquals(Aws.REGION, 'eu-central-2'),
+        Fn.conditionEquals(Aws.REGION, 'eu-central-2')
       ),
     });
 
@@ -117,7 +116,7 @@ export class PortalStack extends Construct {
       }
     );
 
-    const isNoCert = new CfnCondition(this, "isNoCert", {
+    const isNoCert = new CfnCondition(this, 'isNoCert', {
       expression: Fn.conditionAnd(
         Fn.conditionNot(hasAcmCertificateArn),
         Fn.conditionNot(hasIamCertificateArn)
@@ -238,16 +237,13 @@ export class PortalStack extends Construct {
         }
       );
       if (props.customDomainName != '') {
-        portalDist.addPropertyOverride('DistributionConfig.Aliases',
-          Fn.conditionIf(
-            isNoCert.logicalId,
-            Aws.NO_VALUE,
-            [
-              {
-                Ref: 'Domain',
-              },
-            ]
-          )
+        portalDist.addPropertyOverride(
+          'DistributionConfig.Aliases',
+          Fn.conditionIf(isNoCert.logicalId, Aws.NO_VALUE, [
+            {
+              Ref: 'Domain',
+            },
+          ])
         );
         portalDist.addPropertyOverride(
           'DistributionConfig.ViewerCertificate.MinimumProtocolVersion',
@@ -256,19 +252,11 @@ export class PortalStack extends Construct {
         portalDist.addPropertyOverride(
           'DistributionConfig.ViewerCertificate.SslSupportMethod',
           // 'sni-only'
-          Fn.conditionIf(
-            isNoCert.logicalId,
-            Aws.NO_VALUE,
-            'sni-only'
-          )
+          Fn.conditionIf(isNoCert.logicalId, Aws.NO_VALUE, 'sni-only')
         );
         portalDist.addPropertyOverride(
           'DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate',
-          Fn.conditionIf(
-            isNoCert.logicalId,
-            true,
-            Aws.NO_VALUE
-          )
+          Fn.conditionIf(isNoCert.logicalId, true, Aws.NO_VALUE)
         );
         portalDist.addPropertyOverride(
           'DistributionConfig.ViewerCertificate.IamCertificateId',

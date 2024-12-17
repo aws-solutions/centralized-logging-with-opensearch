@@ -608,6 +608,8 @@ export type ProxyInfo = {
   keyName?: string | null,
   customEndpoint?: string | null,
   cognitoEndpoint?: string | null,
+  proxyInstanceType?: string | null,
+  proxyInstanceNumber?: string | null,
 };
 
 export type AlarmStackInfo = {
@@ -647,6 +649,7 @@ export type ServicePipeline = {
   processorLogGroupName?: string | null,
   helperLogGroupName?: string | null,
   logEventQueueName?: string | null,
+  logEventQueueType?: LogEventQueueType | null,
   deliveryStreamName?: string | null,
   bufferResourceName?: string | null,
   stackId?: string | null,
@@ -654,6 +657,7 @@ export type ServicePipeline = {
   logSourceRegion?: string | null,
   engineType?: AnalyticEngineType | null,
   lightEngineParams?: LightEngineParameter | null,
+  logProcessorConcurrency?: string | null,
 };
 
 export type Parameter = {
@@ -664,9 +668,11 @@ export type Parameter = {
 
 export enum PipelineStatus {
   ACTIVE = "ACTIVE",
+  PAUSED = "PAUSED",
   INACTIVE = "INACTIVE",
   CREATING = "CREATING",
   DELETING = "DELETING",
+  UPDATING = "UPDATING",
   ERROR = "ERROR",
 }
 
@@ -687,6 +693,12 @@ export type OpenSearchIngestionParams = {
   minCapacity?: number | null,
   maxCapacity?: number | null,
 };
+
+export enum LogEventQueueType {
+  EventBridge = "EventBridge",
+  SQS = "SQS",
+}
+
 
 export enum AnalyticEngineType {
   OpenSearch = "OpenSearch",
@@ -751,6 +763,7 @@ export type LogConfig = {
   timeKeyRegex?: string | null,
   userLogFormat?: string | null,
   userSampleLog?: string | null,
+  description?: string | null,
 };
 
 export type ProcessorFilterRegex = {
@@ -799,6 +812,8 @@ export type AppPipeline = {
   processorLogGroupName?: string | null,
   helperLogGroupName?: string | null,
   logEventQueueName?: string | null,
+  logEventQueueType?: LogEventQueueType | null,
+  logProcessorConcurrency?: string | null,
   monitor?: MonitorDetail | null,
   osiParams?: OpenSearchIngestionParams | null,
   osiPipelineName?: string | null,
@@ -834,6 +849,56 @@ export type AOSParameter = {
   engine?: EngineType | null,
 };
 
+export type BatchImportAppPipelinesAnalyzerResponse = {
+  __typename: "BatchImportAppPipelinesAnalyzerResponse",
+  findings?:  Array<BatchImportAppPipelinesAnalyzerFinding | null > | null,
+  resolvers?:  Array<Resolver | null > | null,
+};
+
+export type BatchImportAppPipelinesAnalyzerFinding = {
+  __typename: "BatchImportAppPipelinesAnalyzerFinding",
+  findingDetails?: string | null,
+  findingType?: BatchImportAppPipelinesAnalyzerFindingType | null,
+  issueCode?: BatchImportAppPipelinesAnalyzerFindingIssueCode | null,
+  location?: BatchImportAppPipelinesAnalyzerFindingLocation | null,
+};
+
+export enum BatchImportAppPipelinesAnalyzerFindingType {
+  ERROR = "ERROR",
+  WARNING = "WARNING",
+  SUGGESTION = "SUGGESTION",
+}
+
+
+export enum BatchImportAppPipelinesAnalyzerFindingIssueCode {
+  YAML_SYNTAX_ERROR = "YAML_SYNTAX_ERROR",
+  INVALID_ELEMENT = "INVALID_ELEMENT",
+  INVALID_BUCKET = "INVALID_BUCKET",
+  BUCKET_NOTIFICATION_OVERLAP = "BUCKET_NOTIFICATION_OVERLAP",
+  INVALID_RESOURCE = "INVALID_RESOURCE",
+  INVALID_RESOURCE_STATUS = "INVALID_RESOURCE_STATUS",
+  INVALID_VALUE = "INVALID_VALUE",
+  MISSING_ELEMENT = "MISSING_ELEMENT",
+  MISMATCH_DATA_TYPE = "MISMATCH_DATA_TYPE",
+  MISSING_VERSION = "MISSING_VERSION",
+  INVALID_ENUM = "INVALID_ENUM",
+  HTTP_REQUEST_ERROR = "HTTP_REQUEST_ERROR",
+  UNSUPPORTED_LOG_SOURCE = "UNSUPPORTED_LOG_SOURCE",
+  OPENSEARCH_INDEX_OVERLAP = "OPENSEARCH_INDEX_OVERLAP",
+}
+
+
+export type BatchImportAppPipelinesAnalyzerFindingLocation = {
+  __typename: "BatchImportAppPipelinesAnalyzerFindingLocation",
+  path?: string | null,
+};
+
+export type Resolver = {
+  __typename: "Resolver",
+  operationName?: string | null,
+  variables?: string | null,
+};
+
 export type ListAppLogIngestionResponse = {
   __typename: "ListAppLogIngestionResponse",
   appLogIngestions?:  Array<AppLogIngestion | null > | null,
@@ -854,20 +919,6 @@ export type AppLogIngestion = {
   tags?:  Array<Tag | null > | null,
   accountId?: string | null,
   region?: string | null,
-};
-
-export type ListInstanceIngestionDetailsResponse = {
-  __typename: "ListInstanceIngestionDetailsResponse",
-  instanceIngestionDetail?:  Array<InstanceIngestionDetail | null > | null,
-  total?: number | null,
-};
-
-export type InstanceIngestionDetail = {
-  __typename: "InstanceIngestionDetail",
-  instanceId?: string | null,
-  ssmCommandId?: string | null,
-  ssmCommandStatus?: string | null,
-  details?: string | null,
 };
 
 export type TagFilterInput = {
@@ -891,16 +942,6 @@ export type Instance = {
   name?: string | null,
 };
 
-export enum LogAgentStatus {
-  Online = "Online",
-  Offline = "Offline",
-  Installing = "Installing",
-  Installed = "Installed",
-  Not_Installed = "Not_Installed",
-  Unknown = "Unknown",
-}
-
-
 export type InstanceAgentStatusResponse = {
   __typename: "InstanceAgentStatusResponse",
   commandId?: string | null,
@@ -915,9 +956,20 @@ export type InstanceAgentStatus = {
   curlOutput?: string | null,
 };
 
+export enum LogAgentStatus {
+  Online = "Online",
+  Offline = "Offline",
+  Installing = "Installing",
+  Installed = "Installed",
+  Not_Installed = "Not_Installed",
+  Unknown = "Unknown",
+}
+
+
 export type LogSource = {
   __typename: "LogSource",
   sourceId: string,
+  name?: string | null,
   type?: LogSourceType | null,
   accountId?: string | null,
   region?: string | null,
@@ -1065,6 +1117,10 @@ export enum MetricName {
   SQSNumberOfMessagesDeleted = "SQSNumberOfMessagesDeleted",
   SQSApproximateNumberOfMessagesVisible = "SQSApproximateNumberOfMessagesVisible",
   SQSApproximateAgeOfOldestMessage = "SQSApproximateAgeOfOldestMessage",
+  EvtMatchedEvents = "EvtMatchedEvents",
+  EvtInvocations = "EvtInvocations",
+  EvtTriggeredRules = "EvtTriggeredRules",
+  EvtFailedInvocations = "EvtFailedInvocations",
   ProcessorFnError = "ProcessorFnError",
   ProcessorFnConcurrentExecutions = "ProcessorFnConcurrentExecutions",
   ProcessorFnDuration = "ProcessorFnDuration",
@@ -1134,7 +1190,9 @@ export type GraphXaxis = {
 };
 
 export enum AlarmMetricName {
+  DEAD_LETTER_INVOCATIONS = "DEAD_LETTER_INVOCATIONS",
   OLDEST_MESSAGE_AGE_ALARM = "OLDEST_MESSAGE_AGE_ALARM",
+  PROCESSOR_ERROR_RATE_ALARM = "PROCESSOR_ERROR_RATE_ALARM",
   PROCESSOR_ERROR_INVOCATION_ALARM = "PROCESSOR_ERROR_INVOCATION_ALARM",
   PROCESSOR_ERROR_RECORD_ALARM = "PROCESSOR_ERROR_RECORD_ALARM",
   PROCESSOR_DURATION_ALARM = "PROCESSOR_DURATION_ALARM",
@@ -1369,16 +1427,6 @@ export type CreateLightEngineServicePipelineMutation = {
   createLightEngineServicePipeline?: string | null,
 };
 
-export type UpdateServicePipelineMutationVariables = {
-  id: string,
-  monitor?: MonitorInput | null,
-};
-
-export type UpdateServicePipelineMutation = {
-  // Update a service pipeline
-  updateServicePipeline?: string | null,
-};
-
 export type DeleteServicePipelineMutationVariables = {
   id: string,
 };
@@ -1482,6 +1530,7 @@ export type CreateLogConfigMutationVariables = {
   timeKeyRegex?: string | null,
   userLogFormat?: string | null,
   userSampleLog?: string | null,
+  description?: string | null,
 };
 
 export type CreateLogConfigMutation = {
@@ -1516,6 +1565,7 @@ export type UpdateLogConfigMutationVariables = {
   timeKeyRegex?: string | null,
   userLogFormat?: string | null,
   userSampleLog?: string | null,
+  description?: string | null,
 };
 
 export type UpdateLogConfigMutation = {
@@ -1541,6 +1591,14 @@ export type CreateAppPipelineMutation = {
   createAppPipeline?: string | null,
 };
 
+export type ResumePipelineMutationVariables = {
+  id: string,
+};
+
+export type ResumePipelineMutation = {
+  resumePipeline?: string | null,
+};
+
 export type CreateLightEngineAppPipelineMutationVariables = {
   params: LightEngineParameterInput,
   bufferParams?: Array< BufferInput | null > | null,
@@ -1558,7 +1616,9 @@ export type CreateLightEngineAppPipelineMutation = {
 
 export type UpdateAppPipelineMutationVariables = {
   id: string,
-  monitor?: MonitorInput | null,
+  logConfigId: string,
+  logConfigVersionNumber: number,
+  logProcessorConcurrency: string,
 };
 
 export type UpdateAppPipelineMutation = {
@@ -1595,6 +1655,15 @@ export type DeleteAppLogIngestionMutationVariables = {
 export type DeleteAppLogIngestionMutation = {
   // Remove a app logging ingestion
   deleteAppLogIngestion?: string | null,
+};
+
+export type RefreshAppLogIngestionMutationVariables = {
+  appPipelineId: string,
+};
+
+export type RefreshAppLogIngestionMutation = {
+  // regenerate the FLB conf by appPipeline ID
+  refreshAppLogIngestion?: string | null,
 };
 
 export type RequestInstallLogAgentMutationVariables = {
@@ -1894,6 +1963,8 @@ export type GetDomainDetailsQuery = {
       keyName?: string | null,
       customEndpoint?: string | null,
       cognitoEndpoint?: string | null,
+      proxyInstanceType?: string | null,
+      proxyInstanceNumber?: string | null,
     } | null,
     alarmStatus?: StackStatus | null,
     alarmError?: string | null,
@@ -1971,6 +2042,7 @@ export type ListServicePipelinesQuery = {
       processorLogGroupName?: string | null,
       helperLogGroupName?: string | null,
       logEventQueueName?: string | null,
+      logEventQueueType?: LogEventQueueType | null,
       deliveryStreamName?: string | null,
       bufferResourceName?: string | null,
       stackId?: string | null,
@@ -1994,6 +2066,7 @@ export type ListServicePipelinesQuery = {
         notificationService?: NotificationService | null,
         enrichmentPlugins?: string | null,
       } | null,
+      logProcessorConcurrency?: string | null,
     } | null > | null,
     total?: number | null,
   } | null,
@@ -2044,6 +2117,7 @@ export type GetServicePipelineQuery = {
     processorLogGroupName?: string | null,
     helperLogGroupName?: string | null,
     logEventQueueName?: string | null,
+    logEventQueueType?: LogEventQueueType | null,
     deliveryStreamName?: string | null,
     bufferResourceName?: string | null,
     stackId?: string | null,
@@ -2067,6 +2141,7 @@ export type GetServicePipelineQuery = {
       notificationService?: NotificationService | null,
       enrichmentPlugins?: string | null,
     } | null,
+    logProcessorConcurrency?: string | null,
   } | null,
 };
 
@@ -2167,9 +2242,53 @@ export type ListLogConfigsQuery = {
       timeKeyRegex?: string | null,
       userLogFormat?: string | null,
       userSampleLog?: string | null,
+      description?: string | null,
     } | null > | null,
     total?: number | null,
   } | null,
+};
+
+export type ListLogConfigVersionsQueryVariables = {
+  id: string,
+};
+
+export type ListLogConfigVersionsQuery = {
+  // get all version of LogConfig
+  listLogConfigVersions?:  Array< {
+    __typename: "LogConfig",
+    id?: string | null,
+    version?: number | null,
+    createdAt?: string | null,
+    name?: string | null,
+    logType?: LogType | null,
+    syslogParser?: SyslogParser | null,
+    multilineLogParser?: MultiLineLogParser | null,
+    iisLogParser?: IISlogParser | null,
+    filterConfigMap?:  {
+      __typename: "ProcessorFilterRegex",
+      enabled?: boolean | null,
+      filters?:  Array< {
+        __typename: "LogConfFilter",
+        key: string,
+        condition: LogConfFilterCondition,
+        value: string,
+      } | null > | null,
+    } | null,
+    regex?: string | null,
+    jsonSchema?: string | null,
+    regexFieldSpecs?:  Array< {
+      __typename: "RegularSpec",
+      key: string,
+      type: string,
+      format?: string | null,
+    } | null > | null,
+    timeKey?: string | null,
+    timeOffset?: string | null,
+    timeKeyRegex?: string | null,
+    userLogFormat?: string | null,
+    userSampleLog?: string | null,
+    description?: string | null,
+  } | null > | null,
 };
 
 export type GetLogConfigQueryVariables = {
@@ -2212,6 +2331,7 @@ export type GetLogConfigQuery = {
     timeKeyRegex?: string | null,
     userLogFormat?: string | null,
     userSampleLog?: string | null,
+    description?: string | null,
   } | null,
 };
 
@@ -2308,6 +2428,7 @@ export type ListAppPipelinesQuery = {
         timeKeyRegex?: string | null,
         userLogFormat?: string | null,
         userSampleLog?: string | null,
+        description?: string | null,
       } | null,
       bufferAccessRoleArn?: string | null,
       bufferAccessRoleName?: string | null,
@@ -2316,6 +2437,8 @@ export type ListAppPipelinesQuery = {
       processorLogGroupName?: string | null,
       helperLogGroupName?: string | null,
       logEventQueueName?: string | null,
+      logEventQueueType?: LogEventQueueType | null,
+      logProcessorConcurrency?: string | null,
       monitor?:  {
         __typename: "MonitorDetail",
         status?: PipelineMonitorStatus | null,
@@ -2345,6 +2468,41 @@ export type ListAppPipelinesQuery = {
       } | null > | null,
     } | null > | null,
     total?: number | null,
+  } | null,
+};
+
+export type BatchExportAppPipelinesQueryVariables = {
+  appPipelineIds: Array< string >,
+};
+
+export type BatchExportAppPipelinesQuery = {
+  // batch export app pipeline info
+  batchExportAppPipelines?: string | null,
+};
+
+export type BatchImportAppPipelinesAnalyzerQueryVariables = {
+  contentString: string,
+};
+
+export type BatchImportAppPipelinesAnalyzerQuery = {
+  // validate batch import app pipeline yaml
+  batchImportAppPipelinesAnalyzer?:  {
+    __typename: "BatchImportAppPipelinesAnalyzerResponse",
+    findings?:  Array< {
+      __typename: "BatchImportAppPipelinesAnalyzerFinding",
+      findingDetails?: string | null,
+      findingType?: BatchImportAppPipelinesAnalyzerFindingType | null,
+      issueCode?: BatchImportAppPipelinesAnalyzerFindingIssueCode | null,
+      location?:  {
+        __typename: "BatchImportAppPipelinesAnalyzerFindingLocation",
+        path?: string | null,
+      } | null,
+    } | null > | null,
+    resolvers?:  Array< {
+      __typename: "Resolver",
+      operationName?: string | null,
+      variables?: string | null,
+    } | null > | null,
   } | null,
 };
 
@@ -2438,6 +2596,7 @@ export type GetAppPipelineQuery = {
       timeKeyRegex?: string | null,
       userLogFormat?: string | null,
       userSampleLog?: string | null,
+      description?: string | null,
     } | null,
     bufferAccessRoleArn?: string | null,
     bufferAccessRoleName?: string | null,
@@ -2446,6 +2605,8 @@ export type GetAppPipelineQuery = {
     processorLogGroupName?: string | null,
     helperLogGroupName?: string | null,
     logEventQueueName?: string | null,
+    logEventQueueType?: LogEventQueueType | null,
+    logProcessorConcurrency?: string | null,
     monitor?:  {
       __typename: "MonitorDetail",
       status?: PipelineMonitorStatus | null,
@@ -2507,28 +2668,6 @@ export type ListAppLogIngestionsQuery = {
       } | null > | null,
       accountId?: string | null,
       region?: string | null,
-    } | null > | null,
-    total?: number | null,
-  } | null,
-};
-
-export type ListInstanceIngestionDetailsQueryVariables = {
-  page?: number | null,
-  count?: number | null,
-  ingestionId?: string | null,
-  instanceId?: string | null,
-};
-
-export type ListInstanceIngestionDetailsQuery = {
-  // List instance ingestion ssm detail
-  listInstanceIngestionDetails?:  {
-    __typename: "ListInstanceIngestionDetailsResponse",
-    instanceIngestionDetail?:  Array< {
-      __typename: "InstanceIngestionDetail",
-      instanceId?: string | null,
-      ssmCommandId?: string | null,
-      ssmCommandStatus?: string | null,
-      details?: string | null,
     } | null > | null,
     total?: number | null,
   } | null,
@@ -2606,17 +2745,6 @@ export type ListInstancesQuery = {
   } | null,
 };
 
-export type GetLogAgentStatusQueryVariables = {
-  instanceId: string,
-  region?: string | null,
-  accountId?: string | null,
-};
-
-export type GetLogAgentStatusQuery = {
-  // Get logging Agent Status by instanceId
-  getLogAgentStatus?: LogAgentStatus | null,
-};
-
 export type GetInstanceAgentStatusQueryVariables = {
   instanceIds: Array< string | null >,
   region?: string | null,
@@ -2659,6 +2787,7 @@ export type GetLogSourceQuery = {
   getLogSource?:  {
     __typename: "LogSource",
     sourceId: string,
+    name?: string | null,
     type?: LogSourceType | null,
     accountId?: string | null,
     region?: string | null,
@@ -2732,6 +2861,7 @@ export type ListLogSourcesQuery = {
     logSources?:  Array< {
       __typename: "LogSource",
       sourceId: string,
+      name?: string | null,
       type?: LogSourceType | null,
       accountId?: string | null,
       region?: string | null,

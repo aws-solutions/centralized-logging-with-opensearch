@@ -45,13 +45,20 @@ interface LogProcessorProps {
   } | null;
   osiPipelineName?: string | null;
   processorLambda?: string | null;
+  logProcessorConcurrency?: string | null;
 }
 
 const LogProcessor: React.FC<LogProcessorProps> = (
   props: LogProcessorProps
 ) => {
   const { t } = useTranslation();
-  const { osiParams, osiPipelineName, processorLambda, amplifyConfig } = props;
+  const {
+    osiParams,
+    osiPipelineName,
+    processorLambda,
+    amplifyConfig,
+    logProcessorConcurrency,
+  } = props;
 
   const buildSourceLink = (isOsi: boolean) => {
     if (!osiPipelineName && !processorLambda) {
@@ -97,9 +104,14 @@ const LogProcessor: React.FC<LogProcessorProps> = (
     if (isOsi) {
       dataList.push({
         label: t("servicelog:detail.processor.pipelineCapacity"),
-        data: `${osiParams?.minCapacity} - ${osiParams?.maxCapacity} ${t(
+        data: `${osiParams?.minCapacity} - ${osiParams?.maxCapacity} (${t(
           "servicelog:detail.processor.ingestionOCU"
-        )}`,
+        )})`,
+      });
+    } else {
+      dataList.push({
+        label: t("servicelog:detail.processor.concurrency"),
+        data: defaultStr(logProcessorConcurrency, "-"),
       });
     }
 
@@ -109,7 +121,7 @@ const LogProcessor: React.FC<LogProcessorProps> = (
   const isOsi = !!osiParams?.minCapacity;
   return (
     <HeaderWithValueLabel
-      numberOfColumns={isOsi ? 3 : 2}
+      numberOfColumns={3}
       headerTitle={t("servicelog:tab.logProcessor")}
       dataList={createDataList(isOsi)}
     />

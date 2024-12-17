@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import React from "react";
-import { MetricName, PipelineType } from "API";
+import { LogEventQueueType, MetricName, PipelineType } from "API";
 import { ServiceMetricProps } from "../../Monitoring";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
 
@@ -23,7 +23,7 @@ const LambdaBufferMetrics: React.FC<ServiceMetricProps> = (
   props: ServiceMetricProps
 ) => {
   const { pipelineInfo, startDate, endDate, refreshCount } = props;
-  const LabmdaBufferMetricsChartList = [
+  let LabmdaBufferMetricsChartList = [
     {
       title: MetricName.KDFIncomingBytes,
       graphTitle: MetricName.KDFIncomingBytes,
@@ -38,8 +38,33 @@ const LambdaBufferMetrics: React.FC<ServiceMetricProps> = (
       title: MetricName.KDFDeliveryToS3Bytes,
       graphTitle: MetricName.KDFDeliveryToS3Bytes,
       yUnit: "Bytes",
-    },
-    {
+    }
+  ];
+  if (pipelineInfo?.logEventQueueType === LogEventQueueType.EventBridge) {
+    LabmdaBufferMetricsChartList = LabmdaBufferMetricsChartList.concat([
+      {
+        title: MetricName.EvtMatchedEvents,
+        graphTitle: MetricName.EvtMatchedEvents,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtInvocations,
+        graphTitle: MetricName.EvtInvocations,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtTriggeredRules,
+        graphTitle: MetricName.EvtTriggeredRules,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtFailedInvocations,
+        graphTitle: MetricName.EvtFailedInvocations,
+        yUnit: "Count",
+      },
+    ]);
+  } else {
+    LabmdaBufferMetricsChartList = LabmdaBufferMetricsChartList.concat([{
       title: MetricName.SQSNumberOfMessagesSent,
       graphTitle: MetricName.SQSNumberOfMessagesSent,
       yUnit: "Count",
@@ -58,8 +83,8 @@ const LambdaBufferMetrics: React.FC<ServiceMetricProps> = (
       title: MetricName.SQSApproximateAgeOfOldestMessage,
       graphTitle: MetricName.SQSApproximateAgeOfOldestMessage,
       yUnit: "Seconds",
-    },
-  ];
+    }]);
+  }
   return (
     <MonitorMetrics
       type={PipelineType.SERVICE}

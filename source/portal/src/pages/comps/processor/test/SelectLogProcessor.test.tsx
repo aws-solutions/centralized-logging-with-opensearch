@@ -20,6 +20,8 @@ import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
 import { LogProcessorType } from "reducer/selectProcessor";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { act } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   Trans: ({ children }: any) => children,
@@ -41,60 +43,109 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 describe("SelectLogProcessor", () => {
-  it("renders without errors for lambda", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <SelectLogProcessor supportOSI={false} />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
+  it("renders without errors for lambda", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getAccountUnreservedConurrency: 800,
+      },
+    });
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        checkOSIAvailability: true,
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectLogProcessor supportOSI={true} />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            selectProcessor: {
+              serviceAvailable: true,
+              serviceAvailableChecked: true,
+              serviceAvailableCheckedLoading: false,
+              logProcessorType: LogProcessorType.LAMBDA,
+              logProcessorConcurrency: "200",
+              minOCU: "1",
+              maxOCU: "4",
+              logProcessorConcurrencyError: "",
+              minOCUError: "1",
+              maxOCUError: "10",
+              unreservedAccountConcurrency: "10",
+            },
           },
-          selectProcessor: {
-            serviceAvailable: true,
-            serviceAvailableChecked: true,
-            serviceAvailableCheckedLoading: false,
-            logProcessorType: LogProcessorType.LAMBDA,
-            logProcessorConcurrency: "200",
-            minOCU: "1",
-            maxOCU: "4",
-            logProcessorConcurrencyError: "",
-            minOCUError: "",
-            maxOCUError: "",
-            unreservedAccountConcurrency: "0",
-          },
-        },
-      }
-    );
+        }
+      );
+    });
   });
 
-  it("renders without errors for osi", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <SelectLogProcessor supportOSI={false} />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
+  it("renders without errors for osi", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectLogProcessor supportOSI={false} />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            selectProcessor: {
+              serviceAvailable: false,
+              serviceAvailableChecked: false,
+              serviceAvailableCheckedLoading: false,
+              logProcessorType: LogProcessorType.OSI,
+              logProcessorConcurrency: "200",
+              minOCU: "1",
+              maxOCU: "4",
+              logProcessorConcurrencyError: "",
+              minOCUError: "",
+              maxOCUError: "",
+              unreservedAccountConcurrency: "0",
+            },
           },
-          selectProcessor: {
-            serviceAvailable: true,
-            serviceAvailableChecked: true,
-            serviceAvailableCheckedLoading: false,
-            logProcessorType: LogProcessorType.OSI,
-            logProcessorConcurrency: "200",
-            minOCU: "1",
-            maxOCU: "4",
-            logProcessorConcurrencyError: "",
-            minOCUError: "",
-            maxOCUError: "",
-            unreservedAccountConcurrency: "0",
+        }
+      );
+    });
+  });
+
+  it("renders without errors for osi loading", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SelectLogProcessor supportOSI={true} enablePlugins={true} />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            selectProcessor: {
+              serviceAvailable: true,
+              serviceAvailableChecked: true,
+              serviceAvailableCheckedLoading: true,
+              logProcessorType: LogProcessorType.LAMBDA,
+              logProcessorConcurrency: "200",
+              minOCU: "1",
+              maxOCU: "4",
+              logProcessorConcurrencyError: "",
+              minOCUError: "",
+              maxOCUError: "",
+              unreservedAccountConcurrency: "0",
+            },
           },
-        },
-      }
-    );
+        }
+      );
+    });
   });
 });

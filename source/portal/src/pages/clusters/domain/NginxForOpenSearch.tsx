@@ -33,10 +33,7 @@ import { createProxyForOpenSearch } from "graphql/mutations";
 import TextInput from "components/TextInput";
 import ExtLink from "components/ExtLink";
 import ValueWithLabel from "components/ValueWithLabel";
-import CopyText from "components/CopyText";
 import {
-  buildACMLink,
-  buildKeyPairsLink,
   buildSGLink,
   buildSubnetLink,
   buildVPCLink,
@@ -310,16 +307,29 @@ const NginxForOpenSearch: React.FC = () => {
           <div className="flex value-label-span">
             <div className="flex-1">
               <ValueWithLabel label={t("cluster:proxy.clusterVPC")}>
-                <CopyText text={defaultStr(domainInfo?.vpc?.vpcId)}>
+                <ExtLink
+                  to={buildVPCLink(
+                    amplifyConfig.aws_project_region,
+                    defaultStr(domainInfo?.vpc?.vpcId)
+                  )}
+                >
+                  {defaultStr(domainInfo?.vpc?.vpcId)}
+                </ExtLink>
+              </ValueWithLabel>
+            </div>
+
+            <div className="flex-1 border-left-c">
+              <ValueWithLabel label={t("cluster:proxy.securityGroup")}>
+                <div>
                   <ExtLink
-                    to={buildVPCLink(
+                    to={buildSGLink(
                       amplifyConfig.aws_project_region,
-                      defaultStr(domainInfo?.vpc?.vpcId)
+                      defaultStr(domainInfo?.vpc?.securityGroupId)
                     )}
                   >
-                    {defaultStr(domainInfo?.vpc?.vpcId)}
+                    {defaultStr(domainInfo?.vpc?.securityGroupId)}
                   </ExtLink>
-                </CopyText>
+                </div>
               </ValueWithLabel>
             </div>
 
@@ -360,20 +370,6 @@ const NginxForOpenSearch: React.FC = () => {
                         ""
                       );
                     })}
-                </div>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("cluster:proxy.securityGroup")}>
-                <div>
-                  <ExtLink
-                    to={buildSGLink(
-                      amplifyConfig.aws_project_region,
-                      defaultStr(domainInfo?.vpc?.securityGroupId)
-                    )}
-                  >
-                    {defaultStr(domainInfo?.vpc?.securityGroupId)}
-                  </ExtLink>
                 </div>
               </ValueWithLabel>
             </div>
@@ -442,6 +438,7 @@ const NginxForOpenSearch: React.FC = () => {
             errorText={subnetEmptyError ? t("cluster:proxy.subnetError") : ""}
           >
             <MultiSelect
+              data-testid="public-subnet"
               className="m-w-75p"
               loading={loadingRes}
               optionList={publicSubnetOptionList}
@@ -512,17 +509,7 @@ const NginxForOpenSearch: React.FC = () => {
 
           <FormItem
             optionTitle={t("cluster:proxy.nginxKeyName")}
-            optionDesc={
-              <div>
-                {t("cluster:proxy.nginxKeyNameDesc1")}
-                <ExtLink
-                  to={buildKeyPairsLink(amplifyConfig.aws_project_region)}
-                >
-                  {t("cluster:proxy.keyPairs")}
-                </ExtLink>
-                {t("cluster:proxy.nginxKeyNameDesc2")}
-              </div>
-            }
+            optionDesc={t("cluster:proxy.nginxKeyNameDesc")}
             errorText={keyEmptyError ? t("cluster:proxy.keyError") : ""}
           >
             <Select
@@ -585,15 +572,7 @@ const NginxForOpenSearch: React.FC = () => {
 
             <FormItem
               optionTitle={t("cluster:proxy.lbSSL")}
-              optionDesc={
-                <div>
-                  {t("cluster:proxy.lbSSLDesc1")}
-                  <ExtLink to={buildACMLink(amplifyConfig.aws_project_region)}>
-                    {t("cluster:proxy.ACM")}
-                  </ExtLink>
-                  {t("cluster:proxy.lbSSLDesc2")}
-                </div>
-              }
+              optionDesc={t("cluster:proxy.lbSSLDesc")}
               errorText={sslError ? t("cluster:proxy.sslError") : ""}
             >
               <Select
@@ -627,6 +606,7 @@ const NginxForOpenSearch: React.FC = () => {
 
         <div className="button-action text-right">
           <Button
+            data-testid="cancel-button"
             disabled={loadingCreate}
             btnType="text"
             onClick={() => {
@@ -636,6 +616,7 @@ const NginxForOpenSearch: React.FC = () => {
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="create-button"
             loading={loadingCreate}
             btnType="primary"
             onClick={() => {

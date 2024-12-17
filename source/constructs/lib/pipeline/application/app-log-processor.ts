@@ -20,15 +20,15 @@ import {
   aws_s3 as s3,
   aws_lambda as lambda,
   aws_logs as logs,
-} from "aws-cdk-lib";
-import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
-import { Construct } from "constructs";
-import { constructFactory } from "../../util/stack-helper";
-import { CWLMetricStack, MetricSourceType } from "../common/cwl-metric-stack";
+} from 'aws-cdk-lib';
+import { ISecurityGroup, IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+import { constructFactory } from '../../util/stack-helper';
+import { CWLMetricStack, MetricSourceType } from '../common/cwl-metric-stack';
 import {
   OpenSearchInitStack,
   OpenSearchInitProps,
-} from "../common/opensearch-init-stack";
+} from '../common/opensearch-init-stack';
 export interface LogProcessorProps {
   /**
    * Default VPC for OpenSearch REST API Handler
@@ -51,10 +51,10 @@ export interface LogProcessorProps {
    */
   readonly endpoint: string;
   /**
- * OpenSearch Domain Name
- *
- * @default - None.
- */
+   * OpenSearch Domain Name
+   *
+   * @default - None.
+   */
   readonly domainName: string;
   /**
    * OpenSearch or Elasticsearch
@@ -65,10 +65,10 @@ export interface LogProcessorProps {
 
   readonly indexPrefix: string;
   /**
- * Wheather to create Sample Dashboard
- *
- * @default - Yes.
- */
+   * Wheather to create Sample Dashboard
+   *
+   * @default - Yes.
+   */
   readonly createDashboard?: string;
 
   /**
@@ -89,8 +89,8 @@ export interface LogProcessorProps {
   readonly backupBucketName: string;
   readonly stackPrefix: string;
 
-  readonly source: "MSK" | "KDS" | "SQS" | "EVENT_BRIDGE";
-  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL'
+  readonly source: 'MSK' | 'KDS' | 'SQS' | 'EVENT_BRIDGE';
+  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL';
   readonly env?: { [key: string]: string };
 
   readonly logType: string;
@@ -120,19 +120,16 @@ export class AppLogProcessor extends Construct {
     super(scope, id);
 
     // Create the Log Group for the Lambda function
-    const logGroup = new logs.LogGroup(this, "LogProcessorFnLogGroup", {
+    const logGroup = new logs.LogGroup(this, 'LogProcessorFnLogGroup', {
       logGroupName: `/aws/lambda/${Aws.STACK_NAME}-LogProcessorFn`,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    constructFactory(CWLMetricStack)(this, "cwlMetricStack", {
+    constructFactory(CWLMetricStack)(this, 'cwlMetricStack', {
       metricSourceType: MetricSourceType.LOG_PROCESSOR_APP,
       logGroup: logGroup,
       stackPrefix: props.stackPrefix,
     });
-
-
-
 
     const osProps: OpenSearchInitProps = {
       vpc: props.vpc,
@@ -143,9 +140,9 @@ export class AppLogProcessor extends Construct {
       domainName: props.domainName,
       createDashboard: props.createDashboard,
       backupBucketName: props.backupBucketName,
-      logSourceAccountId: "",
+      logSourceAccountId: '',
       logSourceRegion: Aws.REGION,
-      logSourceAccountAssumeRole: "",
+      logSourceAccountAssumeRole: '',
       source: props.source,
       subCategory: props.subCategory,
       shardNumbers: props.shardNumbers,
@@ -162,19 +159,19 @@ export class AppLogProcessor extends Construct {
       logType: props.logType,
       env: props.env,
       enableConfigJsonParam: props.enableConfigJsonParam,
-      logProcessorConcurrency: props.logProcessorConcurrency
+      logProcessorConcurrency: props.logProcessorConcurrency,
     };
 
     const osInitStack = new OpenSearchInitStack(
       this,
-      "OpenSearchInit",
+      'OpenSearchInit',
       osProps
     );
-    this.logProcessorFn = osInitStack.logProcessorFn
+    this.logProcessorFn = osInitStack.logProcessorFn;
 
     const backupBucket = s3.Bucket.fromBucketName(
       this,
-      "backupBucket",
+      'backupBucket',
       props.backupBucketName
     );
     backupBucket.grantWrite(this.logProcessorFn);

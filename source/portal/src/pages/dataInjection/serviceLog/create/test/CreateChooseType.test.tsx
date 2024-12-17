@@ -18,6 +18,7 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import CreateChooseType from "../CreateChooseType";
+import { screen, fireEvent } from "@testing-library/react";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -41,6 +42,7 @@ jest.mock("react-i18next", () => ({
 
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
+  jest.spyOn(console, "warn").mockImplementation(jest.fn());
 });
 
 describe("CreateChooseType", () => {
@@ -58,5 +60,20 @@ describe("CreateChooseType", () => {
       }
     );
     expect(getByText(/servicelog:create.awsServices/i)).toBeInTheDocument();
+
+    // click s3 and next
+    const s3Button = screen.getByTestId("engine-type-Amazon_S3");
+    expect(s3Button).toBeInTheDocument();
+    fireEvent.click(s3Button);
+
+    // click next button
+    const nextButton = screen.getByTestId("next-button");
+    expect(nextButton).toBeInTheDocument();
+    fireEvent.click(nextButton);
+
+    // click cancel button
+    const cancelButton = screen.getByTestId("cancel-button");
+    expect(cancelButton).toBeInTheDocument();
+    fireEvent.click(cancelButton);
   });
 });

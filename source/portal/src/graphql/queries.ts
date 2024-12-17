@@ -120,6 +120,8 @@ export const getDomainDetails = /* GraphQL */ `
         keyName
         customEndpoint
         cognitoEndpoint
+        proxyInstanceType
+        proxyInstanceNumber
         __typename
       }
       alarmStatus
@@ -192,6 +194,7 @@ export const listServicePipelines = /* GraphQL */ `
         processorLogGroupName
         helperLogGroupName
         logEventQueueName
+        logEventQueueType
         deliveryStreamName
         bufferResourceName
         stackId
@@ -215,6 +218,7 @@ export const listServicePipelines = /* GraphQL */ `
           enrichmentPlugins
           __typename
         }
+        logProcessorConcurrency
         __typename
       }
       total
@@ -262,6 +266,7 @@ export const getServicePipeline = /* GraphQL */ `
       processorLogGroupName
       helperLogGroupName
       logEventQueueName
+      logEventQueueType
       deliveryStreamName
       bufferResourceName
       stackId
@@ -285,6 +290,7 @@ export const getServicePipeline = /* GraphQL */ `
         enrichmentPlugins
         __typename
       }
+      logProcessorConcurrency
       __typename
     }
   }
@@ -388,9 +394,49 @@ export const listLogConfigs = /* GraphQL */ `
         timeKeyRegex
         userLogFormat
         userSampleLog
+        description
         __typename
       }
       total
+      __typename
+    }
+  }
+`;
+export const listLogConfigVersions = /* GraphQL */ `
+  query ListLogConfigVersions($id: ID!) {
+    listLogConfigVersions(id: $id) {
+      id
+      version
+      createdAt
+      name
+      logType
+      syslogParser
+      multilineLogParser
+      iisLogParser
+      filterConfigMap {
+        enabled
+        filters {
+          key
+          condition
+          value
+          __typename
+        }
+        __typename
+      }
+      regex
+      jsonSchema
+      regexFieldSpecs {
+        key
+        type
+        format
+        __typename
+      }
+      timeKey
+      timeOffset
+      timeKeyRegex
+      userLogFormat
+      userSampleLog
+      description
       __typename
     }
   }
@@ -429,6 +475,7 @@ export const getLogConfig = /* GraphQL */ `
       timeKeyRegex
       userLogFormat
       userSampleLog
+      description
       __typename
     }
   }
@@ -518,6 +565,7 @@ export const listAppPipelines = /* GraphQL */ `
           timeKeyRegex
           userLogFormat
           userSampleLog
+          description
           __typename
         }
         bufferAccessRoleArn
@@ -527,6 +575,8 @@ export const listAppPipelines = /* GraphQL */ `
         processorLogGroupName
         helperLogGroupName
         logEventQueueName
+        logEventQueueType
+        logProcessorConcurrency
         monitor {
           status
           backupBucketName
@@ -557,6 +607,33 @@ export const listAppPipelines = /* GraphQL */ `
         __typename
       }
       total
+      __typename
+    }
+  }
+`;
+export const batchExportAppPipelines = /* GraphQL */ `
+  query BatchExportAppPipelines($appPipelineIds: [ID!]!) {
+    batchExportAppPipelines(appPipelineIds: $appPipelineIds)
+  }
+`;
+export const batchImportAppPipelinesAnalyzer = /* GraphQL */ `
+  query BatchImportAppPipelinesAnalyzer($contentString: String!) {
+    batchImportAppPipelinesAnalyzer(contentString: $contentString) {
+      findings {
+        findingDetails
+        findingType
+        issueCode
+        location {
+          path
+          __typename
+        }
+        __typename
+      }
+      resolvers {
+        operationName
+        variables
+        __typename
+      }
       __typename
     }
   }
@@ -645,6 +722,7 @@ export const getAppPipeline = /* GraphQL */ `
         timeKeyRegex
         userLogFormat
         userSampleLog
+        description
         __typename
       }
       bufferAccessRoleArn
@@ -654,6 +732,8 @@ export const getAppPipeline = /* GraphQL */ `
       processorLogGroupName
       helperLogGroupName
       logEventQueueName
+      logEventQueueType
+      logProcessorConcurrency
       monitor {
         status
         backupBucketName
@@ -719,31 +799,6 @@ export const listAppLogIngestions = /* GraphQL */ `
         }
         accountId
         region
-        __typename
-      }
-      total
-      __typename
-    }
-  }
-`;
-export const listInstanceIngestionDetails = /* GraphQL */ `
-  query ListInstanceIngestionDetails(
-    $page: Int
-    $count: Int
-    $ingestionId: String
-    $instanceId: String
-  ) {
-    listInstanceIngestionDetails(
-      page: $page
-      count: $count
-      ingestionId: $ingestionId
-      instanceId: $instanceId
-    ) {
-      instanceIngestionDetail {
-        instanceId
-        ssmCommandId
-        ssmCommandStatus
-        details
         __typename
       }
       total
@@ -817,19 +872,6 @@ export const listInstances = /* GraphQL */ `
     }
   }
 `;
-export const getLogAgentStatus = /* GraphQL */ `
-  query GetLogAgentStatus(
-    $instanceId: String!
-    $region: String
-    $accountId: String
-  ) {
-    getLogAgentStatus(
-      instanceId: $instanceId
-      region: $region
-      accountId: $accountId
-    )
-  }
-`;
 export const getInstanceAgentStatus = /* GraphQL */ `
   query GetInstanceAgentStatus(
     $instanceIds: [String]!
@@ -864,6 +906,7 @@ export const getLogSource = /* GraphQL */ `
   query GetLogSource($type: LogSourceType!, $sourceId: ID!) {
     getLogSource(type: $type, sourceId: $sourceId) {
       sourceId
+      name
       type
       accountId
       region
@@ -928,6 +971,7 @@ export const listLogSources = /* GraphQL */ `
     listLogSources(type: $type, page: $page, count: $count) {
       logSources {
         sourceId
+        name
         type
         accountId
         region

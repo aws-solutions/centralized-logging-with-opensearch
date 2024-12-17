@@ -45,7 +45,6 @@ const EksLogList: React.FC = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [curEksLog, setCurEksLog] = useState<LogSource>();
   const [selectedEksLog, setSelectedEksLog] = useState<LogSource[]>([]);
-  const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [eksLogList, setEksLogList] = useState<LogSource[]>([]);
   const [totoalCount, setTotoalCount] = useState(0);
@@ -102,11 +101,6 @@ const EksLogList: React.FC = () => {
     }
   };
 
-  // Click View Detail Button Redirect to detail page
-  const clickToReviewDetail = () => {
-    navigate(`/containers/eks-log/detail/${selectedEksLog[0]?.sourceId}`);
-  };
-
   // Get EKS Log list when page rendered.
   useEffect(() => {
     getEksLogList();
@@ -114,11 +108,6 @@ const EksLogList: React.FC = () => {
 
   // Disable delete button and view detail button when no row selected.
   useEffect(() => {
-    if (selectedEksLog.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
     if (selectedEksLog.length > 0) {
       setDisabledDelete(false);
     } else {
@@ -139,7 +128,7 @@ const EksLogList: React.FC = () => {
       <div className="table-data">
         <TablePanel
           trackId="sourceId"
-          title={t("ekslog:clusters")}
+          title={t("ekslog:name")}
           changeSelected={(item) => {
             console.info("item:", item);
             setSelectedEksLog(item);
@@ -179,6 +168,7 @@ const EksLogList: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
                 onClick={() => {
@@ -192,14 +182,7 @@ const EksLogList: React.FC = () => {
                 <ButtonRefresh loading={loadingData} />
               </Button>
               <Button
-                disabled={disabledDetail}
-                onClick={() => {
-                  clickToReviewDetail();
-                }}
-              >
-                {t("button.viewDetail")}
-              </Button>
-              <Button
+                data-testid="remove-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeEksLog();
@@ -208,6 +191,7 @@ const EksLogList: React.FC = () => {
                 {t("button.remove")}
               </Button>
               <Button
+                data-testid="import-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/containers/eks-log/create");
@@ -237,6 +221,7 @@ const EksLogList: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -246,6 +231,7 @@ const EksLogList: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

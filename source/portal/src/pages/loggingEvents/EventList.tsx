@@ -217,8 +217,8 @@ const EventList: React.FC = () => {
               </div>
               <div>
                 <Button
+                  data-testid="refresh-button"
                   onClick={() => {
-                    console.info("refresh");
                     getLogEventsByLogGroup();
                   }}
                 >
@@ -287,6 +287,7 @@ const EventList: React.FC = () => {
                           <div>
                             {t("common:logging.hasOlder")}
                             <span
+                              data-testid="load-more-history"
                               className="load-more"
                               onClick={() => {
                                 loadHistoryEvents();
@@ -354,6 +355,7 @@ const EventList: React.FC = () => {
                         <div>
                           {t("common:logging.hasNewer")}
                           <span
+                            data-testid="load-more-forward"
                             className="load-more"
                             onClick={() => {
                               loadForwardEvents();

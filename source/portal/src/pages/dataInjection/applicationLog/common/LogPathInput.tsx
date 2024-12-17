@@ -63,7 +63,7 @@ const LogPathInput: React.FC<LogPathInputProps> = (
   };
 
   return (
-    <div className="mt-20">
+    <div>
       <FormItem
         infoType={getInfoType()}
         optionTitle={t("applog:list.logPath")}

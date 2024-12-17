@@ -131,7 +131,13 @@ describe("createAlarmReducer", () => {
       type: CreateAlarmActionTypes.CLEAR_ALARM,
     };
     const expectedState = initState;
-    expect(createAlarmReducer(initState, action)).toEqual(expectedState);
+    expect(createAlarmReducer(initState, action)).toEqual({
+      ...expectedState,
+      monitor: {
+        ...expectedState.monitor,
+        pipelineAlarmStatus: PipelineAlarmStatus.DISABLED,
+      },
+    });
   });
 
   it("should handle VALIDATE_ALARM_INPUT", () => {

@@ -21,11 +21,10 @@ import { appSyncRequestQuery } from "assets/js/request";
 import { domainStatusCheck, listDomainNames } from "graphql/queries";
 import Select, { SelectItem } from "components/Select/select";
 import { ImportedDomainType } from "../ImportCluster";
-import { DOCS_LINK_CREATE_ES } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
-import { buildSubnetLink } from "assets/js/utils";
+import { buildSubnetLink, defaultStr } from "assets/js/utils";
 import ExpandableSection from "components/ExpandableSection";
 import StatusIndicator from "components/StatusIndicator";
 import {
@@ -96,10 +95,10 @@ const SelectDomain: React.FC<SelectDomainProps> = (
       const tmpDomainOptionList: SelectItem[] = [];
       dataDomainList.forEach((element) => {
         tmpDomainOptionList.push({
-          name: element.domainName ?? "",
-          value: element.domainName ?? "",
-          optTitle: element.status ?? "",
-          disabled: (element.status ?? "") !== "ACTIVE",
+          name: defaultStr(element.domainName),
+          value: defaultStr(element.domainName),
+          optTitle: defaultStr(element.status),
+          disabled: defaultStr(element.status) !== "ACTIVE",
         });
       });
       setDomainOptionList(tmpDomainOptionList);
@@ -229,15 +228,7 @@ const SelectDomain: React.FC<SelectDomainProps> = (
         <div>
           <FormItem
             optionTitle={t("cluster:import.selectDomain.domain")}
-            optionDesc={
-              <div>
-                {t("cluster:import.selectDomain.domainDesc1")}
-                <ExtLink to={DOCS_LINK_CREATE_ES}>
-                  {t("cluster:import.selectDomain.domainDesc2")}
-                </ExtLink>
-                {t("cluster:import.selectDomain.domainDesc3")}
-              </div>
-            }
+            optionDesc={t("cluster:import.selectDomain.domainDesc")}
             errorText={
               emptyError ? t("cluster:import.selectDomain.domainError") : ""
             }
@@ -269,7 +260,6 @@ const SelectDomain: React.FC<SelectDomainProps> = (
               <FormItem optionTitle="" optionDesc="">
                 <Alert
                   type={alertType}
-                  title={t("cluster:import.selectDomain.checkDomain")}
                   content={t(
                     `cluster:import.selectDomain.checkDomain${alertType}Desc`
                   )}
@@ -280,16 +270,12 @@ const SelectDomain: React.FC<SelectDomainProps> = (
                 <div>
                   <div className="mb-10">
                     <StatusIndicator type={engineVersionStatus}>
-                      {`${t(
-                        "cluster:import.selectDomain.engineVersion"
-                      )} ${engineVersionDetail}`}
-                    </StatusIndicator>
-                  </div>
-                  <div className="mb-10">
-                    <StatusIndicator type={engineTypeStatus}>
-                      {`${t(
-                        "cluster:import.selectDomain.engineType"
-                      )} ${engineTypeDetail}`}
+                      <div>
+                        {`${t("cluster:import.selectDomain.engineVersion")}`}
+                        {engineVersionDetail
+                          ? `${engineTypeDetail}_${engineVersionDetail}`
+                          : ""}
+                      </div>
                     </StatusIndicator>
                   </div>
                   <div className="mb-10">

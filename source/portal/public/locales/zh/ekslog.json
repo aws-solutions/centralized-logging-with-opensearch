@@ -1,107 +1,106 @@
 {
   "name": "EKS 集群",
-  "clusters": "集群",
   "list": {
-    "clusterName": "集群名称",
+    "clusterName": "名称",
     "account": "账户",
-    "pattern": "采集方式",
+    "pattern": "部署选项",
     "os": "OpenSearch",
     "created": "创建时间"
   },
-  "delete": "移除导入的 EKS 集群",
-  "deleteTips": "您确定要移除导入的 EKS 集群 ",
+  "delete": "移除已导入的 EKS 集群",
+  "deleteTips": "你确定要移除已导入的 EKS 集群吗？",
   "create": {
     "name": "创建",
-    "step": {
-      "specifyEksSource": "指定 EKS 日志源",
-      "specifyOS": "指定 OpenSearch 域",
-      "createTags": "创建告警和标签"
-    },
     "eksSource": {
-      "eks": "Amazon EKS",
+      "importCluster": "导入 EKS 集群",
+      "importClusterDesc": "从 EKS 集群收集应用日志。",
+      "eksSettings": "EKS 集群设置",
+      "prerequisites": "前提条件",
+      "prerequisitesDesc": "在导入 EKS 集群之前，请先查看以下前提条件。",
+      "prerequisitesTip1": "此解决方案使用 Fluent Bit 代理从 EKS 集群摄取日志。",
+      "prerequisitesTip2": "你可以选择使用 DaemonSet 或 Sidecar 模式部署 Fluent Bit 日志代理，但不能同时使用这两种模式。",
+      "prerequisitesTip3": "此解决方案将生成用于配置 Fluent Bit 代理的 YAML 文件，你需要使用 kubectl 等工具运行该 YAML 文件。",
       "eksCluster": "EKS 集群",
-      "eksClusterDesc": "选择现有的 EKS 集群",
+      "eksClusterDesc": "从所选 AWS 账户中选择一个现有的 EKS 集群。",
       "eksClusterError": "请选择一个 EKS 集群",
       "chooseEksCluster": "选择 EKS 集群",
       "curAccount": "当前 AWS 账户",
       "agent": "代理",
-      "eksAgentPattern": "采集方式",
-      "eksAgentPatternDesc": "请选择将用于部署日志代理的采集方式。",
+      "eksAgentPattern": "部署选项",
+      "eksAgentPatternDesc": "选择日志代理的部署选项。",
       "networkConfig": "网络配置",
-      "networkConfigDesc": "如果您计划直接将 EKS 日志提取到 OpenSearch（即不使用 Amazon S3 或 Kinesis Data Streams 作为缓冲层），请确保您的 EKS 集群的 VPC 和 OpenSearch 的 VPC 已连接。 如果它们没有连接，您可以按照以下步骤创建 VPC 对等连接。 （请注意，VPC 对等连接会产生额外费用）。",
-      "vpc1": "1. 创建并接受 VPC 对等连接参考 ",
-      "vpc2": "2. 更新路由表参考",
-      "vpc3": "3. 更新安全组参考",
+      "networkConfigDesc": "如果你计划将 EKS 日志直接引入 OpenSearch（即，不使用 Amazon S3 或 Kinesis Data Streams 作为缓冲层），请确保你的 EKS 集群的 VPC 和 OpenSearch 的 VPC 已连接。如果它们未连接，你可以按照以下步骤创建 VPC 对等连接（注意，VPC 对等连接会产生额外费用）。",
+      "vpc1": "1. 创建并接受 VPC 对等连接，按照 ",
+      "vpc2": "2. 更新路由表，按照 ",
+      "vpc3": "3. 更新安全组，按照 ",
       "guide": "操作指南",
       "acknowledge": "请在继续之前确认复选框。",
-      "confirmed": "我确认已完成日志从 EKS 直接提取到 OpenSearch VPC 的连接要求。"
+      "confirmed": "我确认 VPC 连接要求，以便将日志从 EKS 直接引入 OpenSearch。"
     }
   },
   "detail": {
     "config": "基础配置",
-    "clusterName": "EKS 集群",
-    "deploymentPattern": "采集方式",
+    "name": "名称",
+    "deploymentPattern": "部署选项",
     "aos": "OpenSearch",
     "iamRole": "IAM 角色 ARN",
     "created": "创建时间",
     "tab": {
-      "ingestions": "日志源",
-      "daemonsetGuide": "DaemonSet 指南",
-      "tags": "标签"
+      "applications": "应用",
+      "daemonsetGuide": "DaemonSet 指南"
     },
     "ingestions": {
-      "osIndex": "OpenSearch 索引",
-      "pipeline": "应用日志管道",
+      "osIndex": "索引/表名",
+      "pipeline": "日志管道",
       "logConfig": "日志配置",
       "sources": "日志源",
       "created": "创建时间",
       "status": "状态",
-      "delete": "删除摄取",
-      "deleteTips": "您确定要删除日志摄取吗？ 注意：应用日志管道不会被删除。 "
+      "delete": "删除日志源",
+      "deleteTips": "你确定要删除日志源吗？注意：应用日志管道将不会被删除。"
     },
     "daemonsetGuide": {
       "alert": "",
-      "alertDesc": "请确保您所创建的所有的摄取都处于已创建状态，然后再继续执行以下步骤。此过程中的所有步骤都是将 Fluent Bit 代理部署为 DaemonSet。 默认情况下，使用命名空间 'logging'. 请注意, 如果 Yaml 文件发生了变更，那么您需要重启相关的 FluentBit Pod。",
-      "step1": "您需要将以下所有内容复制并粘贴到文件 ~/fluent-bit-logging.yaml 中",
+      "alertDesc": "在进行以下步骤之前，请确保你创建的所有日志源均处于“已创建”状态。所有步骤均用于将 Fluent Bit 代理作为 DaemonSet 部署。默认情况下，使用命名空间“logging”。请注意, 如果 Yaml 文件发生了变更，那么您需要重启相关的 FluentBit Pod。",
+      "step1": "你需要将以下内容复制并粘贴到文件 ~/fluent-bit-logging.yaml 中。",
       "step2": "使用 kubectl 命令将 fluent-bit 部署为 DaemonSet。",
-      "createIngestion": "请先创建一个摄取"
+      "createIngestion": "请先创建一个日志源"
     }
   },
   "select": "选择 EKS 集群",
   "ingest": {
     "ingest": "摄取",
     "step": {
-      "specifyPipeline": "指定管道设置",
-      "specifyConfig": "指定日志配置",
-      "createTags": "创建标签"
+      "specifyPipeline": "管道设置",
+      "specifyConfig": "日志配置"
     },
     "specifyPipeline": {
-      "alert": "您正在创建或选择表单的管道与此 OpenSearch 集群相连：",
+      "alert": "你正在创建或选择的管道已连接到 Amazon OpenSearch 域：",
       "creationMethod": "创建方式",
       "createNew": "创建新的",
-      "createNewDesc": "创建新的应用程序日志管道",
-      "chooseExists": "选择已存在",
-      "chooseExistsDesc": "选择现有的应用程序日志管道",
+      "createNewDesc": "创建一个新的应用日志管道",
+      "chooseExists": "选择现有的",
+      "chooseExistsDesc": "选择一个现有的应用日志管道",
       "index": "索引",
-      "indexPrefix": "索引前缀",
-      "indexPrefixDesc": "输入保存在 OpenSearch 中的日志的索引",
+      "indexPrefix": "索引名称",
+      "indexPrefixDesc": "输入保存在 OpenSearch 中的日志索引",
       "choosePipeline": "选择管道",
       "pipeline": "管道",
       "filterPipeline": "过滤现有管道",
       "selectPipeline": "选择管道",
       "pipelineConfig": "管道配置",
-      "osIndexPrefix": "OpenSearch 索引前缀",
+      "osIndexPrefix": "OpenSearch 索引名称",
       "aos": "OpenSearch",
       "kds": "Kinesis Data Streams",
       "created": "创建时间",
-      "pipelineRequiredError": "请选择一个管道."
+      "pipelineRequiredError": "请选择一个管道。"
     },
     "specifyLogConfig": {
       "config": "日志配置"
     },
     "detail": {
-      "ingestionDetail": "摄取详情",
-      "osIndexPrefix": "OpenSearch 索引前缀",
+      "ingestionDetail": "日志源详情",
+      "osIndexPrefix": "OpenSearch 索引名称",
       "bufferLayer": "缓冲层",
       "kds": "Kinesis Data Streams",
       "pipeline": "管道",
@@ -112,17 +111,21 @@
       "tag": "标签",
       "sidecarTab": {
         "guide": "Sidecar 指南",
-        "alert": "您需要将 Fluent Bit 代理部署作为您的 pod 中的 sidecar，并且请确保您创建的所有摄取都处于已创建状态，然后再继续。"
+        "guideDesc": "使用 Sidecar 部署选项部署日志代理。",
+        "howTo": "如何部署",
+        "alert": "请将 YAML 配置集成到包含目标应用程序的 Pod 中，以便进行日志摄取。"
       },
       "daemonsetTab": {
         "guide": "DaemonSet 指南",
-        "alert": "对于 DaemonSet 采集方式。 所有摄取共享相同的部署指南。 请在"
+        "alert": "对于 DaemonSet 模式，所有日志源共享相同的部署指南。请在此处查找："
       },
       "configTab": {
         "config": "日志配置",
         "name": "名称",
         "type": "类型",
-        "created": "创建时间"
+        "revision": "版本",
+        "created": "创建时间",
+        "update": "更新"
       }
     }
   }

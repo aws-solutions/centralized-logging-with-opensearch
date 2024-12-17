@@ -18,6 +18,8 @@ import React from "react";
 import AccountName from "../AccountName";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
+import { appSyncRequestQuery } from "assets/js/request";
+import { act } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,6 +36,11 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
@@ -45,5 +52,18 @@ describe("AccountName", () => {
         <AccountName />
       </MemoryRouter>
     );
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: { getSubAccountLink: { subAccountId: "111111111111" } },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <AccountName region="us-example-1" accountId="111111111111" />
+        </MemoryRouter>
+      );
+    });
   });
 });

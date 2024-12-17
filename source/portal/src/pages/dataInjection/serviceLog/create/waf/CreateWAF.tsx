@@ -25,11 +25,12 @@ import {
   createServicePipeline,
 } from "graphql/mutations";
 import { DestinationType, ServiceType, MonitorInput } from "API";
-import { AmplifyConfigType, AnalyticEngineTypes } from "types";
+import { AmplifyConfigType, AnalyticEngineTypes, WAFIngestOption } from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { useDispatch, useSelector } from "react-redux";
@@ -42,7 +43,6 @@ import {
   defaultStr,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
-import { IngestOption } from "./steps/IngestOptionSelect";
 import ConfigLightEngine, {
   covertSvcTaskToLightEngine,
 } from "../common/ConfigLightEngine";
@@ -56,7 +56,6 @@ import {
   validateLightEngine,
 } from "reducer/createLightEngine";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -66,6 +65,7 @@ import { useGrafana } from "assets/js/hooks/useGrafana";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -98,13 +98,7 @@ const EXCLUDE_PARAMS_FULL = [
   "webACLScope",
 ];
 
-const EXCLUDE_PARAMS_SAMPLED = [
-  ...EXCLUDE_PARAMS_COMMON,
-  "logBucketPrefix",
-  "defaultCmkArnParam",
-  "logBucketName",
-  "backupBucketName",
-];
+const EXCLUDE_PARAMS_SAMPLED = [...EXCLUDE_PARAMS_COMMON];
 
 export interface WAFTaskProps {
   type: ServiceType;
@@ -146,7 +140,7 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
     manualBucketName: "",
     logBucketPrefix: "",
     webACLNames: "",
-    ingestOption: IngestOption.SampledRequest,
+    ingestOption: "",
     interval: "",
     webACLScope: "",
     logSource: "",
@@ -174,12 +168,23 @@ const CreateWAF: React.FC = () => {
     (state: RootState) => state.app.amplifyConfig
   );
   const dispatch = useDispatch<Dispatch<Actions>>();
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+  const logIngestType =
+    searchParams.get("ingestLogType") ?? WAFIngestOption.FullRequest;
 
   const [curStep, setCurStep] = useState(0);
   const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
-  const [wafPipelineTask, setWAFPipelineTask] =
-    useState<WAFTaskProps>(DEFAULT_TASK_VALUE);
+  const [wafPipelineTask, setWAFPipelineTask] = useState<WAFTaskProps>({
+    ...DEFAULT_TASK_VALUE,
+    params: {
+      ...DEFAULT_TASK_VALUE.params,
+      ingestOption: logIngestType,
+    },
+  });
 
   const [autoWAFEmptyError, setAutoWAFEmptyError] = useState(false);
   const [manualWebACLEmptyError, setManualWebACLEmptyError] = useState(false);
@@ -191,29 +196,6 @@ const CreateWAF: React.FC = () => {
   const [needEnableAccessLog, setNeedEnableAccessLog] = useState(false);
   const [intervalValueError, setIntervalValueError] = useState(false);
 
-  const [searchParams] = useSearchParams();
-  const engineType =
-    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
-    AnalyticEngineTypes.OPENSEARCH;
-  useEffect(() => {
-    if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
-      setWAFPipelineTask({
-        ...wafPipelineTask,
-        params: {
-          ...wafPipelineTask.params,
-          ingestOption: IngestOption.FullRequest,
-        },
-      });
-    }
-  }, [engineType]);
-  const defaultIngestionOption = useMemo(
-    () =>
-      engineType === AnalyticEngineTypes.OPENSEARCH
-        ? IngestOption.SampledRequest
-        : IngestOption.FullRequest,
-    [engineType]
-  );
-
   const totalStep =
     searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 2 : 3;
   const isLightEngine = useMemo(
@@ -223,7 +205,9 @@ const CreateWAF: React.FC = () => {
 
   const checkSampleScheduleValue = () => {
     // Check Sample Schedule Interval
-    if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
+    if (
+      wafPipelineTask.params.ingestOption === WAFIngestOption.SampledRequest
+    ) {
       if (
         !wafPipelineTask.params.interval.trim() ||
         parseInt(wafPipelineTask.params.interval) < 2 ||
@@ -239,10 +223,10 @@ const CreateWAF: React.FC = () => {
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
   const tags = useTags();
-  const monitor = useAlarm();
   const osiParams = useSelectProcessor();
   const openSearch = useOpenSearch();
   const appDispatch = useDispatch<AppDispatch>();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
 
   const confirmCreateLightEnginePipeline = useCallback(async () => {
     console.info("wafPipelineTask:", wafPipelineTask);
@@ -284,7 +268,7 @@ const CreateWAF: React.FC = () => {
     };
     const createPipelineParams: any = {};
     createPipelineParams.type =
-      wafPipelineTask.params.ingestOption === IngestOption.SampledRequest
+      wafPipelineTask.params.ingestOption === WAFIngestOption.SampledRequest
         ? ServiceType.WAFSampled
         : ServiceType.WAF;
     createPipelineParams.source = wafPipelineTask.source;
@@ -303,7 +287,9 @@ const CreateWAF: React.FC = () => {
       buildLambdaConcurrency(osiParams);
 
     let tmpParamList: any = [];
-    if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
+    if (
+      wafPipelineTask.params.ingestOption === WAFIngestOption.SampledRequest
+    ) {
       tmpParamList = convertOpenSearchTaskParameters(
         wafPipelineTask,
         EXCLUDE_PARAMS_SAMPLED,
@@ -317,13 +303,11 @@ const CreateWAF: React.FC = () => {
       );
     }
 
-    if (wafPipelineTask.params.ingestOption === IngestOption.FullRequest) {
-      // Add defaultCmkArnParam
-      tmpParamList.push({
-        parameterKey: "defaultCmkArnParam",
-        parameterValue: amplifyConfig.default_cmk_arn,
-      });
-    }
+    // Add defaultCmkArnParam
+    tmpParamList.push({
+      parameterKey: "defaultCmkArnParam",
+      parameterValue: amplifyConfig.default_cmk_arn,
+    });
 
     // Add Default Failed Log Bucket
     tmpParamList.push({
@@ -348,6 +332,9 @@ const CreateWAF: React.FC = () => {
   };
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -389,13 +376,13 @@ const CreateWAF: React.FC = () => {
       }
       if (
         !wafPipelineTask.params.logBucketName &&
-        wafPipelineTask.params.ingestOption === IngestOption.FullRequest
+        wafPipelineTask.params.ingestOption === WAFIngestOption.FullRequest
       ) {
         setManualWAFEmptyError(true);
         return false;
       }
       if (
-        wafPipelineTask.params.ingestOption === IngestOption.FullRequest &&
+        wafPipelineTask.params.ingestOption === WAFIngestOption.FullRequest &&
         (!wafPipelineTask.params.manualBucketWAFPath
           .toLowerCase()
           .startsWith("s3") ||
@@ -452,33 +439,19 @@ const CreateWAF: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-waf">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
-              engineType={engineType}
               wafTask={wafPipelineTask}
               setISChanging={(status) => {
                 setWAFISChanging(status);
@@ -506,17 +479,6 @@ const CreateWAF: React.FC = () => {
                   return {
                     ...prev,
                     logSourceAccountId: id,
-                  };
-                });
-              }}
-              changeIngestionOption={(option) => {
-                setWAFPipelineTask((prev: WAFTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      ingestOption: option,
-                    },
                   };
                 });
               }}
@@ -557,7 +519,7 @@ const CreateWAF: React.FC = () => {
                   params: {
                     ...DEFAULT_TASK_VALUE.params,
                     taskType: taskType,
-                    ingestOption: defaultIngestionOption,
+                    ingestOption: logIngestType,
                   },
                 });
               }}
@@ -576,7 +538,6 @@ const CreateWAF: React.FC = () => {
                       webACLNames: defaultStr(wafObj?.name),
                       wafObj: wafObj,
                       webACLScope: defaultStr(wafObj?.description),
-                      ingestOption: defaultIngestionOption,
                     },
                   };
                 });
@@ -633,7 +594,12 @@ const CreateWAF: React.FC = () => {
               {isLightEngine ? (
                 <ConfigLightEngine />
               ) : (
-                <ConfigOpenSearch taskType={ServiceLogType.Amazon_WAF} />
+                <ConfigOpenSearch
+                  taskType={ServiceLogType.Amazon_WAF}
+                  isWAFSampled={
+                    logIngestType === WAFIngestOption.SampledRequest
+                  }
+                />
               )}
             </>
           )}
@@ -644,7 +610,7 @@ const CreateWAF: React.FC = () => {
                   !wafPipelineTask.logSourceAccountId &&
                   !isLightEngine &&
                   wafPipelineTask.params.ingestOption !==
-                    IngestOption.SampledRequest
+                    WAFIngestOption.SampledRequest
                 }
               />
             </div>
@@ -660,6 +626,7 @@ const CreateWAF: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="waf-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -669,6 +636,7 @@ const CreateWAF: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="waf-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -681,7 +649,7 @@ const CreateWAF: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
-                // loading={autoCreating}
+                data-testid="waf-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -713,6 +681,7 @@ const CreateWAF: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="waf-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

@@ -22,16 +22,16 @@ import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
 import { LoggingBucket, ResourceType } from "API";
 import { getResourceLoggingBucket } from "graphql/queries";
-import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import { ConfigTaskProps } from "../CreateConfig";
-import Tiles from "components/Tiles";
 import { CreateLogMethod } from "assets/js/const";
 import TextInput from "components/TextInput";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
 import { AlertType } from "components/Alert/alert";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import LoadingText from "components/LoadingText";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import LogLocation from "../../common/LogLocation";
 
 interface SpecifySettingsProps {
   configTask: ConfigTaskProps;
@@ -82,7 +82,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
       accountId: accountId,
     });
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
-    if (logginBucket.enabled) {
+    if (logginBucket?.enabled) {
       setShowSuccessText(true);
       setShowInfoText(false);
       setPreviewConfigPath(
@@ -114,40 +114,21 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:config.logCreation")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:config.creationMethod")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={configTask.params.taskType}
-                  onChange={(event) => {
-                    if (!isLoading) {
-                      changeTaskType(event.target.value);
-                      setCreateMethod(event.target.value);
-                    }
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:config.auto"),
-                      description: t("servicelog:config.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:config.manual"),
-                      description: t("servicelog:config.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-          <HeaderPanel title={t("servicelog:create.service.config")}>
+          <LogSourceEnable
+            value={configTask.params.taskType}
+            onChange={(value) => {
+              if (!isLoading) {
+                changeTaskType(value);
+                setCreateMethod(value);
+              }
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <CrossAccountSelect
                 disabled={isLoading}
@@ -182,7 +163,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         }
                         successText={
                           showSuccessText && previewConfigPath
-                            ? t("servicelog:config.savedTips") +
+                            ? t("servicelog:create.savedTips") +
                               previewConfigPath
                             : ""
                         }
@@ -219,31 +200,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                           }}
                         />
                       </FormItem>
-                      <FormItem
-                        optionTitle={t("servicelog:config.logLocation")}
-                        optionDesc={t("servicelog:config.logLocationDesc")}
-                        errorText={
-                          (manualConfigEmptyError
-                            ? t("servicelog:config.logLocationError")
-                            : "") ||
-                          (manualS3PathInvalid
-                            ? t("servicelog:s3InvalidError")
-                            : "")
-                        }
-                      >
-                        <TextInput
-                          className="m-w-75p"
-                          value={configTask.params.manualBucketS3Path}
-                          placeholder="s3://bucket/prefix"
-                          onChange={(event) => {
-                            const { bucket, prefix } =
-                              splitStringToBucketAndPrefix(event.target.value);
-                            changeLogPrefix(prefix);
-                            changeLogBucket(bucket);
-                            changeManualBucketS3Path(event.target.value);
-                          }}
-                        />
-                      </FormItem>
+                      <LogLocation
+                        manualS3EmptyError={manualConfigEmptyError}
+                        manualS3PathInvalid={manualS3PathInvalid}
+                        logLocation={configTask.params.manualBucketS3Path}
+                        changeLogPath={(value) => {
+                          const { bucket, prefix } =
+                            splitStringToBucketAndPrefix(value);
+                          changeLogPrefix(prefix);
+                          changeLogBucket(bucket);
+                          changeManualBucketS3Path(value);
+                        }}
+                      />
                     </div>
                   )}
                 </div>

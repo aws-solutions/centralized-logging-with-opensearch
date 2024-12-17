@@ -169,6 +169,7 @@ const CrossAccountDetail: React.FC = () => {
           </HeaderPanel>
           <div className="button-action text-right">
             <Button
+              data-testid="cancel-button"
               disabled={loadingSave}
               btnType="text"
               onClick={() => {
@@ -178,6 +179,7 @@ const CrossAccountDetail: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="save-button"
               loading={loadingSave}
               btnType="primary"
               onClick={() => {

@@ -73,9 +73,7 @@ describe("GrafanaCheckList", () => {
       }
     );
 
-    fireEvent.click(getByText(/next/i));
-    fireEvent.click(getByText(/button.previous/i));
-    fireEvent.click(getByText(/button.saveAndValidate/i));
+    fireEvent.click(getByText(/button.validateAndImport/i));
   });
 
   it("input change", () => {
@@ -145,8 +143,7 @@ describe("GrafanaCheckList", () => {
       }
     );
 
-    fireEvent.click(getByText(/next/i));
-    fireEvent.click(getByText(/button.import/i));
+    fireEvent.click(getByText(/button.validateAndImport/i));
     cleanup(); // https://github.com/testing-library/react-testing-library/issues/1216#issuecomment-1595684566
   });
 });

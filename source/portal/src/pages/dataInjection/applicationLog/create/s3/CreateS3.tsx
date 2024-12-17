@@ -48,7 +48,6 @@ import { Trans, useTranslation } from "react-i18next";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
 import CompressionFormatSelector from "./CompressionFormatSelector";
-import { IngestionModeSelector } from "./IngestionModeSelector";
 import FilePathPrefixFilter from "./FilePathPrefixFilter";
 import { S3BucketSelector } from "./S3BucketSelector";
 import LogConfigSelector from "../../common/LogConfigSelector";
@@ -66,7 +65,6 @@ import {
   CreateAlarmActionTypes,
   validateAlarmInput,
 } from "reducer/createAlarm";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { Dispatch } from "redux";
 import ConfigOpenSearch from "pages/dataInjection/serviceLog/create/common/ConfigOpenSearch";
 import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
@@ -94,6 +92,8 @@ import { buildLambdaConcurrency, ternary } from "assets/js/utils";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import { useS3Buffer } from "assets/js/hooks/useS3Buffer";
 import IndexPrefixHandler from "../../common/IndexPrefixHandler";
+import { LogProcessorType } from "reducer/selectProcessor";
+import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 
 const AppLogCreateS3: React.FC = () => {
   const { t } = useTranslation();
@@ -103,6 +103,8 @@ const AppLogCreateS3: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
+  const ingestionMode =
+    searchParams.get("ingestLogType") ?? IngestionMode.ON_GOING;
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
@@ -134,9 +136,6 @@ const AppLogCreateS3: React.FC = () => {
 
   const [currentBucket, setCurrentBucket] = useState<OptionType | null>(null);
   const [filePathPrefix, setFilePathPrefix] = useState("");
-  const [ingestionMode, setIngestionMode] = useState<string>(
-    IngestionMode.ON_GOING
-  );
   const [compressionFormat, setCompressionFormat] = useState("");
   const [logConfigJSON, setLogConfigJSON] = useState(
     JSON.stringify(state?.logConfig)
@@ -149,7 +148,7 @@ const AppLogCreateS3: React.FC = () => {
   const [indexErrorMessage, setIndexErrorMessage] = useState("");
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const openSearch = useOpenSearch();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
@@ -289,7 +288,7 @@ const AppLogCreateS3: React.FC = () => {
 
   const stepComps = [
     {
-      name: t("applog:logSourceDesc.s3.step1.naviTitle"),
+      name: t("step.logSource"),
       element: (
         <PagePanel title={t("applog:logSourceDesc.s3.step1.title")}>
           <HeaderPanel title={t("applog:logSourceDesc.s3.step1.panelName")}>
@@ -302,11 +301,6 @@ const AppLogCreateS3: React.FC = () => {
               value={filePathPrefix}
               setValue={setFilePathPrefix}
               validator={filePathValidator}
-            />
-            <IngestionModeSelector
-              engineType={engineType}
-              value={ingestionMode}
-              setValue={setIngestionMode}
             />
             {isLightEngine ? (
               <FormItem optionTitle={t("applog:logSourceDesc.s3.step1.title4")}>
@@ -357,10 +351,10 @@ const AppLogCreateS3: React.FC = () => {
       validators: [bucketValidator, filePathValidator],
     },
     {
-      name: t("applog:logSourceDesc.s3.step2.naviTitle"),
+      name: t("step.logConfig"),
       element: (
         <PagePanel
-          title={t("applog:logSourceDesc.s3.step2.title")}
+          title={t("step.logConfig")}
           desc={state ? "" : t("applog:logSourceDesc.eks.step2.titleDesc")}
         >
           <HeaderPanel title={t("applog:logSourceDesc.s3.step2.panelName")}>
@@ -401,32 +395,56 @@ const AppLogCreateS3: React.FC = () => {
               )}
             </>
           </HeaderPanel>
+          <>
+            {logConfigJSON && (
+              <HeaderPanel title={t("resource:config.detail.logParser")}>
+                <ConfigDetailComps
+                  hideBasicInfo
+                  curLogConfig={JSON.parse(logConfigJSON)}
+                />
+              </HeaderPanel>
+            )}
+          </>
         </PagePanel>
       ),
       validators: [logConfigValidator],
     },
     {
-      name: isLightEngine
-        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
-        : t("applog:logSourceDesc.eks.step4.naviTitle"),
+      name: t("step.analyticsEngine"),
       disabled: !!state,
       element: isLightEngine ? (
         <ConfigLightEngine />
       ) : (
-        <ConfigOpenSearch taskType={LogSourceType.S3} />
+        <ConfigOpenSearch
+          onChangeIndexPrefix={(prefix) => {
+            setCurApplicationLog((prev) => {
+              return {
+                ...prev,
+                aosParams: {
+                  ...prev.aosParams,
+                  indexPrefix: prefix,
+                },
+              };
+            });
+          }}
+          taskType={LogSourceType.S3}
+        />
       ),
       validators: [
         isLightEngine ? lightEngineValidator : openSearchInputValidator,
       ],
     },
     {
-      name: t("applog:logSourceDesc.s3.step3.title"),
+      name: t("step.logProcessing"),
       disabled: !!state || engineType === AnalyticEngineTypes.LIGHT_ENGINE,
       validators: [],
       element: <SelectLogProcessor supportOSI={false} />,
     },
     {
-      name: t("applog:logSourceDesc.s3.step5.naviTitle"),
+      name:
+        osiParams.logProcessorType === LogProcessorType.OSI
+          ? t("step.tags")
+          : t("step.alarmTags"),
       disabled: !!state,
       element: <AlarmAndTags applicationPipeline={curApplicationLog} />,
       validators: [],
@@ -501,6 +519,13 @@ const AppLogCreateS3: React.FC = () => {
     );
   };
 
+  useEffect(() => {
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
+  }, []);
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="create-wrapper">
@@ -511,6 +536,7 @@ const AppLogCreateS3: React.FC = () => {
           {stepComps[currentStep].element}
           <div className="button-action text-right">
             <Button
+              data-testid="app-s3-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/application-log");
@@ -520,6 +546,7 @@ const AppLogCreateS3: React.FC = () => {
             </Button>
             {currentStep > 0 && (
               <Button
+                data-testid="app-s3-previous-button"
                 onClick={() => {
                   setCurrentStep(Math.max(currentStep - 1, 0));
                 }}
@@ -529,6 +556,7 @@ const AppLogCreateS3: React.FC = () => {
             )}
             {currentStep < stepComps.length - 1 && (
               <Button
+                data-testid="app-s3-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -546,6 +574,7 @@ const AppLogCreateS3: React.FC = () => {
             )}
             {currentStep === stepComps.length - 1 && (
               <Button
+                data-testid="app-s3-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

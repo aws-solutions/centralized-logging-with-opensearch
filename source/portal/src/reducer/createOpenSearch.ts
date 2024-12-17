@@ -43,7 +43,6 @@ export type OpenSearchState = {
   warmEnable: boolean;
   coldEnable: boolean;
   esDomainId: string;
-  enableRolloverByCapacity: boolean;
   warmTransitionType: string;
   rolloverSizeNotSupport: boolean;
 
@@ -65,6 +64,7 @@ export type OpenSearchState = {
   retainAge: string;
   rolloverSize: string;
   indexSuffix: string;
+  indexTaskTypeSuffix: string;
   appIndexSuffix: string;
   codec: string;
   refreshInterval: string;
@@ -114,19 +114,19 @@ export const INIT_OPENSEARCH_DATA: OpenSearchState = {
   opensearchArn: "",
   esDomainId: "",
   indexPrefix: "",
+  indexTaskTypeSuffix: "",
   createDashboard: YesNo.Yes,
   vpcId: "",
   subnetIds: "",
   publicSubnetIds: "",
   securityGroupId: "",
-  shardNumbers: "1",
+  shardNumbers: "",
   replicaNumbers: "1",
-  enableRolloverByCapacity: true,
   warmTransitionType: WarmTransitionType.IMMEDIATELY,
   warmAge: "0",
   coldAge: "60",
   retainAge: "180",
-  rolloverSize: "30",
+  rolloverSize: "30gb",
   indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
   appIndexSuffix: IndexSuffix.yyyy_MM_dd,
   codec: Codec.best_compression,
@@ -136,7 +136,6 @@ export const INIT_OPENSEARCH_DATA: OpenSearchState = {
 
 export const AOS_EXCLUDE_PARAMS = [
   "esDomainId",
-  "enableRolloverByCapacity",
   "warmTransitionType",
   "warmEnable",
   "coldEnable",
@@ -156,15 +155,14 @@ export const AOS_EXCLUDE_PARAMS = [
   "opensearchArn",
   "publicSubnetIds",
   "appIndexSuffix",
+  "indexTaskTypeSuffix",
 ];
 
 export const rolloverAndLogLifecycleTransformData = (
   openSearch: OpenSearchState
 ) => {
   return {
-    rolloverSize: openSearch.enableRolloverByCapacity
-      ? openSearch.rolloverSize + "gb"
-      : "",
+    rolloverSize: openSearch.rolloverSize,
     warmLogTransition: (() => {
       const userInputWarmAge = openSearch.warmAge;
       if (openSearch.warmEnable && userInputWarmAge) {
@@ -232,14 +230,11 @@ export const validateIndexPrefix = (state: OpenSearchState) => {
 };
 
 export const validateShardNumbers = (state: OpenSearchState) => {
+  if (state.shardNumbers.trim() === "") {
+    return "servicelog:cluster.shardEmptyError";
+  }
   return parseInt(state.shardNumbers) <= 0
     ? "servicelog:cluster.shardNumError"
-    : "";
-};
-
-export const validateRolloverSize = (state: OpenSearchState) => {
-  return state.enableRolloverByCapacity && parseFloat(state.rolloverSize) <= 0
-    ? "servicelog:cluster.rolloverError"
     : "";
 };
 
@@ -310,7 +305,11 @@ export const convertOpenSearchTaskParameters = (
   };
   Object.keys(pipelineTask.params).forEach((key) => {
     if (!EXCLUDE_PARAMS.includes(key)) {
-      const value = paramHandlers[key] ?? (pipelineTask.params as any)[key];
+      let value = paramHandlers[key] ?? (pipelineTask.params as any)[key];
+      // add task type suffix like "-elb" for service pipeline
+      if (key === "indexPrefix") {
+        value += openSearch["indexTaskTypeSuffix"];
+      }
       resParamList.push({ parameterKey: key, parameterValue: value });
     }
   });
@@ -322,7 +321,6 @@ export const validateOpenSearchParams = (openSearch: OpenSearchState) => {
     openSearch?.domainNameError ||
     !DOMAIN_ALLOW_STATUS.includes(openSearch?.domainCheckedStatus?.status) ||
     validateShardNumbers(openSearch) ||
-    validateRolloverSize(openSearch) ||
     validateWarmAge(openSearch) ||
     validateColdAge(openSearch) ||
     validateRetentionAge(openSearch) ||
@@ -354,7 +352,7 @@ export const openSearchSlice = createSlice({
       const NOT_SUPPORT_VERSION =
         payload?.engine === EngineType.Elasticsearch ||
         parseFloat(defaultStr(payload?.version)) < 1.3;
-      state.domainName = payload.domainName;
+      state.domainName = payload?.domainName;
       state.opensearchArn = defaultStr(payload?.domainArn);
       state.engineType = defaultStr(payload?.engine);
       state.esDomainId = defaultStr(payload?.id);
@@ -366,12 +364,14 @@ export const openSearchSlice = createSlice({
       state.warmEnable = payload?.nodes?.warmEnabled ?? false;
       state.coldEnable = payload?.nodes?.coldEnabled ?? false;
       state.rolloverSizeNotSupport = NOT_SUPPORT_VERSION;
-      state.enableRolloverByCapacity = !NOT_SUPPORT_VERSION;
-      state.rolloverSize = NOT_SUPPORT_VERSION ? "" : "30";
+      state.rolloverSize = NOT_SUPPORT_VERSION ? "" : "30gb";
     },
     indexPrefixChanged: (state, { payload }: PayloadAction<string>) => {
       state.indexPrefix = payload;
       state.indexPrefixError = "";
+    },
+    indexTaskTypeSuffixChanged: (state, { payload }: PayloadAction<string>) => {
+      state.indexTaskTypeSuffix = payload;
     },
     indexSuffixChanged: (state, { payload }: PayloadAction<string>) => {
       state.indexSuffix = payload;
@@ -389,12 +389,6 @@ export const openSearchSlice = createSlice({
     replicaNumbersChanged: (state, { payload }: PayloadAction<string>) => {
       state.replicaNumbers = payload;
       state.capacityError = "";
-    },
-    enableRolloverByCapacityChanged: (
-      state,
-      { payload }: PayloadAction<boolean>
-    ) => {
-      state.enableRolloverByCapacity = payload;
     },
     rolloverSizeChanged: (state, { payload }: PayloadAction<string>) => {
       state.rolloverSize = payload;
@@ -426,11 +420,7 @@ export const openSearchSlice = createSlice({
     },
     validateOpenSearch: (state) => {
       state.indexPrefixError = validateIndexPrefix(state);
-      if (validateIndexPrefix(state)) {
-        state.showAdvancedSetting = true;
-      }
       state.shardsError = validateShardNumbers(state);
-      state.capacityError = validateRolloverSize(state);
       state.warmLogError = validateWarmAge(state);
       state.coldLogError = validateColdAge(state);
       state.retentionLogError = validateRetentionAge(state);
@@ -455,7 +445,6 @@ export const {
   appIndexSuffixChanged,
   shardNumbersChanged,
   replicaNumbersChanged,
-  enableRolloverByCapacityChanged,
   rolloverSizeChanged,
   compressionTypeChanged,
   warmTransitionTypeChanged,
@@ -464,4 +453,5 @@ export const {
   retainAgeChanged,
   validateOpenSearch,
   showAdvancedSettingChanged,
+  indexTaskTypeSuffixChanged,
 } = openSearchSlice.actions;

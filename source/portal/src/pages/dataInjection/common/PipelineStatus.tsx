@@ -37,22 +37,34 @@ const PipelineStatusComp: React.FC<PipelineStatusCompProps> = (
     <ClickableRichTooltip
       content={
         <div style={{ maxWidth: "30em" }}>
-          {error}. {t("moreDetailsGoToCloudformation")}
-          {
-            <ExtLink
-              to={buildCfnLink(stackId?.split(":")[3] || "", stackId || "")}
-            >
-              <> {t("page")}.</>
-            </ExtLink>
-          }
+          {status === PipelineStatus.PAUSED ? (
+            t("error.pipelinePauseMessage")
+          ) : (
+            <>
+              {error}. {t("moreDetailsGoToCloudformation")}
+              <ExtLink
+                to={buildCfnLink(stackId?.split(":")[3] || "", stackId || "")}
+              >
+                <> {t("page")}.</>
+              </ExtLink>
+            </>
+          )}
         </div>
       }
       placement="left"
-      disabled={status !== PipelineStatus.ERROR}
+      disabled={
+        status
+          ? ![PipelineStatus.ERROR, PipelineStatus.PAUSED].includes(
+              status as PipelineStatus
+            )
+          : true
+      }
     >
       <div className="pr">
         <Status
-          isLink={status === PipelineStatus.ERROR}
+          isLink={
+            status === PipelineStatus.ERROR || status === PipelineStatus.PAUSED
+          }
           status={status || ""}
         />
       </div>

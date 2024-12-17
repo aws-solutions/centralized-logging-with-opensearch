@@ -28,7 +28,7 @@ import { handleErrorMessage } from "assets/js/alert";
 
 const EditLogConfig: React.FC = () => {
   const { t } = useTranslation();
-  const { id } = useParams();
+  const { id, revision } = useParams();
   const logConfig = useLogConfig();
   const dispatch = useDispatch<AppDispatch>();
   const [loadingData, setLoadingData] = useState(false);
@@ -50,7 +50,7 @@ const EditLogConfig: React.FC = () => {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getLogConfig, {
         id: encodeURIComponent(defaultStr(id)),
-        version: 0,
+        version: revision,
       });
       const dataLogConfig: ExLogConf = resData.data.getLogConfig;
       if (!dataLogConfig.filterConfigMap) {
@@ -77,7 +77,7 @@ const EditLogConfig: React.FC = () => {
   return (
     <LogConfigComp
       loadingData={loadingData}
-      headerTitle={t("resource:config.name")}
+      headerTitle={t("resource:config.config")}
       breadCrumbList={breadCrumbList}
       pageType={PageType.Edit}
       logConfig={logConfig}

@@ -16,9 +16,6 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
-import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
-import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import { appSyncRequestQuery } from "assets/js/request";
 import {
   getAppLogIngestion,
@@ -35,22 +32,12 @@ import {
   LogSourceType,
   Tag,
 } from "API";
-import {
-  buildKDSLink,
-  buildS3Link,
-  defaultStr,
-  formatLocalTime,
-  ternary,
-} from "assets/js/utils";
-import ExtLink from "components/ExtLink";
-import { AmplifyConfigType } from "types";
-import { useSelector } from "react-redux";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import DaemonSet from "./comps/DaemonSet";
 import { getParamValueByKey } from "assets/js/applog";
-import AccountName from "pages/comps/account/AccountName";
-import { RootState } from "reducer/reducers";
-import Tags from "../common/Tags";
 import CommonLayout from "pages/layout/CommonLayout";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
+import AccountName from "pages/comps/account/AccountName";
 
 export interface EksDetailProps {
   deploymentKind: EKSDeployKind | null | undefined;
@@ -66,12 +53,8 @@ export interface EksDetailProps {
 
 const EksIngestionDetail: React.FC = () => {
   const { t } = useTranslation();
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: RootState) => state.app.amplifyConfig
-  );
   const { id, eksId } = useParams();
   const [loadingData, setLoadingData] = useState(false);
-  const [activeTab, setActiveTab] = useState("guide");
   const [eksIngestionData, setEksIngestionData] = useState<EksDetailProps>();
   const [eksClusterInfo, setEksClusterInfo] = useState<LogSource>();
   const breadCrumbList = [
@@ -146,113 +129,49 @@ const EksIngestionDetail: React.FC = () => {
   return (
     <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
       <div>
-        <HeaderPanel title={t("ekslog:ingest.detail.ingestionDetail")}>
-          <div className="flex value-label-span">
-            <div className="flex-1">
-              <ValueWithLabel label={t("ekslog:ingest.detail.osIndexPrefix")}>
-                <div>{eksIngestionData?.indexPrefix}</div>
-              </ValueWithLabel>
-              <ValueWithLabel label={t("resource:crossAccount.account")}>
+        <HeaderWithValueLabel
+          numberOfColumns={4}
+          headerTitle={t("applog:detail.ingestion.generalConfig")}
+          dataList={[
+            {
+              label: t("applog:detail.ingestion.sourceType"),
+              data: t("applog:logSourceDesc.eks.title"),
+            },
+            {
+              label: t("applog:detail.ingestion.source"),
+              data: (
+                <Link
+                  to={`/containers/eks-log/detail/${eksClusterInfo?.sourceId}`}
+                >
+                  {eksClusterInfo?.eks?.eksClusterName}
+                </Link>
+              ),
+            },
+            {
+              label: t("sourceAccount"),
+              data: (
                 <AccountName
-                  accountId={defaultStr(eksClusterInfo?.accountId)}
-                  region={amplifyConfig.aws_project_region}
+                  accountId={eksClusterInfo?.accountId ?? ""}
+                  region={eksClusterInfo?.region ?? ""}
                 />
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel
-                label={`${t("ekslog:ingest.detail.bufferLayer")}(${
-                  eksIngestionData?.bufferType
-                })`}
-              >
-                <>
-                  {eksIngestionData?.bufferType === BufferType.KDS && (
-                    <div>
-                      <ExtLink
-                        to={buildKDSLink(
-                          amplifyConfig.aws_project_region,
-                          defaultStr(eksIngestionData?.bufferName)
-                        )}
-                      >
-                        {defaultStr(eksIngestionData?.bufferName, "-")}
-                      </ExtLink>
-                      {ternary(
-                        eksIngestionData?.enableAutoScaling,
-                        t("applog:detail.autoScaling"),
-                        ""
-                      )}
-                    </div>
-                  )}
-                  {eksIngestionData?.bufferType === BufferType.S3 && (
-                    <div>
-                      <ExtLink
-                        to={buildS3Link(
-                          amplifyConfig.aws_project_region,
-                          defaultStr(eksIngestionData?.bufferName)
-                        )}
-                      >
-                        {defaultStr(eksIngestionData?.bufferName, "-")}
-                      </ExtLink>
-                    </div>
-                  )}
-                  {eksIngestionData?.bufferType === BufferType.None && (
-                    <div>{t("none")}</div>
-                  )}
-                </>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("ekslog:ingest.detail.pipeline")}>
-                <div>
-                  <Link
-                    to={`/log-pipeline/application-log/detail/${eksIngestionData?.appPipelineId}`}
-                  >
-                    {eksIngestionData?.appPipelineId}
-                  </Link>
-                </div>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
-                <div>
-                  {formatLocalTime(defaultStr(eksIngestionData?.created))}
-                </div>
-              </ValueWithLabel>
-            </div>
-          </div>
-        </HeaderPanel>
+              ),
+            },
+            {
+              label: t("ekslog:ingest.detail.created"),
+              data: formatLocalTime(defaultStr(eksClusterInfo?.createdAt)),
+            },
+          ]}
+        />
 
-        <AntTabs
-          value={activeTab}
-          onChange={(event, newTab) => {
-            setActiveTab(newTab);
-          }}
-        >
-          {eksIngestionData?.deploymentKind === EKSDeployKind.Sidecar && (
-            <AntTab label={t("ekslog:ingest.detail.sidecar")} value="guide" />
-          )}
-          {eksIngestionData?.deploymentKind === EKSDeployKind.DaemonSet && (
-            <AntTab label={t("ekslog:ingest.detail.daemonset")} value="guide" />
-          )}
-          <AntTab label={t("ekslog:ingest.detail.tag")} value="tags" />
-        </AntTabs>
-        <TabPanel value={activeTab} index="guide">
-          {eksIngestionData?.deploymentKind === EKSDeployKind.Sidecar && (
-            <Sidecar
-              clusterId={defaultStr(eksId)}
-              ingestionId={defaultStr(id)}
-            />
-          )}
-          {eksIngestionData?.deploymentKind === EKSDeployKind.DaemonSet && (
-            <DaemonSet
-              clusterId={defaultStr(eksId)}
-              ingestionId={defaultStr(id)}
-            />
-          )}
-        </TabPanel>
-        <TabPanel value={activeTab} index="tags">
-          <Tags tags={eksIngestionData?.tags} />
-        </TabPanel>
+        {eksIngestionData?.deploymentKind === EKSDeployKind.Sidecar && (
+          <Sidecar clusterId={defaultStr(eksId)} ingestionId={defaultStr(id)} />
+        )}
+        {eksIngestionData?.deploymentKind === EKSDeployKind.DaemonSet && (
+          <DaemonSet
+            clusterId={defaultStr(eksId)}
+            ingestionId={defaultStr(id)}
+          />
+        )}
       </div>
     </CommonLayout>
   );

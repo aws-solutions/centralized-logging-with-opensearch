@@ -13,18 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
+
 import {
-  Aws,
-  Duration,
+  aws_appsync as appsync,
   aws_dynamodb as ddb,
   aws_iam as iam,
-  aws_lambda as lambda,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
-import { SharedPythonLayer } from '../layer/layer';
+import { CloudWatchAlarmManagerSingleton } from './lambda-construct';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
@@ -40,60 +37,40 @@ export interface PipelineAlarmStackProps {
 
   readonly solutionId: string;
   readonly stackPrefix: string;
-  readonly svcPipelineTableArn: string;
-  readonly appPipelineTableArn: string;
-  readonly appLogIngestionTableArn: string;
+  readonly svcPipelineTable: ddb.Table;
+  readonly appPipelineTable: ddb.Table;
+  readonly appLogIngestionTable: ddb.Table;
 }
 export class PipelineAlarmStack extends Construct {
   constructor(scope: Construct, id: string, props: PipelineAlarmStackProps) {
     super(scope, id);
 
-    const svcPipelineTable = ddb.Table.fromTableArn(
-      this,
-      'svcPipeline',
-      props.svcPipelineTableArn
-    );
-    const appPipelineTable = ddb.Table.fromTableArn(
-      this,
-      'appPipeline',
-      props.appPipelineTableArn
-    );
-    const appLogIngestionTable = ddb.Table.fromTableArn(
-      this,
-      'appLogIngestion',
-      props.appLogIngestionTableArn
-    );
+    const svcPipelineTable = props.svcPipelineTable;
+    const appPipelineTable = props.appPipelineTable;
+    const appLogIngestionTable = props.appLogIngestionTable;
 
     // Create a lambda to handle all Alarm System Request.
-    const centralAlarmHandler = new lambda.Function(
+    const centralAlarmHandler = new CloudWatchAlarmManagerSingleton(
       this,
-      'CentralAlarmHandler',
+      'AppFlowAlarmFn',
       {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, '../../lambda/api/alarm')
-        ),
-        runtime: lambda.Runtime.PYTHON_3_11,
-        handler: 'lambda_function.lambda_handler',
-        timeout: Duration.seconds(60),
-        memorySize: 1024,
-        layers: [SharedPythonLayer.getInstance(this)],
-        environment: {
-          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
-          SOLUTION_ID: props.solutionId,
-          STACK_PREFIX: props.stackPrefix,
-          APP_PIPELINE_TABLE_NAME: appPipelineTable.tableName,
-          PIPELINE_TABLE_NAME: svcPipelineTable.tableName,
-          APP_LOG_INGESTION_TABLE_NAME: appLogIngestionTable.tableName,
-          METADATA_TABLE_NAME: props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
-        },
-        description: `${Aws.STACK_NAME} - Central Alarm System APIs Resolver`,
+        APP_PIPELINE_TABLE_NAME: appPipelineTable.tableName,
+        PIPELINE_TABLE_NAME: svcPipelineTable.tableName,
+        APP_LOG_INGESTION_TABLE_NAME: appLogIngestionTable.tableName,
+        METADATA_TABLE_NAME:
+          props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
       }
-    );
+    ).handlerFunc;
+
     appPipelineTable.grantReadWriteData(centralAlarmHandler);
     svcPipelineTable.grantReadWriteData(centralAlarmHandler);
     appLogIngestionTable.grantReadData(centralAlarmHandler);
-    props.microBatchStack.microBatchDDBStack.MetaTable.grantReadWriteData(centralAlarmHandler);
-    props.microBatchStack.microBatchKMSStack.encryptionKey.grantDecrypt(centralAlarmHandler);
+    props.microBatchStack.microBatchDDBStack.MetaTable.grantReadWriteData(
+      centralAlarmHandler
+    );
+    props.microBatchStack.microBatchKMSStack.encryptionKey.grantDecrypt(
+      centralAlarmHandler
+    );
 
     const centralAlarmHandlerPolicy = new iam.Policy(
       this,
@@ -122,20 +99,17 @@ export class PipelineAlarmStack extends Construct {
           }),
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            resources: [props.microBatchStack.microBatchKMSStack.encryptionKey.keyArn],
-            actions: [
-              "kms:GenerateDataKey*",
-              "kms:Decrypt",
-              "kms:Encrypt"
+            resources: [
+              props.microBatchStack.microBatchKMSStack.encryptionKey.keyArn,
             ],
+            actions: ['kms:GenerateDataKey*', 'kms:Decrypt', 'kms:Encrypt'],
           }),
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            resources: [props.microBatchStack.microBatchDDBStack.MetaTable.tableArn],
-            actions: [
-              "dynamodb:GetItem",
-              "dynamodb:UpdateItem"
+            resources: [
+              props.microBatchStack.microBatchDDBStack.MetaTable.tableArn,
             ],
+            actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
           }),
         ],
       }

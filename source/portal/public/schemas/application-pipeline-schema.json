@@ -1,0 +1,357 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$ref": "#/definitions/AppPipelines",
+  "definitions": {
+    "AppPipelines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "appPipelines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppPipeline"
+          }
+        }
+      },
+      "required": ["appPipelines"],
+      "title": "AppPipelines"
+    },
+    "AppPipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logConfigName": {
+          "type": "string",
+          "description": "The log config name."
+        },
+        "logConfigVersionNumber": {
+          "type": "integer",
+          "title": "LogConfigVersionNumber",
+          "default": 1,
+          "minimum": 1,
+          "description": "Version number of the log config. If not specified, the latest version will be used."
+        },
+        "bufferType": {
+          "type": "string",
+          "default": "S3",
+          "enum": ["S3", "KDS", "None"],
+          "description": "Buffer layer is designed for a robust system between the log source and log destination. This layer can decouple the source and destination and accept more log ingestion requests, and also can buffer the logs for retry when log analytics engine has server issue or performance issue."
+        },
+        "bufferParams": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enableAutoScaling": {
+              "type": "string",
+              "format": "boolean",
+              "description": "Enable auto scaling of the Kinesis Data Streams shards?"
+            },
+            "shardCount": {
+              "type": "string",
+              "format": "integer",
+              "minimum": 1,
+              "description": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second. (* Kinesis shard adjustment limit per 24 hours)"
+            },
+            "minCapacity": {
+              "type": "string",
+              "format": "integer",
+              "minimum": 1,
+              "description": "Specify minimum number of shards."
+            },
+            "maxCapacity": {
+              "type": "string",
+              "format": "integer",
+              "minimum": 1,
+              "description": "Specify maximum number of shards."
+            },
+            "createDashboard": {
+              "type": "string",
+              "format": "boolean",
+              "description": "Create a predefined sample dashboard in OpenSearch Dashboards, only valid for nginx and apache log config."
+            },
+            "logBucketName": {
+              "type": "string",
+              "default": "",
+              "description": "Specify a bucket to store the log data. "
+            },
+            "logBucketPrefix": {
+              "type": "string",
+              "default": "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/",
+              "description": "Specify a custom prefix that includes expressions that are evaluated at runtime."
+            },
+            "maxFileSize": {
+              "type": "string",
+              "format": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Specify the buffer size in your log source before sending to Amazon S3. The higher buffer size may be lower in cost with higher latency. The lower buffer size will be faster in delivery with higher cost. Minimum: 1 MiB, maximum: 50 MiB."
+            },
+            "uploadTimeout": {
+              "type": "string",
+              "format": "integer",
+              "description": "The higher interval allows more time to collect data and the size of data may be bigger. The lower interval sends the data more frequently and may be more advantageous when looking at shorter cycles of data activity."
+            },
+            "compressionType": {
+              "type": "string",
+              "enum": ["GZIP", "NONE"],
+              "description": "Compression for data records."
+            },
+            "s3StorageClass": {
+              "type": "string",
+              "enum": [
+                "STANDARD",
+                "STANDARD_IA",
+                "ONEZONE_IA",
+                "INTELLIGENT_TIERING"
+              ],
+              "description": "Select a storage class for the prefix that buffer your log data."
+            }
+          }
+        },
+        "aosParams": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "domainName": {
+              "type": "string",
+              "description": "Specify the domain name of OpenSearch Cluster."
+            },
+            "indexPrefix": {
+              "type": "string",
+              "description": " A unique prefix used for OpenSearch indices managed by the index set."
+            },
+            "indexSuffix": {
+              "type": "string",
+              "default": "yyyy_MM_dd",
+              "enum": ["yyyy_MM_dd_HH", "yyyy_MM_dd", "yyyy_MM", "yyyy"],
+              "description": "Specify a suffix to adjust the index rollover time window."
+            },
+            "rolloverSize": {
+              "type": "string",
+              "default": "30gb",
+              "description": "The minimum storage size of a single primary shard required to roll over the index."
+            },
+            "codec": {
+              "type": "string",
+              "default": "best_compression",
+              "enum": ["best_compression", "default"],
+              "description": "Specify a compression type to use for this index."
+            },
+            "refreshInterval": {
+              "type": "string",
+              "default": "1s",
+              "description": "Specify how often the index should refresh, which publishes the most recent changes and make them available for search. Default is 1 second."
+            },
+            "shardNumbers": {
+              "type": "integer",
+              "default": 1,
+              "description": "Specify the number of primary shards for the index. Default is 1. The number of primary shards cannot be changed after the index is created."
+            },
+            "replicaNumbers": {
+              "type": "integer",
+              "default": 1,
+              "description": "Specify the number of replicas each primary shard should have. Default is 1."
+            },
+            "warmLogTransition": {
+              "type": "string",
+              "default": "\"\"",
+              "description": "Move aged logs from hot storage to warm storage to save cost. You must enable UltraWarm before using this."
+            },
+            "coldLogTransition": {
+              "type": "string",
+              "default": "\"\"",
+              "description": "Move aged logs from warm storage to cold storage to save cost. You must enable Cold Storage before using this."
+            },
+            "logRetention": {
+              "type": "string",
+              "default": "180d",
+              "description": "Delete aged logs from OpenSearch domain."
+            }
+          },
+          "required": ["domainName", "indexPrefix"],
+          "title": "AosParams"
+        },
+        "monitor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pipelineAlarmStatus": {
+              "type": "string",
+              "format": "boolean",
+              "description": "The solution will collect metrics to monitor the log pipeline status, and it provides a set of recommended alarms to notify you if any anomaly detected. "
+            },
+            "snsTopicArn": {
+              "type": "string",
+              "description": "Specify an SNS Topic arn."
+            }
+          },
+          "if": {
+            "properties": {
+              "pipelineAlarmStatus": {
+                "const": "ENABLED"
+              }
+            }
+          },
+          "then": {
+            "required": ["snsTopicArn"],
+            "properties": {
+              "snsTopicArn": {
+                "pattern": "^arn:(aws|aws-cn|aws-us-gov):[a-zA-Z0-9-]+:[a-zA-Z0-9-]*:[0-9]{12}:[a-zA-Z0-9-:/._+]*$"
+              }
+            }
+          },
+          "title": "Monitor"
+        },
+        "logSources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["EC2", "EKSCluster"]
+              },
+              "name": {
+                "type": "string",
+                "description": "The log source name."
+              },
+              "accountId": {
+                "type": "string",
+                "pattern": "[0-9]{12}",
+                "description": "The account ID where the log source is located."
+              },
+              "logPath": {
+                "type": "string",
+                "description": "Enter the location of the log files. All files under the specified folder will be included."
+              },
+              "autoAddPermission": {
+                "type": "boolean",
+                "default": true,
+                "description": "The Instance Groups needs permissions to access System Manager, S3, and Kinesis Data Stream services for log collection agent configuration and log transmission. Please select a method to add permissions to the instances."
+              }
+            },
+            "required": ["type", "name", "accountId", "logPath"],
+            "not": {
+              "required": ["id"]
+            },
+            "title": "LogSource"
+          }
+        }
+      },
+      "required": ["aosParams", "bufferType", "logConfigName", "monitor"],
+      "not": {
+        "required": ["id"]
+      },
+      "title": "AppPipeline",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "bufferType": {
+                "const": "S3"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "aosParams",
+              "bufferType",
+              "bufferParams",
+              "logConfigName",
+              "monitor"
+            ],
+            "properties": {
+              "bufferParams": {
+                "required": ["logBucketName", "logBucketPrefix"],
+                "properties": {
+                  "logBucketName": {
+                    "default": ""
+                  },
+                  "logBucketPrefix": {
+                    "default": "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/"
+                  },
+                  "maxFileSize": {
+                    "default": 50
+                  },
+                  "uploadTimeout": {
+                    "default": 60
+                  },
+                  "compressionType": {
+                    "default": "GZIP"
+                  },
+                  "s3StorageClass": {
+                    "default": "INTELLIGENT_TIERING"
+                  },
+                  "createDashboard": {
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "bufferType": {
+                "const": "KDS"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "aosParams",
+              "bufferType",
+              "bufferParams",
+              "logConfigName",
+              "monitor"
+            ],
+            "properties": {
+              "bufferParams": {
+                "required": [
+                  "enableAutoScaling",
+                  "shardCount",
+                  "minCapacity",
+                  "maxCapacity"
+                ],
+                "properties": {
+                  "enableAutoScaling": {
+                    "default": false
+                  },
+                  "shardCount": {
+                    "default": 1
+                  },
+                  "minCapacity": {
+                    "default": 1
+                  },
+                  "maxCapacity": {
+                    "default": 1
+                  },
+                  "createDashboard": {
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "bufferType": {
+                "const": "None"
+              }
+            }
+          },
+          "then": {
+            "required": ["aosParams", "bufferType", "logConfigName", "monitor"],
+            "not": {
+              "required": ["bufferParams"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

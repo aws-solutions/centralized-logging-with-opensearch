@@ -32,6 +32,7 @@ import {
   buildDashboardLink,
   buildESLink,
   defaultStr,
+  formatNumber,
   humanFileSize,
 } from "assets/js/utils";
 import Status from "components/Status/Status";
@@ -42,7 +43,6 @@ import { Button } from "components/Button/button";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
 import { RootState } from "reducer/reducers";
-import Tags from "pages/dataInjection/common/Tags";
 import ButtonRefresh from "components/ButtonRefresh";
 import CommonLayout from "pages/layout/CommonLayout";
 
@@ -56,7 +56,6 @@ const ESDomainDetail: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const changeTab = (event: any, newTab: string) => {
-    console.info("newTab:", newTab);
     setActiveTab(newTab);
   };
   const [curDomain, setCurDomain] = useState<DomainDetails>();
@@ -83,7 +82,6 @@ const ESDomainDetail: React.FC = () => {
         id: decodeURIComponent(defaultStr(id)),
         metrics: true,
       });
-      console.info("resData:", resData);
       const dataDomain: DomainDetails = resData.data.getDomainDetails;
       setCurDomain(dataDomain);
       setLoadingData(false);
@@ -110,6 +108,7 @@ const ESDomainDetail: React.FC = () => {
         actions={
           <div>
             <Button
+              data-testid="refresh-button"
               btnType="icon"
               disabled={isRefreshing || loadingData}
               onClick={() => {
@@ -137,7 +136,9 @@ const ESDomainDetail: React.FC = () => {
                     </ExtLink>
                   </ValueWithLabel>
                   <ValueWithLabel label={t("cluster:detail.searchDoc")}>
-                    <div>{curDomain?.metrics?.searchableDocs}</div>
+                    <div>
+                      {formatNumber(curDomain?.metrics?.searchableDocs ?? 0)}
+                    </div>
                   </ValueWithLabel>
                 </div>
                 <div className="flex-1 border-left-c">
@@ -171,7 +172,7 @@ const ESDomainDetail: React.FC = () => {
                             curDomain?.id || ""
                           )}/create-alarm`}
                         >
-                          {t("cluster:detail.enable")}
+                          {t("button.create")}
                         </Link>
                       )}
                       {curDomain?.alarmStatus === StackStatus.ENABLED && (
@@ -206,7 +207,7 @@ const ESDomainDetail: React.FC = () => {
                             curDomain?.domainName
                           }/${encodeURIComponent(curDomain?.id)}/access-proxy`}
                         >
-                          {t("cluster:detail.enable")}
+                          {t("button.create")}
                         </Link>
                       )}
                       {curDomain?.proxyStatus === StackStatus.ENABLED && (
@@ -242,12 +243,12 @@ const ESDomainDetail: React.FC = () => {
                 value="overview"
               />
               <AntTab
+                data-testid="accessProxy-tab"
                 label={t("cluster:detail.tab.proxy")}
                 value="accessProxy"
               />
               <AntTab label={t("cluster:detail.tab.alarms")} value="alarms" />
               <AntTab label={t("cluster:detail.tab.network")} value="network" />
-              <AntTab label={t("cluster:detail.tab.tags")} value="tags" />
             </AntTabs>
             <TabPanel value={activeTab} index="overview">
               <Overview domainInfo={curDomain} />
@@ -270,9 +271,6 @@ const ESDomainDetail: React.FC = () => {
             </TabPanel>
             <TabPanel value={activeTab} index="network">
               <NetWork domainInfo={curDomain} />
-            </TabPanel>
-            <TabPanel value={activeTab} index="tags">
-              <Tags tags={curDomain?.tags} />
             </TabPanel>
           </div>
         </div>

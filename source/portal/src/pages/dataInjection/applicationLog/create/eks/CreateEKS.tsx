@@ -52,7 +52,6 @@ import { useTranslation } from "react-i18next";
 import {
   buildLambdaConcurrency,
   buildOSIParamsValue,
-  checkIndexNameValidate,
   defaultStr,
   hasSamePrefix,
   ternary,
@@ -69,14 +68,12 @@ import LogConfigSelector from "../../common/LogConfigSelector";
 import LogPathInput from "../../common/LogPathInput";
 import CreateSampleDashboard from "../../common/CreateSampleDashboard";
 import { getAppPipeline, getLogSource } from "graphql/queries";
-import IndexName from "../../common/IndexName";
 import { Validator } from "pages/comps/Validator";
 import { buildInitPipelineData } from "assets/js/init";
 import AlarmAndTags from "pages/pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import UnmodifiableLogConfigSelector from "../../common/UnmodifiableLogConfigSelector";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import {
   CreateAlarmActionTypes,
   validateAlarmInput,
@@ -92,6 +89,7 @@ import { createLightEngineApplicationPipeline } from "assets/js/helpers/lightEng
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -101,7 +99,6 @@ import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import { AppDispatch } from "reducer/store";
 import {
   convertOpenSearchStateToAppLogOpenSearchParam,
-  indexPrefixChanged,
   isIndexDuplicated,
   isIndexPrefixOverlap,
   validateOpenSearch,
@@ -116,7 +113,6 @@ import {
 } from "reducer/configBufferKDS";
 import {
   convertS3BufferParameters,
-  logBucketPrefixChanged,
   setLogBucketAndCMKArn,
   validateS3Buffer,
   validateS3BufferParams,
@@ -124,6 +120,7 @@ import {
 import CommonLayout from "pages/layout/CommonLayout";
 import { DOMAIN_ALLOW_STATUS } from "assets/js/const";
 import IndexPrefixHandler from "../../common/IndexPrefixHandler";
+import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 
 export interface IngestionFromEKSPropsType {
   eksObject: SelectItem | null;
@@ -185,7 +182,7 @@ const AppLogCreateEks: React.FC = () => {
   const [indexErrorMessage, setIndexErrorMessage] = useState("");
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
@@ -274,14 +271,6 @@ const AppLogCreateEks: React.FC = () => {
       throw new Error(t("applog:logSourceDesc.eks.step2.selectConfig"));
     }
   });
-  const indexNameValidator = new Validator(() => {
-    if (!curApplicationLog.aosParams.indexPrefix) {
-      throw new Error(t("error.indexNameEmpty"));
-    }
-    if (!checkIndexNameValidate(curApplicationLog.aosParams.indexPrefix)) {
-      throw new Error(t("error.invalidIndexName"));
-    }
-  });
 
   const openSearchInputValidator = new Validator(() => {
     if (!validateOpenSearchParams(openSearch)) {
@@ -310,6 +299,9 @@ const AppLogCreateEks: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -402,12 +394,9 @@ const AppLogCreateEks: React.FC = () => {
 
   const stepComps = [
     {
-      name: t("applog:logSourceDesc.eks.step1.naviTitle"),
+      name: t("step.logSource"),
       element: (
-        <PagePanel
-          title={t("applog:logSourceDesc.eks.step1.title")}
-          desc={t("applog:logSourceDesc.eks.step1.titleDesc")}
-        >
+        <PagePanel title={t("applog:logSourceDesc.eks.step1.title")}>
           <StepChooseEKSSource
             ingestionInfo={ingestionInfo}
             changeEKSObject={(eks) => {
@@ -440,28 +429,13 @@ const AppLogCreateEks: React.FC = () => {
       validators: [logSourceValidator],
     },
     {
-      name: t("applog:logSourceDesc.eks.step2.naviTitle"),
+      name: t("step.logConfig"),
       disabled: !!state,
       element: (
         <PagePanel
-          title={t("applog:logSourceDesc.eks.step2.title")}
+          title={t("step.logConfig")}
           desc={state ? "" : t("applog:logSourceDesc.eks.step2.titleDesc")}
         >
-          <HeaderPanel title={t("resource:config.common.logPath")}>
-            <LogPathInput
-              value={ingestionInfo.logPath}
-              setValue={(value) => {
-                setIngestionInfo((prev) => {
-                  return {
-                    ...prev,
-                    logPath: value as string,
-                  };
-                });
-              }}
-              logSourceType={LogSourceType.EKSCluster}
-              validator={logPathValidator}
-            />
-          </HeaderPanel>
           <HeaderPanel title={t("applog:logSourceDesc.eks.step2.panelName")}>
             <LogConfigSelector
               title={t("applog:logSourceDesc.eks.step2.logConfig")}
@@ -487,19 +461,10 @@ const AppLogCreateEks: React.FC = () => {
               )}
             </>
           </HeaderPanel>
-        </PagePanel>
-      ),
-      validators: [logConfigValidator, logPathValidator],
-    },
-    {
-      name: t("applog:logSourceDesc.eks.step2.naviTitle"),
-      disabled: !state,
-      element: (
-        <PagePanel
-          title={t("applog:logSourceDesc.eks.step2.title")}
-          desc={t("")}
-        >
-          <HeaderPanel title={t("resource:config.common.logPath")}>
+          <HeaderPanel
+            title={t("resource:config.common.logPath")}
+            desc={t("resource:config.common.logPathTitleDesc")}
+          >
             <LogPathInput
               value={ingestionInfo.logPath}
               setValue={(value) => {
@@ -514,7 +479,26 @@ const AppLogCreateEks: React.FC = () => {
               validator={logPathValidator}
             />
           </HeaderPanel>
-          <HeaderPanel title={"Log config"}>
+          <>
+            {logConfigJSON && (
+              <HeaderPanel title={t("resource:config.detail.logParser")}>
+                <ConfigDetailComps
+                  hideBasicInfo
+                  curLogConfig={JSON.parse(logConfigJSON)}
+                />
+              </HeaderPanel>
+            )}
+          </>
+        </PagePanel>
+      ),
+      validators: [logConfigValidator, logPathValidator],
+    },
+    {
+      name: t("step.logConfig"),
+      disabled: !state,
+      element: (
+        <PagePanel title={t("step.logConfig")} desc={t("")}>
+          <HeaderPanel title={t("step.logConfig")}>
             {state ? (
               <UnmodifiableLogConfigSelector
                 configId={state.logConfigId ?? ""}
@@ -538,42 +522,68 @@ const AppLogCreateEks: React.FC = () => {
               />
             )}
           </HeaderPanel>
+          <HeaderPanel
+            title={t("resource:config.common.logPath")}
+            desc={t("resource:config.common.logPathTitleDesc")}
+          >
+            <LogPathInput
+              value={ingestionInfo.logPath}
+              setValue={(value) => {
+                setIngestionInfo((prev) => {
+                  return {
+                    ...prev,
+                    logPath: value as string,
+                  };
+                });
+              }}
+              logSourceType={LogSourceType.EKSCluster}
+              validator={logPathValidator}
+            />
+          </HeaderPanel>
+          <>
+            {logConfigJSON && (
+              <HeaderPanel title={t("resource:config.detail.logParser")}>
+                <ConfigDetailComps
+                  hideBasicInfo
+                  curLogConfig={JSON.parse(logConfigJSON)}
+                />
+              </HeaderPanel>
+            )}
+          </>
         </PagePanel>
       ),
       validators: [logPathValidator],
     },
     {
-      name: t("applog:logSourceDesc.eks.step3.naviTitle"),
+      name: t("step.analyticsEngine"),
+      disabled: !!state,
+      element: isLightEngine ? (
+        <ConfigLightEngine />
+      ) : (
+        <ConfigOpenSearch
+          onChangeIndexPrefix={(prefix) => {
+            setCurApplicationLog((prev) => {
+              return {
+                ...prev,
+                aosParams: {
+                  ...prev.aosParams,
+                  indexPrefix: prefix,
+                },
+              };
+            });
+          }}
+          taskType={LogSourceType.EKSCluster}
+        />
+      ),
+      validators: [
+        isLightEngine ? lightEngineValidator : openSearchInputValidator,
+      ],
+    },
+    {
+      name: t("step.bufferLayer"),
       disabled: !!state,
       element: (
         <PagePanel title={t("applog:logSourceDesc.ec2.step3.panelTitle")}>
-          {isLightEngine ? (
-            <></>
-          ) : (
-            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-              <IndexName
-                value={curApplicationLog.aosParams.indexPrefix}
-                setValue={(value) => {
-                  appDispatch(indexPrefixChanged(value as string));
-                  appDispatch(
-                    logBucketPrefixChanged(
-                      `AppLogs/${value}/year=%Y/month=%m/day=%d/`
-                    )
-                  );
-                  setCurApplicationLog((prev) => {
-                    return {
-                      ...prev,
-                      aosParams: {
-                        ...prev.aosParams,
-                        indexPrefix: value as string,
-                      },
-                    };
-                  });
-                }}
-                validator={indexNameValidator}
-              />
-            </HeaderPanel>
-          )}
           <HeaderPanel
             title={t("applog:logSourceDesc.eks.step3.title")}
             desc={t("applog:logSourceDesc.eks.step3.desc")}
@@ -588,26 +598,11 @@ const AppLogCreateEks: React.FC = () => {
           </HeaderPanel>
         </PagePanel>
       ),
-      validators: [bufferLayerValidator].concat(
-        isLightEngine ? [] : [indexNameValidator]
-      ),
+      validators: [bufferLayerValidator],
     },
+
     {
-      name: isLightEngine
-        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
-        : t("applog:logSourceDesc.eks.step4.naviTitle"),
-      disabled: !!state,
-      element: isLightEngine ? (
-        <ConfigLightEngine />
-      ) : (
-        <ConfigOpenSearch taskType={LogSourceType.EKSCluster} />
-      ),
-      validators: [
-        isLightEngine ? lightEngineValidator : openSearchInputValidator,
-      ],
-    },
-    {
-      name: t("processor.logProcessorSettings"),
+      name: t("step.logProcessing"),
       disabled: !!state || engineType === AnalyticEngineTypes.LIGHT_ENGINE,
       element: (
         <SelectLogProcessor
@@ -620,7 +615,10 @@ const AppLogCreateEks: React.FC = () => {
       validators: [selectProcessorValidator],
     },
     {
-      name: t("applog:logSourceDesc.eks.step5.naviTitle"),
+      name:
+        osiParams.logProcessorType === LogProcessorType.OSI
+          ? t("step.tags")
+          : t("step.alarmTags"),
       disabled: !!state,
       element: (
         <AlarmAndTags
@@ -721,7 +719,7 @@ const AppLogCreateEks: React.FC = () => {
     } catch (error: any) {
       setLoadingCreate(false);
       console.error(error.message);
-      const { errorCode, message } = refineErrorMessage(error.message);
+      const { errorCode, message } = refineErrorMessage(error.message) || {};
       if (isIndexPrefixOverlap(errorCode)) {
         setCurrentIndexOverlap(true);
         setIndexErrorMessage(message);
@@ -754,6 +752,7 @@ const AppLogCreateEks: React.FC = () => {
           {stepComps[currentStep].element}
           <div className="button-action text-right">
             <Button
+              data-testid="eks-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/application-log");
@@ -763,6 +762,7 @@ const AppLogCreateEks: React.FC = () => {
             </Button>
             {currentStep > 0 && (
               <Button
+                data-testid="eks-previous-button"
                 onClick={() => {
                   setCurrentStep(Math.max(currentStep - 1, 0));
                 }}
@@ -772,6 +772,7 @@ const AppLogCreateEks: React.FC = () => {
             )}
             {currentStep < stepComps.length - 1 && (
               <Button
+                data-testid="eks-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -796,6 +797,7 @@ const AppLogCreateEks: React.FC = () => {
             )}
             {currentStep === stepComps.length - 1 && (
               <Button
+                data-testid="eks-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

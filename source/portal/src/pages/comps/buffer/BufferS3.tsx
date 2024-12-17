@@ -102,11 +102,7 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     <div>
       <FormItem
         optionTitle={t("applog:create.ingestSetting.s3Bucket")}
-        optionDesc={
-          isLightEngine
-            ? t("applog:create.ingestSetting.s3BucketPrefixLightEngineDesc")
-            : t("applog:create.ingestSetting.s3BucketDesc")
-        }
+        optionDesc={t("applog:create.ingestSetting.s3BucketDesc")}
         errorText={displayI18NMessage(s3Buffer.logBucketError)}
       >
         <div className="flex m-w-75p">
@@ -140,11 +136,7 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
             {!isLightEngine && (
               <FormItem
                 optionTitle={t("applog:create.ingestSetting.s3BucketPrefix")}
-                optionDesc={
-                  t("applog:create.ingestSetting.s3BucketPrefixDesc1") +
-                  S3_BUFFER_PREFIX +
-                  t("applog:create.ingestSetting.s3BucketPrefixDesc2")
-                }
+                optionDesc={t("applog:create.ingestSetting.s3BucketPrefixDesc")}
                 errorText={displayI18NMessage(s3Buffer.logBucketPrefixError)}
               >
                 <TextInput
@@ -163,19 +155,15 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
               optionDesc={t("applog:create.ingestSetting.bufferSizeDesc")}
               errorText={displayI18NMessage(s3Buffer.bufferSizeError)}
             >
-              <div className="flex">
-                <div>
-                  <TextInput
-                    type="number"
-                    placeholder="50"
-                    value={s3Buffer.data.maxFileSize}
-                    onChange={(event) => {
-                      dispatch(bufferSizeChanged(event.target.value));
-                    }}
-                  />
-                </div>
-                <div className="ml-10">MiB</div>
-              </div>
+              <TextInput
+                className="m-w-75p"
+                type="number"
+                placeholder="50"
+                value={s3Buffer.data.maxFileSize}
+                onChange={(event) => {
+                  dispatch(bufferSizeChanged(event.target.value));
+                }}
+              />
             </FormItem>
 
             <FormItem
@@ -183,19 +171,15 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
               optionDesc={t("applog:create.ingestSetting.bufferIntDesc")}
               errorText={displayI18NMessage(s3Buffer.bufferIntervalError)}
             >
-              <div className="flex">
-                <div>
-                  <TextInput
-                    type="number"
-                    placeholder="60"
-                    value={s3Buffer.data.uploadTimeout}
-                    onChange={(event) => {
-                      dispatch(bufferIntervalChanged(event.target.value));
-                    }}
-                  />
-                </div>
-                <div className="ml-10">{t("seconds")}</div>
-              </div>
+              <TextInput
+                className="m-w-75p"
+                type="number"
+                placeholder="60"
+                value={s3Buffer.data.uploadTimeout}
+                onChange={(event) => {
+                  dispatch(bufferIntervalChanged(event.target.value));
+                }}
+              />
             </FormItem>
 
             <FormItem

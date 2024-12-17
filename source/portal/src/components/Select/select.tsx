@@ -41,6 +41,22 @@ const usePlaceholderStyles = makeStyles(() => ({
   },
 }));
 
+const useDescriptionStyles = makeStyles(() => ({
+  description: {
+    position: "relative",
+    height: "1.3rem",
+  },
+  innerDescription: {
+    position: "absolute",
+    color: "#aaa",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    width: "100%",
+    left: 0,
+  },
+}));
+
 const Placeholder = ({ children }: any) => {
   const classes = usePlaceholderStyles();
   return <div className={classes.placeholder}>{children}</div>;
@@ -153,6 +169,7 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
     onBlur,
   } = props;
   const { t } = useTranslation();
+  const descriptionClasses = useDescriptionStyles();
   return (
     <div className={`flex gsui-select-wrap ${className}`}>
       <div className="flex-1">
@@ -188,6 +205,13 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
               >
                 <span className="flex-1">
                   {isI18N ? t(element.name) : element.name}
+                  {element.description && (
+                    <div className={descriptionClasses.description}>
+                      <div className={descriptionClasses.innerDescription}>
+                        {element.description}
+                      </div>
+                    </div>
+                  )}
                 </span>
                 {hasStatus && <ItemStatus status={element.optTitle} />}
               </MenuItem>

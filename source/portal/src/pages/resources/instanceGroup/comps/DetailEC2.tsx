@@ -41,6 +41,8 @@ import InstanceTable, {
 import { Alert, handleErrorMessage } from "assets/js/alert";
 import { RootState } from "reducer/reducers";
 import ButtonRefresh from "components/ButtonRefresh";
+import { AntTab, AntTabs, TabPanel } from "components/Tab";
+import InstancePermission from "pages/dataInjection/applicationLog/common/InstancePermission";
 
 interface DetailEC2Props {
   instanceGroup: LogSource;
@@ -70,6 +72,43 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
   const [openRemoveInstance, setOpenRemoveInstance] = useState(false);
   const [loadingRemove, setLoadingRemove] = useState(false);
   const [loadingAdd, setLoadingAdd] = useState(false);
+  const [activeTab, setActiveTab] = useState("instanceTable");
+
+  const getInstanceWithUnknownList = async (chunk: (string | undefined)[]) => {
+    const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
+      maxResults: 50,
+      nextToken: "",
+      accountId: instanceGroup?.accountId,
+      region: amplifyConfig.aws_project_region,
+      instanceSet: chunk,
+    });
+    const instanceWithStatusList: InstanceWithStatusType[] =
+      dataInstanceInfo.data?.listInstances?.instances;
+    // available instance list
+    const availableInstanceList = instanceWithStatusList?.map(
+      (item) => item.id
+    );
+    // update instanceWithStatus with unknown
+    const instanceWithUnknownList: InstanceWithStatusType[] = [];
+    chunk.forEach((chunkId) => {
+      const avaInstance = instanceWithStatusList?.find(
+        (item) => item.id === chunkId
+      );
+      if (avaInstance) {
+        instanceWithUnknownList.push(avaInstance);
+      } else {
+        instanceWithUnknownList.push({
+          computerName: "-",
+          id: chunkId,
+          ipAddress: "-",
+          name: "-",
+          platformName: "-",
+          status: StatusType.Unknown,
+        });
+      }
+    });
+    return { availableInstanceList, instanceWithUnknownList };
+  };
 
   const getAllInstanceDetailAndStatus = async () => {
     setLoadingInstance(true);
@@ -90,39 +129,8 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
       const allInstanceInfo: InstanceWithStatusType[] = [];
       for (const chunk of instanceChunks) {
         // Get all instance info
-        const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
-          maxResults: 50,
-          nextToken: "",
-          accountId: instanceGroup?.accountId,
-          region: amplifyConfig.aws_project_region,
-          instanceSet: chunk,
-        });
-        const instanceWithStatusList: InstanceWithStatusType[] =
-          dataInstanceInfo.data?.listInstances?.instances;
-        // available instance list
-        const availableInstanceList = instanceWithStatusList?.map(
-          (item) => item.id
-        );
-        // update instanceWithStatus with unknown
-        const instanceWithUnknownList: InstanceWithStatusType[] = [];
-        chunk.forEach((chunkId) => {
-          const avaInstance = instanceWithStatusList?.find(
-            (item) => item.id === chunkId
-          );
-          if (avaInstance) {
-            instanceWithUnknownList.push(avaInstance);
-          } else {
-            instanceWithUnknownList.push({
-              computerName: "-",
-              id: chunkId,
-              ipAddress: "-",
-              name: "-",
-              platformName: "-",
-              status: StatusType.Unknown,
-            });
-          }
-        });
-
+        const { availableInstanceList, instanceWithUnknownList } =
+          await getInstanceWithUnknownList(chunk);
         // Get all instance status
         const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
           instanceIds: availableInstanceList,
@@ -259,90 +267,109 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
 
   return (
     <div data-testid="test-detail-ec2">
-      <TablePanel
-        trackId="id"
-        title={t("instances") + `(${instanceInfoList.length})`}
-        changeSelected={(item) => {
-          console.info("item:", item);
-          setRemoveInstanceList(item);
+      <AntTabs
+        value={activeTab}
+        onChange={(event, newTab) => {
+          setActiveTab(newTab);
         }}
-        loading={loadingInstance}
-        selectType={SelectType.CHECKBOX}
-        columnDefinitions={[
-          {
-            id: "Name",
-            header: t("resource:group.detail.list.name"),
-            cell: (e: InstanceWithStatusType) => {
-              return defaultStr(e.name, t("unknown"));
+      >
+        <AntTab
+          data-testid="instanceTable"
+          label={t("resource:group.detail.asg.instance")}
+          value="instanceTable"
+        />
+        <AntTab
+          data-testid="instanceTable"
+          label={t("resource:group.detail.permissions")}
+          value="permissions"
+        />
+      </AntTabs>
+      <TabPanel value={activeTab} index="permissions">
+        <InstancePermission />
+      </TabPanel>
+      <TabPanel value={activeTab} index="instanceTable">
+        <TablePanel
+          trackId="id"
+          title={t("instances") + `(${instanceInfoList.length})`}
+          changeSelected={(item) => {
+            console.info("item:", item);
+            setRemoveInstanceList(item);
+          }}
+          loading={loadingInstance}
+          selectType={SelectType.CHECKBOX}
+          columnDefinitions={[
+            {
+              id: "Name",
+              header: t("resource:group.detail.list.name"),
+              cell: (e: InstanceWithStatusType) => {
+                return defaultStr(e.name, t("unknown"));
+              },
             },
-          },
-          {
-            id: "instanceId",
-            header: t("resource:group.detail.list.instanceId"),
-            cell: (e: InstanceWithStatusType) => renderInstanceId(e),
-          },
-          {
-            id: "ip",
-            header: t("resource:group.detail.list.primaryIP"),
-            cell: (e: InstanceWithStatusType) => {
-              return defaultStr(e.ipAddress, t("unknown"));
+            {
+              id: "instanceId",
+              header: t("resource:group.detail.list.instanceId"),
+              cell: (e: InstanceWithStatusType) => renderInstanceId(e),
             },
-          },
-          {
-            id: "agent",
-            header: t("resource:group.detail.list.agent"),
-            cell: (e) => {
-              return getFLBVersionByType(
-                instanceGroup.ec2?.groupPlatform,
-                e.status
-              );
+            {
+              id: "ip",
+              header: t("resource:group.detail.list.primaryIP"),
+              cell: (e: InstanceWithStatusType) => {
+                return defaultStr(e.ipAddress, t("unknown"));
+              },
             },
-          },
-          {
-            id: "agentStatus",
-            header: t("resource:group.detail.list.agentStatus"),
-            cell: (e: InstanceWithStatusType) => renderStatus(e),
-          },
-        ]}
-        items={instanceInfoList}
-        actions={
-          <div>
-            {!props.disableAddInstance && (
-              <Button
-                data-testid="test-add-instance"
-                disabled={loadingInstance}
-                btnType="primary"
-                onClick={() => {
-                  setOpenAddInstance(true);
-                }}
-              >
-                {t("button.addInstances")}
-              </Button>
-            )}
+            {
+              id: "agent",
+              header: t("resource:group.detail.list.agent"),
+              cell: () => {
+                return getFLBVersionByType(instanceGroup.ec2?.groupPlatform);
+              },
+            },
+            {
+              id: "agentStatus",
+              header: t("resource:group.detail.list.agentStatus"),
+              cell: (e: InstanceWithStatusType) => renderStatus(e),
+            },
+          ]}
+          items={instanceInfoList}
+          actions={
+            <div>
+              {!props.disableAddInstance && (
+                <Button
+                  data-testid="test-add-instance"
+                  disabled={loadingInstance}
+                  btnType="primary"
+                  onClick={() => {
+                    setOpenAddInstance(true);
+                  }}
+                >
+                  {t("button.addInstances")}
+                </Button>
+              )}
 
-            {!props.disableRemoveInstance && (
+              {!props.disableRemoveInstance && (
+                <Button
+                  disabled={removeInstanceList.length <= 0}
+                  onClick={() => {
+                    setOpenRemoveInstance(true);
+                  }}
+                >
+                  {t("button.removeInstances")}
+                </Button>
+              )}
               <Button
-                disabled={removeInstanceList.length <= 0}
+                btnType="icon"
+                disabled={loadingData || loadingInstance}
                 onClick={() => {
-                  setOpenRemoveInstance(true);
+                  getAllInstanceDetailAndStatus();
                 }}
               >
-                {t("button.removeInstances")}
+                <ButtonRefresh loading={loadingInstance} />
               </Button>
-            )}
-            <Button
-              btnType="icon"
-              disabled={loadingData || loadingInstance}
-              onClick={() => {
-                getAllInstanceDetailAndStatus();
-              }}
-            >
-              <ButtonRefresh loading={loadingInstance} />
-            </Button>
-          </div>
-        }
-        pagination={<div></div>}
-      />
+            </div>
+          }
+          pagination={<div></div>}
+        />
+      </TabPanel>
 
       <Modal
         title={t("resource:group.detail.addInstances")}

@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import {
-  aws_ecs as ecs,
-} from "aws-cdk-lib";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
+import { aws_ecs as ecs } from 'aws-cdk-lib';
+import { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
 
 export interface EcsClusterProps {
   /**
@@ -26,7 +24,7 @@ export interface EcsClusterProps {
    *
    * @default - None.
    */
-   readonly vpc: IVpc;
+  readonly vpc: IVpc;
 }
 
 /**
@@ -40,7 +38,7 @@ export class EcsClusterStack extends Construct {
 
     const stackPrefix = 'CL';
 
-    this.ecsCluster =  new ecs.Cluster(this, `${stackPrefix}Cluster`, {
+    this.ecsCluster = new ecs.Cluster(this, `${stackPrefix}Cluster`, {
       vpc: props.vpc,
       containerInsights: true,
     });

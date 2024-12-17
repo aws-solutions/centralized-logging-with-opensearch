@@ -4,7 +4,6 @@ import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { InfoBarTypes } from "reducer/appReducer";
 
 interface PermissionsModeSelectorProps {
   disableAuto?: boolean;
@@ -26,7 +25,6 @@ const PermissionsModeSelector: React.FC<PermissionsModeSelectorProps> = (
   }, []);
   return (
     <FormItem
-      infoType={InfoBarTypes.PERMISSIONS_TYPE}
       optionTitle={t("applog:logSourceDesc.ec2.step1.permissionMethod")}
       optionDesc={
         <>
@@ -38,6 +36,7 @@ const PermissionsModeSelector: React.FC<PermissionsModeSelectorProps> = (
       }
     >
       <RadioGroup
+        className="radio-group"
         value={props.value}
         onChange={(e) => {
           props.setValue(e.target.value);
@@ -47,13 +46,31 @@ const PermissionsModeSelector: React.FC<PermissionsModeSelectorProps> = (
           <FormControlLabel
             value={AUTO}
             control={<Radio />}
-            label={t("applog:logSourceDesc.ec2.step1.permissionAuto")}
+            label={
+              <div>
+                <div className="radio-title">
+                  {t("applog:logSourceDesc.ec2.step1.auto")}
+                </div>
+                <div className="radio-desc">
+                  {t("applog:logSourceDesc.ec2.step1.permissionAuto")}
+                </div>
+              </div>
+            }
           />
         )}
         <FormControlLabel
           value={MANUAL}
           control={<Radio />}
-          label={t("applog:logSourceDesc.ec2.step1.permissionManual")}
+          label={
+            <div>
+              <div className="radio-title">
+                {t("applog:logSourceDesc.ec2.step1.manual")}
+              </div>
+              <div className="radio-desc">
+                {t("applog:logSourceDesc.ec2.step1.permissionManual")}
+              </div>
+            </div>
+          }
         />
       </RadioGroup>
     </FormItem>

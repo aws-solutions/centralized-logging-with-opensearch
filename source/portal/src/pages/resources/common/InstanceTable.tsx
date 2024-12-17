@@ -85,6 +85,7 @@ interface InstanceTableProps {
   changeInstanceSet?: (instances: any) => void;
   setCreateDisabled?: (disable: boolean) => void;
   defaultDisabledIds?: (string | null)[];
+  description?: string;
 }
 
 let intervalId: any = 0;
@@ -102,6 +103,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
     platform,
     changePlatform,
     disableChangePlatform,
+    description,
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -172,6 +174,51 @@ const InstanceTable: React.FC<InstanceTableProps> = (
     console.info("statusData:", statusData);
   };
 
+  const handleRefreshLogicGetInstanceIds = (refresh: boolean) => {
+    if (refresh) {
+      // if has selected instance, get instance status by selected instance
+      if (selectInstanceList.length > 0) {
+        return selectInstanceList.map((instance) => instance.id);
+      } else {
+        // get all instance with status
+        return instanceWithStatusList.map((instance) => instance.id);
+      }
+    } else {
+      return instanceWithStatusList.map((instance) => instance.id);
+    }
+  };
+
+  const getMergedStatusInstance = (
+    fetchStatusList: InstanceItemType[] | InstanceWithStatusType[],
+    instanceStatusList: InstanceStatusType[]
+  ) => {
+    const tmpInstanceWithStatus: InstanceWithStatusType[] = [];
+    for (const instanceInfo of fetchStatusList) {
+      let mergedObj;
+      // find same id object
+      const statusInfo = instanceStatusList?.find(
+        (status) => status?.instanceId === instanceInfo?.id
+      );
+      if (statusInfo) {
+        // found
+        mergedObj = { ...instanceInfo, ...statusInfo };
+      } else {
+        mergedObj = {
+          ...instanceInfo,
+          ...{
+            instanceId: instanceInfo?.id,
+            status: LogAgentStatus.Offline,
+            invocationOutput: t("resource:group.comp.defaultOfflineError"),
+            curlOutput: "",
+          },
+        };
+      }
+      // merge and push to template array
+      tmpInstanceWithStatus.push(mergedObj);
+    }
+    return tmpInstanceWithStatus;
+  };
+
   // Get All Instance Status
   const getAllInstanceWithStatus = async (
     refresh = false,
@@ -218,17 +265,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
         (instance) => instance.id
       );
     } else {
-      if (refresh) {
-        // if has selected instance, get instance status by selected instance
-        if (selectInstanceList.length > 0) {
-          instanceIDs = selectInstanceList.map((instance) => instance.id);
-        } else {
-          // get all instance with status
-          instanceIDs = instanceWithStatusList.map((instance) => instance.id);
-        }
-      } else {
-        instanceIDs = instanceWithStatusList.map((instance) => instance.id);
-      }
+      instanceIDs = handleRefreshLogicGetInstanceIds(refresh);
     }
     const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
       instanceIds: [...new Set(instanceIDs)],
@@ -239,36 +276,18 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       statusData.data.getInstanceAgentStatus;
     const instanceStatusList = instanceStatusResp.instanceAgentStatusList;
 
-    const tmpInstanceWithStatus: InstanceWithStatusType[] = [];
+    let tmpInstanceWithStatus: InstanceWithStatusType[] = [];
 
     let fetchStatusList: InstanceItemType[] | InstanceWithStatusType[] =
       dataInstanceList;
     if (refresh && !isLoadingMore) {
       fetchStatusList = instanceWithStatusList;
     }
-    for (const instanceInfo of fetchStatusList) {
-      let mergedObj;
-      // find same id object
-      const statusInfo = instanceStatusList?.find(
-        (status) => status?.instanceId === instanceInfo?.id
-      );
-      if (statusInfo) {
-        // found
-        mergedObj = { ...instanceInfo, ...statusInfo };
-      } else {
-        mergedObj = {
-          ...instanceInfo,
-          ...{
-            instanceId: instanceInfo?.id,
-            status: LogAgentStatus.Offline,
-            invocationOutput: t("resource:group.comp.defaultOfflineError"),
-            curlOutput: "",
-          },
-        };
-      }
-      // merge and push to template array
-      tmpInstanceWithStatus.push(mergedObj);
-    }
+
+    tmpInstanceWithStatus = getMergedStatusInstance(
+      fetchStatusList,
+      instanceStatusList
+    );
 
     // Set Token after Load more and status
     ternary(
@@ -474,9 +493,11 @@ const InstanceTable: React.FC<InstanceTableProps> = (
     <div>
       <div className="pb-20">
         <TablePanel
+          variant="header-panel"
           trackId="id"
           defaultDisabledIds={defaultDisabledIds}
           title={t("resource:group.comp.instances.title")}
+          desc={description}
           changeSelected={(item) => {
             setSelectInstanceList(item);
             changeInstanceSet?.(item);
@@ -565,7 +586,19 @@ const InstanceTable: React.FC<InstanceTableProps> = (
                 </div>
               </div>
             ) : (
-              <div>
+              <div className="flex align-center">
+                <div className="flex mr-10">
+                  <Switch
+                    isOn={enableAutoRefresh}
+                    handleToggle={() => {
+                      setEnableAutoRefresh(!enableAutoRefresh);
+                    }}
+                    label={" "}
+                  />
+                  <div className="ml-5 font-bold">
+                    {t("applog:installAgent.refreshSwitch")}
+                  </div>
+                </div>
                 <Button
                   btnType="icon"
                   disabled={loadingData || loadingRefresh || loadingInstall}
@@ -627,24 +660,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
               </div>
             )
           }
-          pagination={
-            <>
-              {!isASGList && (
-                <div className="flex" style={{ paddingTop: "104px" }}>
-                  <Switch
-                    isOn={enableAutoRefresh}
-                    handleToggle={() => {
-                      setEnableAutoRefresh(!enableAutoRefresh);
-                    }}
-                    label={" "}
-                  />
-                  <div className="ml-5 font-bold">
-                    {t("applog:installAgent.refreshSwitch")}
-                  </div>
-                </div>
-              )}
-            </>
-          }
+          pagination={<></>}
         />
 
         {!hasMoreInstance && !loadingData && loadMoreIsClick && (

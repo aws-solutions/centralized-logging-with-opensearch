@@ -22,10 +22,8 @@ import {
   AlarmInput,
   AlarmType,
   CreateAlarmForOpenSearchMutationVariables,
-  DomainDetails,
 } from "API";
-import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { getDomainDetails } from "graphql/queries";
+import { appSyncRequestMutation } from "assets/js/request";
 import TextInput from "components/TextInput";
 import {
   AlarmParamType,
@@ -62,10 +60,6 @@ const DomainAlarm: React.FC = () => {
     { name: t("cluster:alarm.name") },
   ];
 
-  const [domainInfo, setDomainInfo] = useState<
-    DomainDetails | undefined | null
-  >();
-  const [loadingData, setLoadingData] = useState(true);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [showRequireEmailError, setShowRequireEmailError] = useState(false);
   const [emailFormatError, setEmailFormatError] = useState(false);
@@ -82,27 +76,6 @@ const DomainAlarm: React.FC = () => {
       alarmParams: domainAlarmList,
     },
   });
-
-  const getDomainById = async () => {
-    try {
-      setLoadingData(true);
-      const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id ?? ""),
-      });
-      console.info("resData:", resData);
-      const dataDomain: DomainDetails = resData.data.getDomainDetails;
-      setDomainInfo(dataDomain);
-      console.info("domainInfo?.vpc?.vpcId:", domainInfo?.vpc?.vpcId);
-      setLoadingData(false);
-    } catch (error) {
-      setLoadingData(false);
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    getDomainById();
-  }, []);
 
   const backToDetailPage = () => {
     navigate(`/clusters/opensearch-domains/detail/${id}`);
@@ -214,9 +187,6 @@ const DomainAlarm: React.FC = () => {
         alarms: alarmsList,
       },
     };
-    // alarmParamData.id = alarmData.id;
-    // alarmParamData.input.alarms = ;
-    console.info("alarmParamData:", alarmParamData);
     setLoadingCreate(true);
     const createRes = await appSyncRequestMutation(
       createAlarmForOpenSearch,
@@ -228,7 +198,6 @@ const DomainAlarm: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("alarmData:", alarmData);
     // Check Min Free Storage Value
     const freeStorageValue =
       (alarmData.input.alarmParams.find(
@@ -297,47 +266,17 @@ const DomainAlarm: React.FC = () => {
   };
 
   return (
-    <CommonLayout loadingData={loadingData} breadCrumbList={breadCrumbList}>
+    <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="m-w-1024">
         <HeaderPanel
-          contentNoPadding
-          title={t("cluster:alarm.domainAlarm")}
-          desc={t("cluster:alarm.domainAlarmDesc")}
+          title={t("cluster:detail.alarms.name")}
+          desc={t("cluster:detail.alarms.desc")}
         >
-          <div className="pd-20">
-            <FormItem
-              optionTitle={t("cluster:alarm.email")}
-              optionDesc={t("cluster:alarm.emailDesc")}
-              errorText={
-                (showRequireEmailError ? t("cluster:alarm.emailError") : "") ||
-                (emailFormatError ? t("cluster:alarm.emailFormatError") : "")
-              }
-            >
-              <TextInput
-                className="m-w-75p"
-                value={alarmData.input.email}
-                onChange={(event) => {
-                  setShowRequireEmailError(false);
-                  setEmailFormatError(false);
-                  setAlarmData((prev) => {
-                    return {
-                      ...prev,
-                      input: {
-                        ...prev.input,
-                        email: event.target.value,
-                      },
-                    };
-                  });
-                }}
-                placeholder="abc@example.com"
-              />
-            </FormItem>
-          </div>
-
           <div>
             <div className="flex show-tag-list">
               <div className="checkbox">
                 <input
+                  data-testid="alarm-select-all"
                   type="checkbox"
                   onChange={(event) => {
                     if (event.target.checked) {
@@ -372,6 +311,7 @@ const DomainAlarm: React.FC = () => {
                 <div key={element.key} className="flex show-tag-list">
                   <div className="checkbox">
                     <input
+                      data-testid={`alarm-checkbox-${element.key}`}
                       type="checkbox"
                       checked={element.isChecked}
                       onChange={(event) => {
@@ -390,6 +330,7 @@ const DomainAlarm: React.FC = () => {
                   <div className="tag-value flex-1">
                     {element.isNumber ? (
                       <TextInput
+                        data-testid={`alarm-param-input-${element.key}`}
                         className={classNames(
                           {
                             error:
@@ -423,8 +364,45 @@ const DomainAlarm: React.FC = () => {
           </div>
         </HeaderPanel>
 
+        <HeaderPanel
+          contentNoPadding
+          title={t("cluster:alarm.notification")}
+          desc={t("cluster:alarm.domainAlarmDesc")}
+        >
+          <div className="pd-20">
+            <FormItem
+              optionTitle={t("cluster:alarm.email")}
+              optionDesc={t("cluster:alarm.emailDesc")}
+              errorText={
+                (showRequireEmailError ? t("cluster:alarm.emailError") : "") ||
+                (emailFormatError ? t("cluster:alarm.emailFormatError") : "")
+              }
+            >
+              <TextInput
+                className="m-w-75p"
+                value={alarmData.input.email}
+                onChange={(event) => {
+                  setShowRequireEmailError(false);
+                  setEmailFormatError(false);
+                  setAlarmData((prev) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        email: event.target.value,
+                      },
+                    };
+                  });
+                }}
+                placeholder="abc@example.com"
+              />
+            </FormItem>
+          </div>
+        </HeaderPanel>
+
         <div className="button-action text-right">
           <Button
+            data-testid="alarm-cancel-button"
             disabled={loadingCreate}
             btnType="text"
             onClick={() => {
@@ -434,6 +412,7 @@ const DomainAlarm: React.FC = () => {
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="alarm-create-button"
             loading={loadingCreate}
             btnType="primary"
             onClick={() => {

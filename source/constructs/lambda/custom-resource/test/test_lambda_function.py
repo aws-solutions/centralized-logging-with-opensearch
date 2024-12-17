@@ -8,6 +8,8 @@ import json
 from moto import mock_s3, mock_dynamodb, mock_cloudfront, mock_iam
 from moto.core import DEFAULT_ACCOUNT_ID as ACCOUNT_ID
 
+from commonlib.model import DomainImportType
+
 
 def init_table(table, rows):
     with table.batch_writer() as batch:
@@ -138,6 +140,7 @@ def ddb_client():
                 "endpoint": "vpc-may24.us-west-2.es.amazonaws.com",
                 "engine": "OpenSearch",
                 "importedDt": "2023-05-24T08:47:11Z",
+                "importMethod": DomainImportType.AUTOMATIC,
                 "proxyALB": "",
                 "proxyError": "",
                 "proxyInput": {},
@@ -181,10 +184,26 @@ def ddb_client():
                 "alarmStatus": "DISABLED",
                 "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may23",
                 "domainName": "may23",
+                "domainInfo": {
+                    "DomainStatus": {
+                        "VPCOptions": {
+                            "AvailabilityZones": ["us-west-2b"],
+                            "SecurityGroupIds": ["sg-0fc8398d4dc270f01"],
+                            "SubnetIds": ["subnet-0eb38879d66848a99"],
+                            "VPCId": "vpc-09d983bed6954836e",
+                        }
+                    }
+                },
                 "endpoint": "vpc-may23.us-west-2.es.amazonaws.com",
                 "status": "INACTIVE",
+                "proxyStatus": "DISABLED",
+                "importMethod": DomainImportType.AUTOMATIC,
                 "tags": [],
+                "engine": "OpenSearch",
+                "importedDt": "2023-05-24T08:47:11Z",
                 "version": "2.5",
+                "region": "us-west-2",
+                "resources": [],
                 "vpc": {
                     "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
                     "securityGroupId": "sg-0d6567095a7667f7f",
@@ -350,87 +369,3 @@ def test_lambda_function(mocker, s3_client, ddb_client, cloudfront_client, iam_c
     obj = s3.Object(default_bucket, "aws-exports.json").get()
     assert "ContentLength" in obj
     assert obj["ContentLength"] > 0
-
-    # ddb = boto3.resource("dynamodb", region_name=region)
-    # eks_source_table_name = os.environ.get("EKS_LOG_SOURCE_TABLE")
-    # app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE")
-    # pipeline_table_name = os.environ.get("PIPELINE_TABLE")
-
-    # # eks source table should have deployment kind value
-    # eks_source_table = ddb.Table(eks_source_table_name)
-    # resp2 = eks_source_table.scan()
-    # assert len(resp2["Items"]) == 1
-    # item = resp2["Items"][0]
-    # assert "deploymentKind" in item
-    # assert item["deploymentKind"] == "DaemonSet"
-
-    # app_pipeline_table = ddb.Table(app_pipeline_table_name)
-    # resp3 = app_pipeline_table.scan()
-    # assert len(resp3["Items"]) == 1
-    # item = resp3["Items"][0]
-    # assert "aosParas" not in item
-    # assert "aosParams" in item
-    # assert "bufferAccessRoleName" in item
-    # assert "ec2RoleName" not in item
-    # assert item["bufferType"] == "None"
-
-    # pipeline_table = ddb.Table(pipeline_table_name)
-    # resp4 = pipeline_table.scan()
-    # assert len(resp4["Items"]) == 1
-    # item = resp4["Items"][0]
-    # ddb_params = item["parameters"]
-    # warmAge_done = False
-    # coldAge_done = False
-    # retainAge_done = False
-    # codec_done = False
-    # refreshInterval_done = False
-    # indexSuffix_done = False
-    # rolloverSize_done = False
-    # print(f"ddb_params is {ddb_params}")
-    # for p in ddb_params:
-    #     if p["parameterKey"] == "warmAge":
-    #         warmAge_done = True
-    #     elif p["parameterKey"] == "coldAge":
-    #         coldAge_done = True
-    #     elif p["parameterKey"] == "retainAge":
-    #         retainAge_done = True
-    #     elif p["parameterKey"] == "codec" and p["parameterValue"] == "default":
-    #         codec_done = True
-    #     elif p["parameterKey"] == "refreshInterval" and p["parameterValue"] == "1s":
-    #         refreshInterval_done = True
-    #     elif p["parameterKey"] == "indexSuffix" and p["parameterValue"] == "yyyy-MM-dd":
-    #         indexSuffix_done = True
-    #     elif p["parameterKey"] == "rolloverSize" and p["parameterValue"] == "":
-    #         rolloverSize_done = True
-    # assert warmAge_done
-    # assert coldAge_done
-    # assert retainAge_done
-    # assert codec_done
-    # assert refreshInterval_done
-    # assert indexSuffix_done
-    # assert rolloverSize_done
-    # assert item["id"] == "840afc37-fa71-4cd4-90f8-a29ad908c390"
-    # assert item["createdAt"] == "2023-01-04T09:14:42Z"
-    # assert item["source"] == "test"
-    # assert item["stackName"] == "Solution-Pipe-840af"
-    # assert item["status"] == "CREATING"
-    # assert item["target"] == "test-east1"
-    # assert item["type"] == "WAF"
-
-    # central_assume_role_policy_arn = os.environ.get("CENTRAL_ASSUME_ROLE_POLICY_ARN")
-    # iam = boto3.client("iam", region_name=region)
-    # policy = iam.get_policy(PolicyArn=central_assume_role_policy_arn)
-    # policy_version = iam.get_policy_version(
-    #     PolicyArn=central_assume_role_policy_arn,
-    #     VersionId=policy["Policy"]["DefaultVersionId"],
-    # )
-    # policy_statement = policy_version["PolicyVersion"]["Document"]["Statement"]
-    # assert policy_statement == [
-    #     {
-    #         "Action": "sts:AssumeRole",
-    #         "Effect": "Allow",
-    #         "Resource": [
-    #             "arn:aws:iam::123456789012:role/ca-test-CrossAccountRoleFACE29D1-96TZ97IYN060"
-    #         ],
-    #     }
-    # ]

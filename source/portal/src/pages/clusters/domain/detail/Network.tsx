@@ -16,7 +16,6 @@ limitations under the License.
 import React from "react";
 import ValueWithLabel from "components/ValueWithLabel";
 import HeaderPanel from "components/HeaderPanel";
-import CopyText from "components/CopyText";
 import { DomainDetails } from "API";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
@@ -47,16 +46,14 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.network.vpc")}>
-              <CopyText text={defaultStr(domainInfo?.esVpc?.vpcId)}>
-                <ExtLink
-                  to={buildVPCLink(
-                    amplifyConfig.aws_project_region,
-                    defaultStr(domainInfo?.esVpc?.vpcId)
-                  )}
-                >
-                  {defaultStr(domainInfo?.esVpc?.vpcId)}
-                </ExtLink>
-              </CopyText>
+              <ExtLink
+                to={buildVPCLink(
+                  amplifyConfig.aws_project_region,
+                  defaultStr(domainInfo?.esVpc?.vpcId)
+                )}
+              >
+                {defaultStr(domainInfo?.esVpc?.vpcId)}
+              </ExtLink>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
@@ -121,16 +118,14 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.network.vpc")}>
-              <CopyText text={defaultStr(domainInfo?.vpc?.vpcId)}>
-                <ExtLink
-                  to={buildVPCLink(
-                    amplifyConfig.aws_project_region,
-                    defaultStr(domainInfo?.vpc?.vpcId)
-                  )}
-                >
-                  {defaultStr(domainInfo?.vpc?.vpcId)}
-                </ExtLink>
-              </CopyText>
+              <ExtLink
+                to={buildVPCLink(
+                  amplifyConfig.aws_project_region,
+                  defaultStr(domainInfo?.vpc?.vpcId)
+                )}
+              >
+                {defaultStr(domainInfo?.vpc?.vpcId)}
+              </ExtLink>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">

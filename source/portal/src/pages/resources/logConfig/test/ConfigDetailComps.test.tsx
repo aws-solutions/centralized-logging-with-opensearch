@@ -19,7 +19,13 @@ import ConfigDetailComps from "../ConfigDetailComps";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter, useParams } from "react-router-dom";
 import { INIT_CONFIG_DATA } from "reducer/createLogConfig";
-import { LogType, MultiLineLogParser, SyslogParser } from "API";
+import {
+  IISlogParser,
+  LogConfFilterCondition,
+  LogType,
+  MultiLineLogParser,
+  SyslogParser,
+} from "API";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -158,5 +164,120 @@ describe("ConfigDetailComps", () => {
     expect(
       getByText(/resource:config.detail.syslogFormat/i)
     ).toBeInTheDocument();
+  });
+
+  it("renders without errors with custom syslog rfc3164", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.Syslog,
+            syslogParser: SyslogParser.RFC3164,
+          }}
+        />
+      </MemoryRouter>
+    );
+  });
+
+  it("renders without errors with custom syslog rfd5424", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.Syslog,
+            syslogParser: SyslogParser.RFC5424,
+          }}
+        />
+      </MemoryRouter>
+    );
+  });
+
+  it("renders without errors with iis log", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.IIS,
+            iisLogParser: IISlogParser.IIS,
+          }}
+        />
+      </MemoryRouter>
+    );
+  });
+
+  it("renders without errors with iis w3c log", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.IIS,
+            iisLogParser: IISlogParser.W3C,
+          }}
+        />
+      </MemoryRouter>
+    );
+  });
+
+  it("renders without errors with regex specs", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.IIS,
+            regexFieldSpecs: [
+              {
+                __typename: "RegularSpec",
+                key: "field",
+                format: "regex",
+                type: "string",
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>
+    );
+  });
+
+  it("renders without errors with filter", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/resources/log-config-create"]}>
+        <ConfigDetailComps
+          curLogConfig={{
+            ...INIT_CONFIG_DATA.data,
+            logType: LogType.IIS,
+            timeKey: "timeKey",
+            regexFieldSpecs: [
+              {
+                __typename: "RegularSpec",
+                key: "timeKey",
+                format: "regex",
+                type: "string",
+              },
+              {
+                __typename: "RegularSpec",
+                key: "log_timestamp",
+                format: "regex",
+                type: "string",
+              },
+            ],
+            filterConfigMap: {
+              enabled: true, // Add the 'enabled' property with a value of true
+              filters: [
+                {
+                  key: "field",
+                  condition: LogConfFilterCondition.Exclude,
+                  value: "value",
+                },
+              ],
+            },
+          }}
+        />
+      </MemoryRouter>
+    );
   });
 });

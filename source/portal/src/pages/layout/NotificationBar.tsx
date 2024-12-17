@@ -66,14 +66,18 @@ const NotificationBar: React.FC = () => {
         <div className="clo-notification-bar-content">
           <div className="clo-notification-bar-content-text">
             <ErrorOutlineIcon fontSize="small" />
-            <span>
-              {t("newVersion", {
-                latestVersionNumber: latestVersionNumber,
-              })}
-            </span>
+            <div>
+              <b>{t("newVersionAvailable")}</b>
+              <div>
+                {t("newVersion", {
+                  latestVersionNumber: latestVersionNumber,
+                })}
+              </div>
+            </div>
           </div>
           <div className="clo-notification-bar-content-button">
             <Button
+              data-testid="learn-more-button"
               onClick={() => {
                 window.open(buildSolutionDocsLink("revisions.html"), "_blank");
               }}
@@ -81,6 +85,7 @@ const NotificationBar: React.FC = () => {
               {t("learnMore")}
             </Button>
             <button
+              data-testid="dismiss-button"
               className="clo-notification-bar-content-button-dismiss"
               onClick={() => setHasNewVersion(false)}
             >

@@ -26,7 +26,7 @@ const S3BufferLayerAlarm: React.FC<AlarmItemProps> = (
   const { t } = useTranslation();
   const ALARM_LIST = [
     {
-      name: AlarmMetricName.OLDEST_MESSAGE_AGE_ALARM,
+      name: AlarmMetricName.DEAD_LETTER_INVOCATIONS,
     },
   ];
   return (

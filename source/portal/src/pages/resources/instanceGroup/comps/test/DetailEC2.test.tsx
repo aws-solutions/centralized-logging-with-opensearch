@@ -19,9 +19,14 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import "pages/resources/common/InstanceTable";
 import DetailEC2 from "../DetailEC2";
-import { instanceGroupMockData } from "test/instance.mock";
+import {
+  instanceGroupMockData,
+  MockGetAgentStatus,
+  MockListInstances,
+} from "test/instance.mock";
 import { LogSource } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
+import { act } from "@testing-library/react";
 
 jest.mock("pages/resources/common/InstanceTable", () => {
   return function InstanceTable() {
@@ -34,6 +39,8 @@ jest.mock("pages/resources/common/InstanceTable", () => {
     return <div>InstanceTable</div>;
   };
 });
+
+jest.useFakeTimers();
 
 jest.mock("assets/js/request", () => {
   return {
@@ -58,12 +65,26 @@ jest.mock("react-i18next", () => ({
 }));
 
 beforeEach(async () => {
+  jest.advanceTimersByTime(2000);
   await (appSyncRequestQuery as any).mockResolvedValue({
     data: {
-      listInstances: [],
-      getInstanceAgentStatus: {
-        instanceAgentStatusList: [],
-      },
+      listInstances: MockListInstances,
+      getInstanceAgentStatus: MockGetAgentStatus,
+    },
+  });
+  jest.advanceTimersByTime(2000);
+  await (appSyncRequestQuery as any).mockResolvedValue({
+    data: {
+      listInstances: MockListInstances,
+      getInstanceAgentStatus: MockGetAgentStatus,
+    },
+  });
+
+  jest.advanceTimersByTime(2000);
+  await (appSyncRequestQuery as any).mockResolvedValue({
+    data: {
+      listInstances: MockListInstances,
+      getInstanceAgentStatus: MockGetAgentStatus,
     },
   });
   jest.spyOn(console, "error").mockImplementation(jest.fn());
@@ -86,5 +107,17 @@ describe("DetailEC2", () => {
       }
     );
     expect(getByTestId("test-detail-ec2")).toBeInTheDocument();
+  });
+
+  it("should render with data", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <DetailEC2
+          instanceGroup={instanceGroupMockData as LogSource}
+          loadingData={false}
+          refreshInstanceGroup={jest.fn()}
+        />
+      );
+    });
   });
 });

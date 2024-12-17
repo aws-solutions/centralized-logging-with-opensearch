@@ -21,8 +21,8 @@ import {
   CfnOutput,
   CfnResource,
   IAspect,
-} from "aws-cdk-lib";
-import { IConstruct } from "constructs";
+} from 'aws-cdk-lib';
+import { IConstruct } from 'constructs';
 
 interface CfnNagSuppressRule {
   readonly id: string;
@@ -41,8 +41,8 @@ export class SolutionStack extends Stack {
   }
   /* istanbul ignore next */
   protected addToParamGroups(label: string, ...param: string[]) {
-    const result = this.paramGroups.findIndex((param) => {
-      return param.Label.default == label;
+    const result = this.paramGroups.findIndex((p) => {
+      return p.Label.default == label;
     });
     if (result === -1) {
       this.paramGroups.push({
@@ -62,7 +62,7 @@ export class SolutionStack extends Stack {
 
   protected setMetadata() {
     this.templateOptions.metadata = {
-      "AWS::CloudFormation::Interface": {
+      'AWS::CloudFormation::Interface': {
         ParameterGroups: this.paramGroups,
         ParameterLabels: this.paramLabels,
       },
@@ -84,7 +84,7 @@ export class SolutionStack extends Stack {
     resource: CfnResource,
     rules: CfnNagSuppressRule[]
   ) {
-    resource.addMetadata("cfn_nag", {
+    resource.addMetadata('cfn_nag', {
       rules_to_suppress: rules,
     });
   }
@@ -95,7 +95,7 @@ export class AddCfnNagSuppressRules implements IAspect {
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
-      node.addMetadata("cfn_nag", {
+      node.addMetadata('cfn_nag', {
         rules_to_suppress: this.rules,
       });
     }

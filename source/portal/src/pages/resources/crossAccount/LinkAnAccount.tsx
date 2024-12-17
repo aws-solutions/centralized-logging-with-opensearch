@@ -136,6 +136,7 @@ const LinkAnAccount: React.FC = () => {
         </HeaderPanel>
         <div className="button-action text-right">
           <Button
+            data-testid="cancel-link-button"
             disabled={loadingCreate}
             btnType="text"
             onClick={() => {
@@ -145,6 +146,7 @@ const LinkAnAccount: React.FC = () => {
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="confirm-link-button"
             loading={loadingCreate}
             btnType="primary"
             onClick={() => {
@@ -155,7 +157,7 @@ const LinkAnAccount: React.FC = () => {
               createCrossAccountLink();
             }}
           >
-            {t("button.link")}
+            {t("button.add")}
           </Button>
         </div>
       </div>

@@ -15,6 +15,12 @@ def start_event():
 
 
 @pytest.fixture
+def update_event():
+    with open("./test/event/update_event.json", "r") as f:
+        return json.load(f)
+
+
+@pytest.fixture
 def stop_event():
     with open("./test/event/stop_event.json", "r") as f:
         return json.load(f)
@@ -76,7 +82,6 @@ def test_lambda_function_start(start_event, s3_client, sts_client, ddb_client):
 
     result = lambda_function.lambda_handler(start_event, None)
     # Expect Execute successfully.
-
     assert result["action"] == "QUERY"
     assert "args" in result
     assert "stackId" in result["args"]
@@ -86,8 +91,9 @@ def test_lambda_function_start(start_event, s3_client, sts_client, ddb_client):
 
 
 @mock_cloudformation
-@mock_s3
-def test_lambda_function_query(query_event):
+def test_lambda_function_query(
+    query_event, update_event, s3_client, sts_client, ddb_client
+):
     import lambda_function
 
     region = os.environ.get("AWS_REGION")
@@ -109,6 +115,27 @@ def test_lambda_function_query(query_event):
 
 
 @mock_cloudformation
+def test_lambda_function_update(update_event, s3_client, sts_client, ddb_client):
+    import lambda_function
+
+    region = os.environ.get("AWS_REGION")
+    with open("./test/template/test.template", "rb") as f:
+        client = boto3.client("cloudformation", region_name=region)
+        body = f.read().decode("utf8")
+    client.create_stack(StackName="test_stack", TemplateBody=body)
+
+    assert "args" in update_event
+    update_event["args"]["stackName"] = "test_stack"
+    result = lambda_function.lambda_handler(update_event, None)
+    assert result["action"] == "QUERY"
+    assert "args" in result
+    assert "stackId" in result["result"]
+
+    assert "stackStatus" in result["result"]
+    assert result["result"]["stackStatus"][:6] == "UPDATE"
+
+
+@mock_cloudformation
 @mock_s3
 def test_lambda_function_stop(stop_event):
     import lambda_function
@@ -127,7 +154,7 @@ def test_lambda_function_stop(stop_event):
     # Expect Execute successfully.
     assert result["action"] == "QUERY"
     assert "args" in result
-    # assert "stackId" in result["args"]
+
     assert "stackStatus" in result["result"]
     assert result["result"]["stackStatus"] == "DELETE_IN_PROGRESS"
 

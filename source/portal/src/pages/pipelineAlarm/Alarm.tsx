@@ -72,7 +72,7 @@ import { Dispatch } from "redux";
 import { identity } from "lodash";
 import { TOPIC_NAME_REGEX } from "assets/js/const";
 import { LogReplicationAlarm } from "./alarm/LogReplicationAlarm";
-import { AnalyticEngineTypes } from "types";
+import { AmplifyConfigType, AnalyticEngineTypes } from "types";
 
 export interface LogSourceAlarmType {
   name: string;
@@ -110,7 +110,10 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     snsEmailError,
   } = useSelector((state: RootState) => state.createAlarm);
   const createMonitor = useSelector((state: RootState) => state.createAlarm);
-
+  const amplifyConfig: AmplifyConfigType = useSelector(
+    (state: RootState) => state.app.amplifyConfig
+  );
+  console.info("amplifyConfig:", amplifyConfig);
   const dispatch = useDispatch<Dispatch<CreateAlarmActions>>();
 
   const {
@@ -139,7 +142,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     if (pageType === "detail") {
       if (type === PipelineType.SERVICE) {
         return (
-          servicePipeline?.monitor.pipelineAlarmStatus ===
+          servicePipeline?.monitor?.pipelineAlarmStatus ===
           PipelineAlarmStatus.ENABLED
         );
       }
@@ -150,7 +153,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         );
       }
     }
-    return pipelineMonitor.pipelineAlarmStatus === PipelineAlarmStatus.ENABLED;
+    return false;
   }, [pageType, type, servicePipeline, servicePipeline]);
 
   const [alarmEnableStatus, setAlarmEnableStatus] = useState(initAlarmStatus);
@@ -184,7 +187,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     [isLightEngine]
   );
 
-  const getSNSList = async () => {
+  const getSNSList = async (enableDefault = false) => {
     try {
       setLoadingSNSList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
@@ -199,6 +202,16 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         });
       });
       setSNSOptionList(tmpOptionList);
+      // set default SNS topic
+      const defaultSNS = tmpOptionList.find(
+        (item) => item.value === amplifyConfig.sns_email_topic_arn
+      );
+      if (enableDefault && defaultSNS) {
+        dispatch({
+          type: CreateAlarmActionTypes.CHANGE_SNS_OBJ,
+          obj: defaultSNS,
+        });
+      }
       setLoadingSNSList(false);
     } catch (error) {
       console.error(error);
@@ -275,7 +288,6 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
       if (pageType === "detail") {
         await updateParentMonitor();
       }
-      console.log("Alarms disabled");
     } catch (error) {
       console.error(error);
     }
@@ -302,7 +314,12 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
   };
 
   const getFLBLogSourceAlarmsStatus = async () => {
-    if (pipelineInfo?.status !== PipelineStatus.ACTIVE) {
+    if (
+      !(
+        pipelineInfo?.status === PipelineStatus.ACTIVE ||
+        pipelineInfo?.status === PipelineStatus.PAUSED
+      )
+    ) {
       return;
     }
     try {
@@ -346,11 +363,11 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         type: CreateAlarmActionTypes.CHANGE_CONFIRM_STATUS,
         status: true,
       });
-    } else {
+    } else if (pageType === "create") {
       dispatch({
-        type: CreateAlarmActionTypes.CLEAR_ALARM,
+        type: CreateAlarmActionTypes.CHANGE_CONFIRM_STATUS,
+        status: true,
       });
-      getSNSList();
     }
   }, [alarmEnableStatus]);
 
@@ -361,6 +378,24 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
       }
     }
   }, [refreshCount]);
+
+  // set isConfirmed to true when page type is create
+  useEffect(() => {
+    if (
+      pageType === "create" &&
+      pipelineMonitor.pipelineAlarmStatus === PipelineAlarmStatus.ENABLED
+    ) {
+      dispatch({
+        type: CreateAlarmActionTypes.CHANGE_CONFIRM_STATUS,
+        status: true,
+      });
+      if (createMonitor.snsObj) {
+        getSNSList();
+      } else {
+        getSNSList(true);
+      }
+    }
+  }, [isConfirmed]);
 
   return (
     <div>
@@ -390,17 +425,21 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         }
       >
         {ternary(
-          ((pipelineInfo?.status === PipelineStatus.ACTIVE ||
-            servicePipeline?.status === PipelineStatus.ACTIVE) &&
-            pageType === "detail") ||
+          pipelineInfo?.status === PipelineStatus.ACTIVE ||
+            pipelineInfo?.status === PipelineStatus.PAUSED ||
+            ((servicePipeline?.status === PipelineStatus.ACTIVE ||
+              servicePipeline?.status === PipelineStatus.PAUSED) &&
+              pageType === "detail") ||
             pageType === "create",
           <div>
             <div>
               <Switch
-                label={t("common:alarm.alarms")}
-                desc={t("common:alarm.desc")}
+                label={t("common:alarm.createAlarms")}
                 isOn={isConfirmed}
                 handleToggle={() => {
+                  if (!isConfirmed) {
+                    getSNSList(true);
+                  }
                   if (alarmEnableStatus) {
                     if (pageType === "detail") {
                       disableAlarms();
@@ -419,8 +458,118 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
               />
             </div>
 
+            {!alarmEnableStatus && isConfirmed && (
+              <FormItem optionTitle="" optionDesc="">
+                <>
+                  {CreateAlarmOptionList.map((element, index) => {
+                    return (
+                      <div key={identity(index)}>
+                        <label>
+                          <input
+                            value={element.value}
+                            onChange={async (e) => {
+                              dispatch({
+                                type: CreateAlarmActionTypes.CHANGE_ALARM_OPTION,
+                                option: e.target.value,
+                              });
+                            }}
+                            checked={element.value === topicCheckOption}
+                            name="chooseTopicOption"
+                            type="radio"
+                          />{" "}
+                          {element.name}
+                        </label>
+                      </div>
+                    );
+                  })}
+                  {topicCheckOption === SNSCreateMethod.ChooseExistTopic && (
+                    <FormItem
+                      optionTitle={t("alarm.snsTopic")}
+                      optionDesc={t("alarm.snsTopicDesc")}
+                      errorText={selectExistSNSError && t(selectExistSNSError)}
+                    >
+                      <AutoComplete
+                        outerLoading
+                        className="m-w-75p"
+                        placeholder={t("alarm.selectSNS")}
+                        loading={loadingSNSList}
+                        optionList={snsOptionList}
+                        value={snsObj}
+                        onChange={(event, data) => {
+                          dispatch({
+                            type: CreateAlarmActionTypes.CHANGE_SNS_OBJ,
+                            obj: data,
+                          });
+                        }}
+                      />
+                    </FormItem>
+                  )}
+                  {topicCheckOption === SNSCreateMethod.ChooseCreateTopic && (
+                    <>
+                      <FormItem
+                        optionTitle={t("alarm.topicName")}
+                        optionDesc={t("alarm.topicNameDesc")}
+                        errorText={snsTopicError && t(snsTopicError)}
+                      >
+                        <TextInput
+                          className="m-w-75p"
+                          value={pipelineMonitor.snsTopicName ?? ""}
+                          placeholder="MyTopic"
+                          onChange={(event) => {
+                            if (
+                              event.target.value !== "" &&
+                              !new RegExp(TOPIC_NAME_REGEX).test(
+                                event.target.value
+                              )
+                            ) {
+                              return false;
+                            }
+                            changeTopicName &&
+                              changeTopicName(event.target.value);
+                          }}
+                        />
+                      </FormItem>
+                      <FormItem
+                        optionTitle={t("common:alarm.emailTitle")}
+                        optionDesc={t("common:alarm.emailDesc")}
+                        errorText={snsEmailError && t(snsEmailError)}
+                      >
+                        <TextInput
+                          className="m-w-75p"
+                          value={pipelineMonitor.emails ?? ""}
+                          placeholder="ops@example.com"
+                          onChange={(event) => {
+                            changeEmails && changeEmails(event.target.value);
+                          }}
+                        />
+                      </FormItem>
+                    </>
+                  )}
+                  {pageType === "detail" && (
+                    <Button
+                      data-testid="create-button"
+                      btnType="primary"
+                      loading={loadingEnableAlarm}
+                      disabled={loadingEnableAlarm}
+                      onClick={() => {
+                        if (!validateAlarmInput(createMonitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
+                        enableAlarms();
+                      }}
+                    >
+                      {t("button.create")}
+                    </Button>
+                  )}
+                </>
+              </FormItem>
+            )}
+
             {!alarmEnableStatus && (
-              <div className="alarm-preset-gray-bg">
+              <div>
                 <ExpandableSection
                   defaultExpanded={false}
                   headerText={t("alarm.expandPresetAlarm")}
@@ -443,119 +592,6 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                   </div>
                 </ExpandableSection>
               </div>
-            )}
-
-            {!alarmEnableStatus && isConfirmed && (
-              <>
-                <FormItem optionTitle="" optionDesc="">
-                  <>
-                    {CreateAlarmOptionList.map((element, index) => {
-                      return (
-                        <div key={identity(index)}>
-                          <label>
-                            <input
-                              value={element.value}
-                              onChange={async (e) => {
-                                dispatch({
-                                  type: CreateAlarmActionTypes.CHANGE_ALARM_OPTION,
-                                  option: e.target.value,
-                                });
-                              }}
-                              checked={element.value === topicCheckOption}
-                              name="chooseTopicOption"
-                              type="radio"
-                            />{" "}
-                            {element.name}
-                          </label>
-                        </div>
-                      );
-                    })}
-                    {topicCheckOption === SNSCreateMethod.ChooseExistTopic && (
-                      <FormItem
-                        optionTitle=""
-                        optionDesc=""
-                        errorText={
-                          selectExistSNSError && t(selectExistSNSError)
-                        }
-                      >
-                        <AutoComplete
-                          outerLoading
-                          className="m-w-75p"
-                          placeholder={t("common:alarm.selectSNS")}
-                          loading={loadingSNSList}
-                          optionList={snsOptionList}
-                          value={snsObj}
-                          onChange={(event, data) => {
-                            dispatch({
-                              type: CreateAlarmActionTypes.CHANGE_SNS_OBJ,
-                              obj: data,
-                            });
-                          }}
-                        />
-                      </FormItem>
-                    )}
-                    {topicCheckOption === SNSCreateMethod.ChooseCreateTopic && (
-                      <>
-                        <FormItem
-                          optionTitle={t("alarm.topicName")}
-                          optionDesc={t("alarm.topicNameDesc")}
-                          errorText={snsTopicError && t(snsTopicError)}
-                        >
-                          <TextInput
-                            className="m-w-75p"
-                            value={pipelineMonitor.snsTopicName ?? ""}
-                            placeholder="MyTopic"
-                            onChange={(event) => {
-                              if (
-                                event.target.value !== "" &&
-                                !new RegExp(TOPIC_NAME_REGEX).test(
-                                  event.target.value
-                                )
-                              ) {
-                                return false;
-                              }
-                              changeTopicName &&
-                                changeTopicName(event.target.value);
-                            }}
-                          />
-                        </FormItem>
-                        <FormItem
-                          optionTitle={t("common:alarm.emailTitle")}
-                          optionDesc={t("common:alarm.emailDesc")}
-                          errorText={snsEmailError && t(snsEmailError)}
-                        >
-                          <TextInput
-                            className="m-w-75p"
-                            value={pipelineMonitor.emails ?? ""}
-                            placeholder="ops@example.com"
-                            onChange={(event) => {
-                              changeEmails && changeEmails(event.target.value);
-                            }}
-                          />
-                        </FormItem>
-                      </>
-                    )}
-                    {pageType === "detail" && (
-                      <Button
-                        btnType="primary"
-                        loading={loadingEnableAlarm}
-                        disabled={loadingEnableAlarm}
-                        onClick={() => {
-                          if (!validateAlarmInput(createMonitor)) {
-                            dispatch({
-                              type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
-                            });
-                            return;
-                          }
-                          enableAlarms();
-                        }}
-                      >
-                        {t("button.create")}
-                      </Button>
-                    )}
-                  </>
-                </FormItem>
-              </>
             )}
 
             {alarmEnableStatus &&
@@ -666,6 +702,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                 </div>
                 <div className="ml-10">
                   <Button
+                    data-testid="edit-button"
                     btnType="default"
                     disabled={!isSNSNotEditable}
                     onClick={() => {
@@ -678,6 +715,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
 
                 <div className="ml-10">
                   <Button
+                    data-testid="save-button"
                     btnType="primary"
                     disabled={isSNSNotEditable || loadingSaveSNS}
                     loading={loadingSaveSNS}

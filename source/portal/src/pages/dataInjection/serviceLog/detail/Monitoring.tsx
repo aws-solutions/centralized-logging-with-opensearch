@@ -22,8 +22,10 @@ import { ServiceLogDetailProps } from "../ServiceLogDetail";
 import {
   AnalyticEngineType,
   DestinationType,
+  LogEventQueueType,
   PipelineStatus,
   PipelineType,
+  ServiceType,
 } from "API";
 import { useTranslation } from "react-i18next";
 import HeaderPanel from "components/HeaderPanel";
@@ -48,9 +50,9 @@ import {
   defaultStr,
   ternary,
   buildOSIPipelineNameByPipelineId,
+  buildEventRuleLink,
 } from "assets/js/utils";
 import { RootState } from "reducer/reducers";
-import { PIPLINE_MONITORING_COST_LINK } from "assets/js/const";
 import Alert from "components/Alert";
 import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
 
@@ -89,12 +91,26 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
   }, [pipelineInfo?.type]);
 
   const renderSQS = () => {
+    if (pipelineInfo?.logEventQueueType === LogEventQueueType.EventBridge) {
+      return (
+        <ValueWithLabel label="EventBridge">
+          <ExtLink
+            to={buildEventRuleLink(
+              amplifyConfig.aws_project_region,
+              defaultStr(pipelineInfo?.sourceSQS)
+            )}
+          >
+            {pipelineInfo?.sourceSQS}
+          </ExtLink>
+        </ValueWithLabel>
+      );
+    }
     return (
       <ValueWithLabel label="SQS">
         <ExtLink
           to={buildSQSLink(
             amplifyConfig.aws_project_region,
-            pipelineInfo?.sourceSQS ?? ""
+            defaultStr(pipelineInfo?.sourceSQS)
           )}
         >
           {pipelineInfo?.sourceSQS}
@@ -109,7 +125,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         <ExtLink
           to={buildKDSLink(
             amplifyConfig.aws_project_region,
-            pipelineInfo?.sourceKDS ?? ""
+            defaultStr(pipelineInfo?.sourceKDS)
           )}
         >
           {pipelineInfo?.sourceKDS}
@@ -124,7 +140,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         <ExtLink
           to={buildKDFLink(
             amplifyConfig.aws_project_region,
-            pipelineInfo?.sourceKDF ?? ""
+            defaultStr(pipelineInfo?.sourceKDF)
           )}
         >
           {pipelineInfo?.sourceKDF}
@@ -149,10 +165,10 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
             <ExtLink
               to={buildLambdaLink(
                 amplifyConfig.aws_project_region,
-                pipelineInfo?.processorLambda?.split("/")[3] ?? ""
+                defaultStr(pipelineInfo?.processorLambda?.split("/")[3])
               )}
             >
-              {pipelineInfo?.processorLambda ?? ""}
+              {defaultStr(pipelineInfo?.processorLambda)}
             </ExtLink>
           </ValueWithLabel>
         </div>
@@ -182,9 +198,15 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         pipelineInfo?.destinationType === DestinationType.CloudWatch) ||
       (pipelineInfo?.type === "CloudFront" &&
         pipelineInfo?.destinationType === DestinationType.KDS) ||
-      pipelineInfo?.type === "WAFSampled" ||
       (pipelineInfo?.type === "VPC" &&
         pipelineInfo?.destinationType === DestinationType.CloudWatch)
+    );
+  };
+
+  const isNotRenderBuffer = () => {
+    return (
+      pipelineInfo?.type === ServiceType.WAFSampled &&
+      !pipelineInfo.logEventQueueType
     );
   };
 
@@ -192,18 +214,11 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     <div>
       <HeaderPanel
         title={t("common:monitoring.title")}
-        desc={
-          <div>
-            {t("info:monitoring.intro")}
-            {"  "}
-            <ExtLink to={PIPLINE_MONITORING_COST_LINK}>
-              {t("info:monitoring.monitoringCost")}
-            </ExtLink>
-          </div>
-        }
+        desc={<div>{t("info:monitoring.intro")}</div>}
       >
         <>
-          {pipelineInfo?.status === PipelineStatus.ACTIVE ? (
+          {pipelineInfo?.status === PipelineStatus.ACTIVE ||
+          pipelineInfo?.status === PipelineStatus.PAUSED ? (
             <>
               <div
                 style={{
@@ -215,6 +230,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
               >
                 <div>
                   <Button
+                    data-testid="refresh-button"
                     onClick={() => {
                       setRefreshCount((prev) => prev + 1);
                     }}
@@ -228,7 +244,6 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                     startTime={""}
                     endTime={""}
                     changeTimeRange={(range) => {
-                      console.info("range:", range);
                       setStartDate(range[0]);
                       setEndDate(range[1]);
                     }}
@@ -238,119 +253,132 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                   />
                 </div>
               </div>
-              <ExpandableSection headerText={t("common:monitoring.buffer")}>
-                <div>
-                  <div className="flex">
-                    {!isNotRenderSQS() && renderSQS()}
-                    {(pipelineInfo?.type === "CloudTrail" &&
-                      pipelineInfo?.destinationType ===
-                        DestinationType.CloudWatch) ||
-                    (pipelineInfo?.type === "CloudFront" &&
-                      pipelineInfo?.destinationType === DestinationType.KDS) ||
-                    (pipelineInfo?.type === "VPC" &&
-                      pipelineInfo?.destinationType ===
-                        DestinationType.CloudWatch) ? (
-                      renderKDS()
-                    ) : (
-                      <></>
+              {!isNotRenderBuffer() && (
+                <ExpandableSection headerText={t("common:monitoring.buffer")}>
+                  <div>
+                    <div className="flex">
+                      {!isNotRenderSQS() && renderSQS()}
+                      {(pipelineInfo?.type === "CloudTrail" &&
+                        pipelineInfo?.destinationType ===
+                          DestinationType.CloudWatch) ||
+                      (pipelineInfo?.type === "CloudFront" &&
+                        pipelineInfo?.destinationType ===
+                          DestinationType.KDS) ||
+                      (pipelineInfo?.type === "VPC" &&
+                        pipelineInfo?.destinationType ===
+                          DestinationType.CloudWatch) ? (
+                        renderKDS()
+                      ) : (
+                        <></>
+                      )}
+                      {pipelineInfo?.type === "Lambda" && !isLightEngine ? (
+                        renderKDF()
+                      ) : (
+                        <></>
+                      )}
+                    </div>
+                    {pipelineInfo?.type === "RDS" && (
+                      <RDSBufferMetrics
+                        pipelineInfo={pipelineInfo}
+                        startDate={startDate}
+                        endDate={endDate}
+                        refreshCount={refreshCount}
+                      />
                     )}
-                    {(pipelineInfo?.type === "RDS" ||
-                      pipelineInfo?.type === "Lambda") &&
-                    !isLightEngine ? (
-                      renderKDF()
-                    ) : (
-                      <></>
+                    {pipelineInfo?.type === "Lambda" && (
+                      <LambdaBufferMetrics
+                        pipelineInfo={pipelineInfo}
+                        startDate={startDate}
+                        endDate={endDate}
+                        refreshCount={refreshCount}
+                      />
+                    )}
+                    {pipelineInfo?.type === "CloudTrail" && (
+                      <>
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.CloudWatch && (
+                          <CloudTrailCWLBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.S3 && (
+                          <ServiceLogBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                      </>
+                    )}
+                    {pipelineInfo?.type === "VPC" && (
+                      <>
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.CloudWatch && (
+                          <VPCFlowLogBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.S3 && (
+                          <ServiceLogBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                      </>
+                    )}
+                    {pipelineInfo?.type === "CloudFront" && (
+                      <>
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.KDS && (
+                          <CloudFrontRealTimeBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                        {pipelineInfo?.destinationType ===
+                          DestinationType.S3 && (
+                          <ServiceLogBufferMetrics
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        )}
+                      </>
+                    )}
+                    {pipelineInfo.type === ServiceType.WAFSampled &&
+                      pipelineInfo.logEventQueueType && (
+                        <ServiceLogBufferMetrics
+                          pipelineInfo={pipelineInfo}
+                          startDate={startDate}
+                          endDate={endDate}
+                          refreshCount={refreshCount}
+                        />
+                      )}
+                    {is_S3_WAF_ELB_Config && (
+                      <ServiceLogBufferMetrics
+                        pipelineInfo={pipelineInfo}
+                        startDate={startDate}
+                        endDate={endDate}
+                        refreshCount={refreshCount}
+                      />
                     )}
                   </div>
-                  {pipelineInfo?.type === "RDS" && (
-                    <RDSBufferMetrics
-                      pipelineInfo={pipelineInfo}
-                      startDate={startDate}
-                      endDate={endDate}
-                      refreshCount={refreshCount}
-                    />
-                  )}
-                  {pipelineInfo?.type === "Lambda" && (
-                    <LambdaBufferMetrics
-                      pipelineInfo={pipelineInfo}
-                      startDate={startDate}
-                      endDate={endDate}
-                      refreshCount={refreshCount}
-                    />
-                  )}
-                  {pipelineInfo?.type === "CloudTrail" && (
-                    <>
-                      {pipelineInfo?.destinationType ===
-                        DestinationType.CloudWatch && (
-                        <CloudTrailCWLBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                      {pipelineInfo?.destinationType === DestinationType.S3 && (
-                        <ServiceLogBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                    </>
-                  )}
-                  {pipelineInfo?.type === "VPC" && (
-                    <>
-                      {pipelineInfo?.destinationType ===
-                        DestinationType.CloudWatch && (
-                        <VPCFlowLogBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                      {pipelineInfo?.destinationType === DestinationType.S3 && (
-                        <ServiceLogBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                    </>
-                  )}
-                  {pipelineInfo?.type === "CloudFront" && (
-                    <>
-                      {pipelineInfo?.destinationType ===
-                        DestinationType.KDS && (
-                        <CloudFrontRealTimeBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                      {pipelineInfo?.destinationType === DestinationType.S3 && (
-                        <ServiceLogBufferMetrics
-                          pipelineInfo={pipelineInfo}
-                          startDate={startDate}
-                          endDate={endDate}
-                          refreshCount={refreshCount}
-                        />
-                      )}
-                    </>
-                  )}
-                  {is_S3_WAF_ELB_Config && (
-                    <ServiceLogBufferMetrics
-                      pipelineInfo={pipelineInfo}
-                      startDate={startDate}
-                      endDate={endDate}
-                      refreshCount={refreshCount}
-                    />
-                  )}
-                </div>
-              </ExpandableSection>
+                </ExpandableSection>
+              )}
 
               {pipelineInfo.osiParams.minCapacity ? (
                 <ExpandableSection headerText={t("monitoring.osiProcessor")}>

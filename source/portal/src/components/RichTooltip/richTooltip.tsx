@@ -45,6 +45,7 @@ const useStyles = makeStyles((theme) => {
     },
 
     popper: {
+      border: "1px solid #ddd",
       zIndex: 2000,
       '&[x-placement*="bottom"] $arrow': {
         top: 0,

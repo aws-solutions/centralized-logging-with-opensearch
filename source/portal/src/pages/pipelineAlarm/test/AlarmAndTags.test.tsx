@@ -19,14 +19,9 @@ import AlarmAndTags from "../AlarmAndTags";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
-import { appSyncRequestQuery } from "assets/js/request";
 
-jest.mock("assets/js/request", () => {
-  return {
-    appSyncRequestQuery: jest.fn(),
-    refineErrorMessage: jest.fn(),
-  };
-});
+import { MockAppLogData, MockOSIData } from "test/applog.mock";
+import { cloudFrontMockData } from "test/servicelog.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -48,18 +43,31 @@ beforeEach(() => {
 });
 
 describe("AlarmAndTags", () => {
-  it("renders without errors", async () => {
-    await (appSyncRequestQuery as any).mockResolvedValue({
-      data: {
-        listInstances: {
-          instances: [],
-        },
-      },
-    });
-
+  it("renders without errors with service pipeline", async () => {
     renderWithProviders(
       <MemoryRouter>
-        <AlarmAndTags />
+        <AlarmAndTags
+          osiParams={{ ...MockOSIData }}
+          pipelineTask={{ ...cloudFrontMockData }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders without errors with app pipeline", async () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <AlarmAndTags
+          osiParams={{ ...MockOSIData }}
+          applicationPipeline={{ ...MockAppLogData }}
+        />
       </MemoryRouter>,
       {
         preloadedState: {

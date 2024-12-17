@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { aws_athena as athena, aws_s3 as s3 } from "aws-cdk-lib";
-import { InitKMSStack } from "../kms/init-kms-stack";
+import { aws_athena as athena, aws_s3 as s3 } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { InitKMSStack } from '../kms/init-kms-stack';
 
-export interface  InitAthenaProps {
+export interface InitAthenaProps {
   readonly solutionId: string;
   readonly solutionName: string;
   readonly stagingBucket: s3.Bucket;
@@ -26,16 +26,19 @@ export interface  InitAthenaProps {
 }
 
 export class InitAthenaStack extends Construct {
-    readonly microBatchAthenaWorkGroup: athena.CfnWorkGroup;
-    
-    constructor(scope: Construct, id: string, props: InitAthenaProps) {
-      super(scope, id);
+  readonly microBatchAthenaWorkGroup: athena.CfnWorkGroup;
 
-      let solutionName = props.solutionName;
-      let stagingBucket = props.stagingBucket;
-      let microBatchKMSStack = props.microBatchKMSStack;
+  constructor(scope: Construct, id: string, props: InitAthenaProps) {
+    super(scope, id);
 
-      this.microBatchAthenaWorkGroup = new athena.CfnWorkGroup(this, 'AthenaWorkGroup', {
+    let solutionName = props.solutionName;
+    let stagingBucket = props.stagingBucket;
+    let microBatchKMSStack = props.microBatchKMSStack;
+
+    this.microBatchAthenaWorkGroup = new athena.CfnWorkGroup(
+      this,
+      'AthenaWorkGroup',
+      {
         name: solutionName,
         description: 'This is an Athena WorkGroup for ' + solutionName,
         recursiveDeleteOption: true,
@@ -50,16 +53,15 @@ export class InitAthenaStack extends Construct {
           requesterPaysEnabled: false,
           resultConfiguration: {
             encryptionConfiguration: {
-              encryptionOption: "SSE_KMS",
+              encryptionOption: 'SSE_KMS',
               kmsKey: microBatchKMSStack.encryptionKey.keyArn,
             },
-            outputLocation: `s3://${stagingBucket.bucketName}/athena-results/` 
+            outputLocation: `s3://${stagingBucket.bucketName}/athena-results/`,
           },
         },
-      });
+      }
+    );
 
-      this.microBatchAthenaWorkGroup.overrideLogicalId("AthenaWorkGroup");
-
-    }
+    this.microBatchAthenaWorkGroup.overrideLogicalId('AthenaWorkGroup');
+  }
 }
-

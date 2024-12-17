@@ -60,7 +60,7 @@ describe("Network", () => {
     );
   });
 
-  it("renders without public subnets", () => {
+  it("renders with public subnets", () => {
     renderWithProviders(
       <MemoryRouter>
         <Network
@@ -69,6 +69,29 @@ describe("Network", () => {
             vpc: {
               ...domainMockData.vpc,
               publicSubnetIds: "subnet-xxxxxxxx,subnet-xxxxxxxx",
+            } as any,
+          }}
+        />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("should render data without public subnets", () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <Network
+          domainInfo={{
+            ...domainMockData,
+            vpc: {
+              ...domainMockData.vpc,
+              publicSubnetIds: "",
             } as any,
           }}
         />

@@ -99,6 +99,7 @@ export const isCustomType = (logConfig: LogConfigState) => {
     logConfig.data.logType === LogType.JSON ||
     logConfig.data.logType === LogType.SingleLineText ||
     logConfig.data.logType === LogType.Syslog ||
+    logConfig.data.logType === LogType.Nginx ||
     (logConfig.data.logType === LogType.MultiLineText &&
       logConfig.data.multilineLogParser === MultiLineLogParser.CUSTOM)
   );
@@ -126,11 +127,20 @@ export const isNginxOrApache = (logType?: LogType | null) => {
   return logType === LogType.Apache || logType === LogType.Nginx;
 };
 
+export const isApache = (logType?: LogType | null) => {
+  return logType === LogType.Apache;
+};
+
+export const isNginx = (logType?: LogType | null) => {
+  return logType === LogType.Nginx;
+};
+
 export const isCustomRegexType = (logType?: LogType | null) => {
   return (
     logType === LogType.SingleLineText ||
     logType === LogType.Syslog ||
     logType === LogType.MultiLineText ||
+    logType === LogType.Nginx ||
     logType === LogType.IIS
   );
 };
@@ -194,6 +204,16 @@ const getWindowsTimeFormat = (
   }
 };
 
+const getNginxTimeFormat = (key?: string) => {
+  if (key === "time_local") {
+    return "%d/%b/%Y:%H:%M:%S %z";
+  } else if (key === "time_iso8601") {
+    return "%Y-%m-%dT%H:%M:%S%z";
+  } else {
+    return "";
+  }
+};
+
 export const getDefaultFormat = (
   state: LogConfigState,
   type: string,
@@ -206,6 +226,8 @@ export const getDefaultFormat = (
       );
     } else if (isWindowsIISLog(state.data.logType)) {
       return getWindowsTimeFormat(key, state.data.iisLogParser);
+    } else if (isNginx(state.data.logType)) {
+      return getNginxTimeFormat(key);
     } else {
       return "";
     }
@@ -451,6 +473,7 @@ export const getSampleLogInfoType = (
 
 export type LogConfigState = {
   data: ExLogConf;
+  description: string;
   timeRegex: string;
   showLogFormat: boolean;
   showRegex: boolean;
@@ -495,6 +518,7 @@ export const INIT_CONFIG_DATA: LogConfigState = {
     timeOffset: "",
     jsonSchema: "",
   },
+  description: "",
   showLogFormat: false,
   showRegex: false,
   regexDisabled: false,
@@ -596,7 +620,6 @@ export const buildRegexFromNginxLog = (
     if (hasGroup) {
       groupName = `?<${match.substring(1, match.length)}>`;
     }
-    console.info("match:match:", match);
     if (match === `$request`) {
       return `(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+`;
     } else if (match.startsWith("$time")) {
@@ -915,6 +938,26 @@ const getIISLogKeyType = (key: string) => {
   return IISKeyTypeMap[key] ?? "text";
 };
 
+const nginxKeyTypeMap: Record<string, string> = {
+  remote_addr: "ip",
+  request_time: "float",
+  time_local: "date",
+  request_method: "keyword",
+  status: "keyword",
+  body_bytes_sent: "long",
+  bytes_sent: "long",
+  connection: "long",
+  connection_requests: "long",
+  msec: "double",
+  pipe: "keyword",
+  request_length: "long",
+  time_iso8601: "date",
+};
+
+const getNginxKeyType = (key: string) => {
+  return nginxKeyTypeMap[key] ?? "text";
+};
+
 export const getDefaultType = (
   logConfig: LogConfigState,
   key: string,
@@ -922,6 +965,9 @@ export const getDefaultType = (
 ): string => {
   if (isWindowsIISLog(logConfig.data.logType)) {
     return getIISLogKeyType(key);
+  }
+  if (isNginx(logConfig.data.logType)) {
+    return getNginxKeyType(key);
   }
   if (key === "time") {
     return "date";
@@ -1072,7 +1118,6 @@ export const validateRegex = (state: LogConfigState) => {
 };
 
 export const validateSampleLog = (state: LogConfigState) => {
-  // do not validate sample log if the type is apache or nginx
   if (!state.data.userSampleLog?.trim()) {
     if (state.data.logType === LogType.JSON) {
       return "resource:config.parsing.sampleLogJSONDesc";
@@ -1202,7 +1247,6 @@ const handleFormatChangeForNginx = (
   const regexStr = buildRegexFromNginxLog(action.payload, true);
   if (action.payload && regexStr === INVALID) {
     state.logFormatError = "resource:config.common.nginxFormatInvalid";
-    state.data.regex = "";
   } else {
     state.data.regex = regexStr === INVALID ? "" : regexStr;
   }
@@ -1215,7 +1259,6 @@ const handleFormatChangeForApache = (
   const regexStr = buildRegexFromApacheLog(action.payload);
   if (action.payload && regexStr === INVALID) {
     state.logFormatError = "resource:config.common.apacheFormatError";
-    state.data.regex = "";
   } else {
     state.data.regex = regexStr === INVALID ? "" : regexStr;
   }
@@ -1314,7 +1357,11 @@ export const logConfigSlice = createSlice({
       state.data = action.payload;
       const tmpRegexKeyList = action.payload.regexFieldSpecs as any;
       // update regex key list value
-      if (isSingleLineText(state.data.logType) || isMultilineCustom(state)) {
+      if (
+        isSingleLineText(state.data.logType) ||
+        isMultilineCustom(state) ||
+        isNginx(state.data.logType)
+      ) {
         const result = RegExp(defaultStr(state.data.regex)).exec(
           defaultStr(state.data.userSampleLog)
         );
@@ -1355,6 +1402,9 @@ export const logConfigSlice = createSlice({
         }
       }
     },
+    setDescription: (state, action: PayloadAction<string>) => {
+      state.description = action.payload.substring(0, 120);
+    },
     configNameChanged: (state, action: PayloadAction<string>) => {
       console.info("configNameChanged:");
       state.data.name = action.payload;
@@ -1363,7 +1413,7 @@ export const logConfigSlice = createSlice({
     configLogTypeChanged: (state, action: PayloadAction<LogType>) => {
       console.info("configLogTypeChanged:");
       // reset rest data
-      resetCommonFields(state, ["name"], []);
+      resetCommonFields(state, ["name"], ["description"]);
       state.data.logType = action.payload;
       if (isNginxOrApache(action.payload)) {
         state.showLogFormat = true;
@@ -1384,7 +1434,7 @@ export const logConfigSlice = createSlice({
     },
     sysLogParserChanged: (state, action: PayloadAction<SyslogParser>) => {
       console.info("sysLogParserChanged:");
-      resetCommonFields(state, ["name", "logType"], []);
+      resetCommonFields(state, ["name", "logType"], ["description"]);
       state.data.syslogParser = action.payload;
       if ([SyslogParser.CUSTOM].includes(action.payload)) {
         state.showLogFormat = true;
@@ -1403,7 +1453,7 @@ export const logConfigSlice = createSlice({
     },
     iisLogParserChanged: (state, action: PayloadAction<IISlogParser>) => {
       console.info("iisLogParserChanged:");
-      resetCommonFields(state, ["name", "logType"], []);
+      resetCommonFields(state, ["name", "logType"], ["description"]);
       state.data.iisLogParser = action.payload;
       if ([IISlogParser.W3C].includes(action.payload)) {
         state.showLogFormat = true;
@@ -1425,7 +1475,7 @@ export const logConfigSlice = createSlice({
       action: PayloadAction<MultiLineLogParser>
     ) => {
       console.info("multiLineParserChanged:");
-      resetCommonFields(state, ["name", "logType"], []);
+      resetCommonFields(state, ["name", "logType"], ["description"]);
       state.data.multilineLogParser = action.payload;
       if ([MultiLineLogParser.JAVA_SPRING_BOOT].includes(action.payload)) {
         state.showLogFormat = true;
@@ -1448,7 +1498,7 @@ export const logConfigSlice = createSlice({
           "syslogParser",
           "multilineLogParser",
         ],
-        ["showLogFormat", "showRegex", "regexDisabled"]
+        ["showLogFormat", "showRegex", "regexDisabled", "description"]
       );
       // set new data
       state.data.userLogFormat = action.payload;
@@ -1457,8 +1507,8 @@ export const logConfigSlice = createSlice({
         handleFormatChangeForNginx(state, action);
         state.showRegex = true;
       } else if (state.data.logType === LogType.Apache) {
-        state.showRegex = true;
         handleFormatChangeForApache(state, action);
+        state.showRegex = true;
       } else if (
         state.data.logType === LogType.Syslog &&
         state.data.syslogParser === SyslogParser.CUSTOM
@@ -1496,7 +1546,7 @@ export const logConfigSlice = createSlice({
           "multilineLogParser",
           "userLogFormat",
         ],
-        ["showLogFormat", "showRegex", "regexDisabled"]
+        ["showLogFormat", "showRegex", "regexDisabled", "description"]
       );
       state.data.regex = action.payload;
     },
@@ -1608,7 +1658,7 @@ export const logConfigSlice = createSlice({
       }
       state.userSampleLogError = "";
       const found: any = RegExp(regex).exec(state.data?.userSampleLog);
-      if (isNginxOrApache(state.data.logType)) {
+      if (isApache(state.data.logType)) {
         handleParsingNginxOrApacheLog(state, found);
       } else if (isCustomRegexType(state.data.logType)) {
         handleParsingCustomRegexType(state, found);
@@ -1744,7 +1794,7 @@ export const logConfigSlice = createSlice({
           state.userSampleLogError = "";
           const found: any = action.payload;
           console.info("state.data.logType:", state.data.logType);
-          if (isNginxOrApache(state.data.logType)) {
+          if (isApache(state.data.logType)) {
             handleParsingNginxOrApacheLog(state, found);
           } else if (isCustomRegexType(state.data.logType)) {
             handleParsingCustomRegexType(state, found);
@@ -1780,4 +1830,5 @@ export const {
   timeKeyFormatChanged,
   filterRegexChanged,
   validateLogConfig,
+  setDescription,
 } = logConfigSlice.actions;

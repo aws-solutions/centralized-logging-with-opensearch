@@ -15,9 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import LinkAnAccount from "../LinkAnAccount";
+import { screen, act, waitFor, fireEvent } from "@testing-library/react";
+import { appSyncRequestMutation } from "assets/js/request";
+import { AppStoreMockData, MockNewAccountData } from "test/store.mock";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,26 +41,99 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/hooks/useMemberAccount", () => ({
+  useMemberAccount: () => {
+    return {
+      data: {
+        subAccountId: MockNewAccountData[1],
+        region: "us-example-1",
+        subAccountName: MockNewAccountData[0],
+        subAccountRoleArn: MockNewAccountData[2],
+        agentInstallDoc: MockNewAccountData[3],
+        agentConfDoc: MockNewAccountData[4],
+        windowsAgentInstallDoc: MockNewAccountData[5],
+        windowsAgentConfDoc: MockNewAccountData[6],
+        agentStatusCheckDoc: MockNewAccountData[7],
+        subAccountBucketName: MockNewAccountData[8],
+        subAccountStackId: MockNewAccountData[9],
+        subAccountKMSKeyArn: MockNewAccountData[10],
+        subAccountIamInstanceProfileArn: MockNewAccountData[11],
+        subAccountFlbConfUploadingEventTopicArn: MockNewAccountData[12],
+        tags: [],
+      },
+    };
+  },
+}));
+
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("LinkAnAccount", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/link-account/link"]}>
-        <LinkAnAccount />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <LinkAnAccount />
+        </MemoryRouter>
+      );
+    });
     expect(
-      getByText(/resource:crossAccount.link.stepTwoTitle/i)
+      screen.getByText(/resource:crossAccount.link.stepTwoTitle/i)
     ).toBeInTheDocument();
+  });
+
+  it("should click refresh and remove button", async () => {
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteSubAccountLink: "OK" },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <LinkAnAccount />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            ...AppStoreMockData,
+            memberAccount: {
+              data: {
+                subAccountId: MockNewAccountData[1],
+                region: "us-example-1",
+                subAccountName: MockNewAccountData[0],
+                subAccountRoleArn: MockNewAccountData[2],
+                agentInstallDoc: MockNewAccountData[3],
+                agentConfDoc: MockNewAccountData[4],
+                windowsAgentInstallDoc: MockNewAccountData[5],
+                windowsAgentConfDoc: MockNewAccountData[6],
+                agentStatusCheckDoc: MockNewAccountData[7],
+                subAccountBucketName: MockNewAccountData[8],
+                subAccountStackId: MockNewAccountData[9],
+                subAccountKMSKeyArn: MockNewAccountData[10],
+                subAccountIamInstanceProfileArn: MockNewAccountData[11],
+                subAccountFlbConfUploadingEventTopicArn: MockNewAccountData[12],
+                tags: [],
+              },
+            } as any,
+          },
+        }
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("gsui-loading")).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-link-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("cancel-link-button"));
+    });
   });
 });

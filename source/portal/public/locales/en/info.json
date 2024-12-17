@@ -9,7 +9,7 @@
     "pre1": "1. Domain name",
     "pre2": "2. The domain associated SSL certificate in ",
     "acm": "Amazon Certificate Manager (ACM)",
-    "pre3": "3. An EC2 public key",
+    "pre3": "3. An EC2 Key",
     "createProxy": "Create an Access Proxy"
   },
   "alarm": {
@@ -21,7 +21,6 @@
   },
   "monitoring": {
     "intro": "This tab provides key metrics of each components within the log ingestion pipeline, making it easy for you to monitor the end-to-end log ingestion status(Linux instance supported). Please note, enabling monitoring will incur additional cost, please refer to the following link for cost estimation.",
-    "monitoringCost": "Monitoring Cost",
     "flbAgents": "Fluent Bit agents",
     "syslog": "Syslog metrics"
   },
@@ -50,7 +49,7 @@
     "importDomain": "Import OpenSearch domain"
   },
   "ingestionCreationMethod": {
-    "name": "Log enabling",
+    "name": "Log source enabling",
     "tip1": "Solution can automatically detect the log location, or you can specify the log location manually.",
     "auto": "Automatic",
     "tip2": "The solution will automatically detect the log location of the selected AWS service. If needed, it will enable the service log and save to a centralized log bucket.",
@@ -59,7 +58,7 @@
   },
   "instanceGroupCreationMethod": {
     "name": "Instance Group Creation",
-    "tip1": "Create a new instance group, or choose an existing Instance Group created before.",
+    "tip1": "Create a new Instance Group, or choose an existing Instance Group created before.",
     "instanceGroup": "Instance Group"
   },
   "logConfigPath": {
@@ -67,7 +66,7 @@
     "tip1": "Specify the log file locations. If you have multiple locations, please write all the locations and split using ' , '. e.g.",
     "eks": {
       "title": "For EKS Log, for Sidecar and DamonSet, refer to the following instructions for configuration:",
-      "dtip1": "For nginx as an example, when Amazon Linux2 is selected as the image of the node, if the user deploys the same application under the same EKS Cluster and uses the Namespace to distinguish different environments, it is recommended to use the following log path",
+      "dtip1": "For nginx as an example, when Amazon Linux2 is selected as the image of the node, if the user deploys the same application under the same EKS cluster and uses the Namespace to distinguish different environments, it is recommended to use the following log path",
       "dtip2Title": "The format of log path is:",
       "dtip2": "The <namespace> is the corresponding Namespace that distinguishes different environments, <application_name> is the name of the deployed application, <container_name> is the name of deployed container. The names of application and container are defined in the Yaml file. This is different from deploying nginx on EC2, where log names are often used under EC2. For access.log, the log name is defined in nginx.conf. When creating a configuration file in Solution, pay attention to the path location.",
       "stip1": "That is, attach a dedicated log collection container to the Pod, and use emptyDir to share the log directory to allow the Fluent Bit container to read the data. Fluent Bit containers share storage, network and other resources with application containers. The volume defined in Solution is named app-log. For example: log path",
@@ -137,7 +136,7 @@
     "tip2": " being selected. The dashboard name will be consistent with your table name."
   },
   "lightEngineTableName": {
-    "name": "Log table name",
+    "name": "Table (AWS Glue)",
     "tip": "Table names are recommended to use lowercase letters, numbers, and other special characters except underscore (_). The length must be less than or equal to 255 characters. Exceeding this limit generates an error. For detailed specifications, please refer to the <0>Document</0>"
   },
   "lightEngineLogProcess": {
@@ -160,7 +159,7 @@
     "tips": "You can choose a specific file type for logs stored in Amazon S3. Gzip only supports the compression of a single file."
   },
   "eksPattern": {
-    "name": "Collection Mode",
+    "name": "Deployment option",
     "tip1": " ensures that all (or some) Nodes run a copy of a Pod. As nodes are added to the cluster, Pods are added to them.",
     "tip2": " is a separate container that runs alongside an application container in a Kubernetes pod."
   },
@@ -188,10 +187,10 @@
     "filterLink": "Select or exclude records per patterns"
   },
   "proxyInstance": {
-    "name": "Proxy Instance Type/Number",
+    "name": "Proxy Instance type/Number",
     "tips": "This recommendation table is base on page refresh time and average query delay, please feel free to create proxy and test base on your own use cases.",
     "conUser": "Concurrent User Number",
-    "instanceType": "Proxy Instance Type",
+    "instanceType": "Proxy Instance type",
     "proxyNumber": "Proxy Instance Number"
   },
   "s3PrefixFilter": {
@@ -201,7 +200,7 @@
     "li2": "If you want to only ingest file with log as file extension, you can specify the prefix as log/*.log"
   },
   "pipelineAlarm": {
-    "name": "Pipeline Alarms",
+    "name": "Alarms",
     "desc": "Pipeline alarms will be triggered if any critical metric cross the threshold, which will send notifications to a SNS topic. Those alarms are created based on the best practices for log pipeline monitoring and troubleshooting, you can custom those alarms or create new alarms in CloudWatch",
     "link1": "Pipeline alarms",
     "link2": "Amazon CloudWatch Alarms"
@@ -213,7 +212,19 @@
     "link2": "Cost details"
   },
   "bufferLayer": {
-    "name": "Buffer layer",
-    "desc": "Buffer layer is designed for a robust system between the log source and log destination. This layer can decouple the source and destination and accept more log ingestion requests, and also can buffer the logs for retry when log analytics engine has server issue or performance issue."
+    "name": "Buffer",
+    "desc": "Buffer is designed for a robust system between the log source and log destination. This layer can decouple the source and destination and accept more log ingestion requests, and also can buffer the logs for retry when log analytics engine has server issue or performance issue."
+  },
+  "appPipelineImport": {
+    "name": "Import template",
+    "tip": "Provide your pipeline configuration in YAML file format. Each pipeline is a combination of one or more log sources, a log config, a buffer, a OpenSearch domain, a log processor, and other optional settings. For detailed specifications, please refer to the <0>Document</0>"
+  },
+  "numberOfShards": {
+    "name": "Number of shards",
+    "tip1": "By default in OpenSearch Service, each index is divided into five primary shards and one replica (total of 10 shards). Because you can't easily change the number of primary shards for an existing index, you should decide about shard count before indexing your first document.",
+    "tip2": "The overall goal of choosing a number of shards is to distribute an index evenly across all data nodes in the cluster. However, these shards shouldn't be too large or too numerous. A general guideline is to try to keep shard size between 10–30 GiB for workloads where search latency is a key performance objective, and 30–50 GiB for write-heavy workloads such as log analytics.",
+    "tip3": "For example, suppose you have 66 GiB of data. You don't expect that number to increase over time, and you want to keep your shards around 30 GiB each. Your number of shards therefore should be approximately 66 * 1.1 / 30 = 3. You can generalize this calculation as follows:",
+    "calc": "(Source data + room to grow) * (1 + indexing overhead) / desired shard size = approximate number of primary shards",
+    "link1": "Sizing Amazon OpenSearch Service domains"
   }
 }

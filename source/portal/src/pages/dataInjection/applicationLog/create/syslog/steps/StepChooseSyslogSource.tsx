@@ -106,6 +106,7 @@ const StepChooseSyslogSource: React.FC<IngestSettingProps> = (
                   {ingestionInfo.syslogProtocol &&
                     !ingestionInfo.syslogPortEnable && (
                       <Button
+                        data-testid="syslog-port-edit"
                         onClick={() => {
                           enableCustomPort(true);
                         }}

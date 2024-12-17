@@ -30,7 +30,7 @@ import {
 } from "graphql/mutations";
 import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import { defaultStr, splitStringToBucketAndPrefix } from "assets/js/utils";
 import { AlertType } from "components/Alert/alert";
 import { VPC_FLOW_LOG_SELECT_ALL_FIELDS } from "assets/js/const";
 
@@ -49,7 +49,8 @@ interface AutoEnableProps {
   changeLogBucketAndPrefix: (
     bucket: string,
     prefix: string,
-    enabled: boolean
+    enabled: boolean,
+    type?: string
   ) => void;
   changeEnableStatus: (status: boolean) => void;
   changeLogSource?: (source: string) => void;
@@ -96,12 +97,12 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
       setAutoCreating(false);
       changeEnableStatus(false);
       changeLogBucketAndPrefix(
-        loggingBucketResData.bucket || "",
-        loggingBucketResData.prefix || "",
+        defaultStr(loggingBucketResData.bucket),
+        defaultStr(loggingBucketResData.prefix),
         loggingBucketResData.enabled || false
       );
       if (changeLogSource) {
-        changeLogSource(loggingBucketResData.source || "");
+        changeLogSource(defaultStr(loggingBucketResData.source));
       }
     } catch (error) {
       changeEnableStatus(false);
@@ -136,18 +137,23 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
           const { bucket, prefix } = splitStringToBucketAndPrefix(
             createConfigRes.destinationName
           );
-          changeLogBucketAndPrefix(bucket, prefix, true);
+          changeLogBucketAndPrefix(
+            bucket,
+            prefix,
+            true,
+            createConfigRes.name ?? ""
+          );
         }
         changeEnableTmpFlowList &&
           changeEnableTmpFlowList(
             [
               {
-                name: createConfigRes.name || "",
-                value: createConfigRes.destinationName || "",
-                optTitle: createConfigRes.region || "",
+                name: defaultStr(createConfigRes.name),
+                value: defaultStr(createConfigRes.destinationName),
+                optTitle: defaultStr(createConfigRes.region),
               },
             ],
-            createConfigRes.logFormat || ""
+            defaultStr(createConfigRes.logFormat)
           );
       }
       setAutoCreating(false);
@@ -167,6 +173,7 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
         actions={
           <div>
             <Button
+              data-testid="auto-enable-logging-button"
               loading={autoCreating}
               disabled={autoCreating}
               loadingColor="#666"

@@ -8,4 +8,5 @@ requests-mock
 moto[awslambda]<=4.2.13
 requests_aws4auth
 pyparsing
+responses
 pydantic==1.10.14 --no-binary=pydantic

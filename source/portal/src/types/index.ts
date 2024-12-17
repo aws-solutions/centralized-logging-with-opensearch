@@ -16,7 +16,6 @@ limitations under the License.
 import {
   Codec,
   CompressionType,
-  DestinationType,
   IndexSuffix,
   LogSource,
   MonitorInput,
@@ -69,6 +68,8 @@ export interface AmplifyConfigType {
   solution_version: string;
   solution_name: string;
   template_bucket: string;
+  sns_email_topic_arn: string;
+  oidc_logout_url: string;
 }
 
 export enum ArchiveFormat {
@@ -98,21 +99,6 @@ export const PROXY_INSTANCE_NUMBER_LIST = [
   { name: "2", value: "2" },
   { name: "3", value: "3" },
   { name: "4", value: "4" },
-];
-
-export const CLOUDFRONT_LOG_STANDARD = [
-  {
-    name: "servicelog:cloudfront.standardLogs",
-    value: DestinationType.S3,
-  },
-];
-
-export const CLOUDFRONT_LOG_TYPE = [
-  ...CLOUDFRONT_LOG_STANDARD,
-  {
-    name: "servicelog:cloudfront.realtimeLogs",
-    value: DestinationType.KDS,
-  },
 ];
 
 export enum CloudFrontFieldType {
@@ -179,20 +165,6 @@ export const WarmLogSettingsList = [
   },
 ];
 
-export enum CWLSourceType {
-  S3 = "S3 Bucket",
-  CWL = "CloudWatch Logs",
-}
-
-export const CWL_LOG_S3 = [
-  { name: CWLSourceType.S3, value: DestinationType.S3 },
-];
-
-export const CWL_SOURCE_LIST = [
-  ...CWL_LOG_S3,
-  { name: CWLSourceType.CWL, value: DestinationType.CloudWatch },
-];
-
 export enum S3_STORAGE_CLASS_TYPE {
   STANDARD = "STANDARD",
   STANDARD_IA = "STANDARD_IA",
@@ -220,7 +192,6 @@ export interface ApplicationLogType {
   coldEnable: boolean;
   confirmNetworkChecked: boolean;
   rolloverSizeNotSupport: boolean;
-  enableRolloverByCapacity: boolean;
   warmTransitionType: string;
   aosParams: AppLogOpenSearchParam;
   bufferType: string;
@@ -267,4 +238,14 @@ export interface IngestionPropsType {
   createDashboard: string;
   accountId: string;
   logPath: string;
+}
+
+export enum WAFIngestOption {
+  FullRequest = "FullRequest",
+  SampledRequest = "SampledRequest",
+}
+
+export enum RDSIngestOption {
+  MySQL = "MySQL",
+  PostgreSQL = "PostgreSQL",
 }

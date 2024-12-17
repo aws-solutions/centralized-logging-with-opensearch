@@ -15,9 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import ServiceLog from "../ServiceLog";
+import { screen, fireEvent, act } from "@testing-library/react";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { mockS3ServicePipelineData } from "test/servicelog.mock";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -43,20 +45,86 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 describe("ServiceLog", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/log-pipeline/service-log"]}>
-        <ServiceLog />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listServicePipelines: {
+          pipelines: [{ ...mockS3ServicePipelineData }],
+          total: 1,
         },
-      }
-    );
-    expect(getByText(/servicelog:title/i)).toBeInTheDocument();
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteServicePipeline: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLog />
+        </MemoryRouter>
+      );
+    });
+
+    // click instance item
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-xxxx"));
+    });
+
+    // click view detail button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("svc-log-actions"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("create-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("cancel-delete-button"));
+    });
+  });
+
+  it("renders without errors with refresh", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listServicePipelines: {
+          pipelines: [{ ...mockS3ServicePipelineData }],
+          total: 1,
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteServicePipeline: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLog />
+        </MemoryRouter>
+      );
+    });
+
+    // click refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
   });
 });

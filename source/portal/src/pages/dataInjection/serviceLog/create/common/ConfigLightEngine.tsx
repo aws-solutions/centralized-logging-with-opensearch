@@ -1,16 +1,15 @@
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import Select from "components/Select";
-import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import RefreshIcon from "@material-ui/icons/Refresh";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { InfoBarTypes } from "reducer/appReducer";
 import { AmplifyConfigType, YesNo } from "types";
 import TextInput from "components/TextInput";
 import Button from "components/Button";
 import { useAsyncData } from "assets/js/useAsyncData";
-import { ListGrafanasResponse, Resource, ResourceType, ServiceType } from "API";
+import { ListGrafanasResponse, Resource, ResourceType } from "API";
 import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
 import { listGrafanas, listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
@@ -59,13 +58,9 @@ const ConfigLightEngine = () => {
     grafanaId,
     centralizedBucketName,
     centralizedTableName,
-    logArchiveSchedule,
-    logMergerSchedule,
     logArchiveAge,
-    logMergerAge,
   } = lightEngine;
   const dispatch = useDispatch<Dispatch<any>>();
-  const [showAdvanceSetting, setShowAdvanceSetting] = useState(false);
   const i18n = useTranslation();
   const { t } = i18n;
   const {
@@ -133,92 +128,38 @@ const ConfigLightEngine = () => {
     ],
     []
   );
+
+  useEffect(() => {
+    if (amplifyConfig.default_logging_bucket) {
+      dispatch({
+        type: CreateLightEngineActionTypes.CENTRALIZED_BUCKET_NAME_CHANGED,
+        value: amplifyConfig.default_logging_bucket,
+      });
+    }
+  }, [amplifyConfig.default_logging_bucket]);
+
   return (
-    <PagePanel title={t("lightengine:engine.create.specifyLightEngine")}>
+    <PagePanel title={t("step.analyticsEngine")}>
       <HeaderPanel title={t("lightengine:engine.create.configTitle")}>
         <FormItem
-          optionTitle={t("lightengine:engine.create.sampleDashboardTitle")}
-          optionDesc={t("lightengine:engine.create.sampleDashboardDesc")}
-          infoType={InfoBarTypes.LIGHT_ENGINE_SAMPLE_DASHBOARD}
+          infoType={InfoBarTypes.LIGHT_ENGINE_TABLE_NAME}
+          optionTitle={t("lightengine:engine.create.centralTableTitle")}
+          optionDesc={t("lightengine:engine.create.centralTableDesc")}
+          errorText={lightEngine.centralizedTableNameError}
         >
-          {Object.values(YesNo).map((key) => {
-            return (
-              <div key={key}>
-                <label>
-                  <input
-                    value={sampleDashboard}
-                    onChange={(event) => {
-                      console.info(event);
-                    }}
-                    onClick={() => {
-                      dispatch({
-                        type: CreateLightEngineActionTypes.SAMPLE_DASHBOARD_CHANGED,
-                        value: key,
-                      });
-                    }}
-                    checked={sampleDashboard === key}
-                    name="sampleDashboard"
-                    type="radio"
-                  />{" "}
-                  {t(key.toLocaleLowerCase())}
-                </label>
-              </div>
-            );
-          })}
+          <TextInput
+            className="m-w-75p"
+            onChange={(e) =>
+              dispatch({
+                type: CreateLightEngineActionTypes.CENTRALIZED_TABLE_NAME_CHANGED,
+                value: e.target.value,
+              })
+            }
+            value={centralizedTableName}
+            placeholder="table-name"
+          />
         </FormItem>
-        {sampleDashboard === YesNo.Yes ? (
-          <>
-            <FormItem
-              optionTitle={t("lightengine:grafana.name")}
-              errorText={lightEngine.grafanaIdError}
-            >
-              <div className="flex">
-                <Select
-                  loading={isGrafanaLoading}
-                  disabled={isGrafanaLoading}
-                  placeholder={t(
-                    "lightengine:engine.create.grafanaPlaceholder"
-                  )}
-                  className="m-w-75p flex-1"
-                  hasRefresh
-                  optionList={grafanaOptionList || []}
-                  value={grafanaId ?? ""}
-                  clickRefresh={() => {
-                    reloadGrafana();
-                    if (lightEngine.grafanaId) {
-                      dispatch(
-                        validateGrafanaConnection({
-                          id: lightEngine.grafanaId,
-                        })
-                      );
-                    }
-                  }}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    dispatch({
-                      type: CreateLightEngineActionTypes.GRAFANA_ID_CHANGED,
-                      value: e.target.value,
-                    });
-                    dispatch(
-                      validateGrafanaConnection({
-                        id: e.target.value,
-                      })
-                    );
-                  }}
-                />
-                <ExtButton
-                  className="ml-5"
-                  to="/grafana/import"
-                  style={{ verticalAlign: "bottom" }}
-                >
-                  {t("common:button.import")}
-                </ExtButton>
-              </div>
-            </FormItem>
-            <GrafanaCheckList />
-          </>
-        ) : (
-          <></>
-        )}
+
         <FormItem
           optionTitle={t("lightengine:engine.create.centralBucketTitle")}
           optionDesc={t("lightengine:engine.create.centralBucketDesc")}
@@ -279,24 +220,6 @@ const ConfigLightEngine = () => {
         </FormItem>
 
         <FormItem
-          infoType={InfoBarTypes.LIGHT_ENGINE_TABLE_NAME}
-          optionTitle={t("lightengine:engine.create.centralTableTitle")}
-          optionDesc={t("lightengine:engine.create.centralTableDesc")}
-          errorText={lightEngine.centralizedTableNameError}
-        >
-          <TextInput
-            className="m-w-75p"
-            onChange={(e) =>
-              dispatch({
-                type: CreateLightEngineActionTypes.CENTRALIZED_TABLE_NAME_CHANGED,
-                value: e.target.value,
-              })
-            }
-            value={centralizedTableName}
-          />
-        </FormItem>
-
-        <FormItem
           infoType={InfoBarTypes.LIGHT_ENGINE_LOG_PROCESS}
           optionTitle={t("lightengine:engine.create.logProcessorExpTitle")}
           errorText={lightEngine.logProcessorScheduleExpError}
@@ -349,103 +272,92 @@ const ConfigLightEngine = () => {
           </Grid>
         </FormItem>
 
-        <div>
-          <div
-            className="addtional-settings"
-            onClick={() => {
-              setShowAdvanceSetting(!showAdvanceSetting);
-            }}
-          >
-            <i className="icon">
-              {showAdvanceSetting && <ArrowDropDownIcon fontSize="large" />}
-              {!showAdvanceSetting && (
-                <ArrowDropDownIcon className="reverse-90" fontSize="large" />
-              )}
-            </i>
-            {t("servicelog:cluster.additionalSetting")}
-          </div>
-
-          <div className={showAdvanceSetting ? "" : "hide"}>
+        <FormItem
+          optionTitle={t("lightengine:engine.create.sampleDashboardTitle")}
+          optionDesc={t("lightengine:engine.create.sampleDashboardDesc")}
+          infoType={InfoBarTypes.LIGHT_ENGINE_SAMPLE_DASHBOARD}
+        >
+          {Object.values(YesNo).map((key) => {
+            return (
+              <div key={key}>
+                <label>
+                  <input
+                    value={sampleDashboard}
+                    onChange={(event) => {
+                      console.info(event);
+                    }}
+                    onClick={() => {
+                      dispatch({
+                        type: CreateLightEngineActionTypes.SAMPLE_DASHBOARD_CHANGED,
+                        value: key,
+                      });
+                    }}
+                    checked={sampleDashboard === key}
+                    name="sampleDashboard"
+                    type="radio"
+                  />{" "}
+                  {t(key.toLocaleLowerCase())}
+                </label>
+              </div>
+            );
+          })}
+        </FormItem>
+        {sampleDashboard === YesNo.Yes ? (
+          <>
             <FormItem
-              infoType={InfoBarTypes.LIGHT_ENGINE_LOG_MERGE}
-              optionTitle={t("lightengine:engine.create.logMergerExpTitle")}
-              errorText={lightEngine.logMergerScheduleError}
-              optionDesc={
-                <Trans
-                  i18={i18n}
-                  i18nKey="lightengine:engine.create.logMergerExpDesc"
-                  components={[
-                    <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
-                      1
-                    </ExtLink>,
-                  ]}
-                />
-              }
+              optionTitle={t("lightengine:grafana.name")}
+              optionDesc={t("lightengine:grafana.desc")}
+              errorText={lightEngine.grafanaIdError}
             >
-              <TextInput
-                className="m-w-75p"
-                onChange={(e) =>
-                  dispatch({
-                    type: CreateLightEngineActionTypes.LOG_MERGER_SCHEDULE_CHANGED,
-                    value: e.target.value,
-                  })
-                }
-                value={logMergerSchedule}
-              />
-            </FormItem>
-
-            <FormItem
-              infoType={InfoBarTypes.LIGHT_ENGINE_LOG_ARCHIVE}
-              optionTitle={t("lightengine:engine.create.logArchiveExpTitle")}
-              errorText={lightEngine.logArchiveScheduleError}
-              optionDesc={
-                <Trans
-                  i18={i18n}
-                  i18nKey="lightengine:engine.create.logArchiveExpDesc"
-                  components={[
-                    <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
-                      1
-                    </ExtLink>,
-                  ]}
+              <div className="flex">
+                <Select
+                  loading={isGrafanaLoading}
+                  disabled={isGrafanaLoading}
+                  placeholder={t(
+                    "lightengine:engine.create.grafanaPlaceholder"
+                  )}
+                  className="m-w-75p flex-1"
+                  hasRefresh
+                  optionList={grafanaOptionList || []}
+                  value={grafanaId ?? ""}
+                  clickRefresh={() => {
+                    reloadGrafana();
+                    if (lightEngine.grafanaId) {
+                      dispatch(
+                        validateGrafanaConnection({
+                          id: lightEngine.grafanaId,
+                        })
+                      );
+                    }
+                  }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    dispatch({
+                      type: CreateLightEngineActionTypes.GRAFANA_ID_CHANGED,
+                      value: e.target.value,
+                    });
+                    dispatch(
+                      validateGrafanaConnection({
+                        id: e.target.value,
+                      })
+                    );
+                  }}
                 />
-              }
-            >
-              <TextInput
-                className="m-w-75p"
-                onChange={(e) =>
-                  dispatch({
-                    type: CreateLightEngineActionTypes.LOG_ARCHIVE_SCHEDULE_CHANGED,
-                    value: e.target.value,
-                  })
-                }
-                value={logArchiveSchedule}
-              />
+                <ExtButton
+                  className="ml-5"
+                  to="/grafana/import"
+                  style={{ verticalAlign: "bottom" }}
+                >
+                  {t("common:button.import")}
+                </ExtButton>
+              </div>
             </FormItem>
-          </div>
-        </div>
+            <GrafanaCheckList />
+          </>
+        ) : (
+          <></>
+        )}
       </HeaderPanel>
       <HeaderPanel title={t("servicelog:cluster.logLifecycle")}>
-        <FormItem
-          optionTitle={t("lightengine:engine.create.logMergerAgeTitle")}
-          optionDesc={t("lightengine:engine.create.logMergerAgeDesc")}
-          errorText={lightEngine.logMergerAgeError}
-        >
-          <TextInput
-            className="m-w-75p"
-            placeholder="7"
-            type="number"
-            onChange={(e) =>
-              dispatch({
-                type: CreateLightEngineActionTypes.LOG_MERGER_AGE_CHANGED,
-                value:
-                  e.target.value === ""
-                    ? undefined
-                    : parseInt(e.target.value, 10),
-              })
-            }
-            value={`${logMergerAge}`}
-          />
-        </FormItem>
         <FormItem
           optionTitle={t("lightengine:engine.create.logArchiveAgeTitle")}
           optionDesc={t("lightengine:engine.create.logArchiveAgeDesc")}
@@ -511,14 +423,7 @@ export const covertSvcTaskToLightEngine = (
     parameterKey: "centralizedBucketPrefix",
     parameterValue: CENTRALIZED_BUCKET_PREFIX,
   });
-  // only for RDS task
-  if (pipelineTask.type === ServiceType.RDS) {
-    const paramValue = { DBIdentifiers: [pipelineTask.source] };
-    parameters.push({
-      parameterKey: "context",
-      parameterValue: `${JSON.stringify(paramValue)}`,
-    });
-  }
+
   // only pick ingestion params defined in SVC_TASK_LIGHT_ENGINE_INGEST_MAP
   const ingestion = Object.entries(SVC_TASK_LIGHT_ENGINE_INGEST_MAP).reduce(
     (ret, [k, v]) => {

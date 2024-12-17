@@ -8,7 +8,7 @@ from typing import Union
 class Folder:
     def __init__(self, api):
         self.api = api
-        
+
     def list_folder(self) -> dict:
         """
 
@@ -46,4 +46,3 @@ class Folder:
         """
         path = f"/folders/{folder_uid}"
         return self.api.delete(path=path)
-

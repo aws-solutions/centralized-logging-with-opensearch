@@ -116,8 +116,13 @@ export const LightEngineLogging = ({
   const [executionStatus, setExecutionStatus] = useState<
     ExecutionStatus | "all"
   >("all");
-  const appendExecutionLogs = (log: ExecutionLog[]) =>
-    setExecutionLogs([...executionLogs, ...log]);
+  const appendExecutionLogs = (log: ExecutionLog[]) => {
+    if (log) {
+      setExecutionLogs([...executionLogs, ...log]);
+    } else {
+      setExecutionLogs([...executionLogs]);
+    }
+  };
   const totalPages = useMemo(
     () => Math.ceil(executionLogs.length / PAGE_SIZE),
     [executionLogs.length]
@@ -182,11 +187,11 @@ export const LightEngineLogging = ({
         );
         res = apiRes.data.getLightEngineServicePipelineExecutionLogs;
       }
-      if (!res.items?.length || res.items.length < REQUEST_SIZE) {
+      if (!res?.items?.length || res.items.length < REQUEST_SIZE) {
         setAllFetched(true);
       }
-      appendExecutionLogs(res.items as any);
-      setLastEvaluatedKey(res.lastEvaluatedKey);
+      appendExecutionLogs(res?.items as any);
+      setLastEvaluatedKey(res?.lastEvaluatedKey);
     } catch (error) {
       console.error(error);
       throw error;

@@ -20,7 +20,6 @@ sqs_cli = conn.get_client("sqs")
 
 
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     event_type = event["Records"][0]["eventName"]
 

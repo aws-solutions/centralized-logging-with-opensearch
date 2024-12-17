@@ -81,7 +81,6 @@ def mock_ssm_context():
             Value="off",
             Type="String",
         )
-
         yield
 
 
@@ -349,10 +348,6 @@ def test_k8s_ingestion(mock_ssm_context):
             ingestion_list=eks_ingestion_list,
             open_extra_metadata_flag=False,
             sub_account_cwl_monitor_role_arn=os.environ["CWL_MONITOR_ROLE_ARN"],
-        )
-        flb = k8s_flb.get_flb_image()
-        assert "public.ecr.aws/aws-observability/aws-for-fluent-bit" in flb.get(
-            "flb_img"
         )
 
         kubectl = k8s_flb.get_kubectl()

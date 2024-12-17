@@ -24,7 +24,7 @@ const LogProcessorAlarm: React.FC<AlarmItemProps> = (props: AlarmItemProps) => {
   const { t } = useTranslation();
   const ALARM_LIST = [
     {
-      name: AlarmMetricName.PROCESSOR_ERROR_INVOCATION_ALARM,
+      name: AlarmMetricName.PROCESSOR_ERROR_RATE_ALARM,
     },
     {
       name: AlarmMetricName.PROCESSOR_ERROR_RECORD_ALARM,

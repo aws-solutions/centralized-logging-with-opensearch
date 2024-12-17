@@ -10,6 +10,7 @@ from moto import (
     mock_dynamodb,
     mock_iam,
     mock_sts,
+    mock_events,
 )
 
 from commonlib.exception import APIException
@@ -117,6 +118,7 @@ def iam_client():
 
 
 @mock_sts
+@mock_events
 def test_lambda_handler(ddb_client, iam_client):
     import lambda_function
 

@@ -15,13 +15,15 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
-import { MemoryRouter, useParams } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import ConfigDetail from "../ConfigDetail";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { mockConfigData } from "test/config.mock";
 
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useParams: jest.fn(),
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
 }));
 
 jest.mock("react-i18next", () => ({
@@ -40,26 +42,108 @@ jest.mock("react-i18next", () => ({
 }));
 
 beforeEach(() => {
-  const mockParams = { id: "i-xxxxxxxx", version: "1" };
   // Make useParams return the mock parameters
-  (useParams as any).mockReturnValue(mockParams);
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("ConfigDetail", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/instance-group"]}>
-        <ConfigDetail />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
-    expect(getByText(/resource:config.name/i)).toBeInTheDocument();
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/instance-group"]}>
+          <ConfigDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with config data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: mockConfigData,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/instance-group"]}>
+          <ConfigDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders without config id", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: { ...mockConfigData, id: "" },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/instance-group"]}>
+          <ConfigDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders without version", async () => {
+    jest.mock("react-router-dom", () => ({
+      ...jest.requireActual("react-router-dom"),
+      useParams: () => ({
+        id: "mockedId",
+        version: "",
+      }),
+      useNavigate: () => jest.fn(),
+    }));
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: { ...mockConfigData, id: "" },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/instance-group"]}>
+          <ConfigDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders delete log config", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: mockConfigData,
+      },
+    });
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteLogConfig: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/instance-group"]}>
+          <ConfigDetail />
+        </MemoryRouter>
+      );
+    });
+
+    // Click delete button
+    const deleteButton = screen.getByTestId("delete-button");
+    expect(deleteButton).toBeInTheDocument();
+    fireEvent.click(deleteButton);
+
+    // Click confirm button
+    const confirmButton = screen.getByTestId("confirm-delete-button");
+    expect(confirmButton).toBeInTheDocument();
+    fireEvent.click(confirmButton);
+
+    // Click cancel button
+    const cancelButton = screen.getByTestId("cancel-delete-button");
+    expect(cancelButton).toBeInTheDocument();
+    fireEvent.click(cancelButton);
   });
 });

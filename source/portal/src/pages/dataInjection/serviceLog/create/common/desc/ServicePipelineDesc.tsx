@@ -25,38 +25,58 @@ import ELBDesc from "./ELBDesc";
 import WAFDesc from "./WAFDesc";
 import VPCDesc from "./VPCDesc";
 import ConfigDesc from "./ConfigDesc";
-import { AnalyticEngineTypes } from "types";
 
 export interface ServicePipelineDescProp {
   logType: ServiceLogType;
-  engineType: AnalyticEngineTypes;
+  ingestLogType: string;
+  changeIngestLogType: (ingestLogType: string) => void;
+  region: string;
 }
 
-export const ServicePipelineDesc = ({
+const ServicePipelineDesc: React.FC<ServicePipelineDescProp> = ({
   logType,
-  engineType,
+  ingestLogType,
+  changeIngestLogType,
+  region,
 }: ServicePipelineDescProp) => (
   <>
     {logType === ServiceLogType.Amazon_S3 && <S3Desc />}
     {logType === ServiceLogType.Amazon_RDS && (
-      <RDSDesc engineType={engineType} />
+      <RDSDesc
+        ingestLogType={ingestLogType}
+        changeIngestLogType={changeIngestLogType}
+      />
     )}
     {logType === ServiceLogType.Amazon_CloudTrail && (
-      <CloudTrailDesc engineType={engineType} />
+      <CloudTrailDesc
+        region={region}
+        ingestLogType={ingestLogType}
+        changeIngestLogType={changeIngestLogType}
+      />
     )}
     {logType === ServiceLogType.Amazon_CloudFront && (
-      <CloudFrontDesc engineType={engineType} />
+      <CloudFrontDesc
+        region={region}
+        ingestLogType={ingestLogType}
+        changeIngestLogType={changeIngestLogType}
+      />
     )}
     {logType === ServiceLogType.Amazon_Lambda && <LambdaDesc />}
-    {logType === ServiceLogType.Amazon_ELB && (
-      <ELBDesc engineType={engineType} />
-    )}
+    {logType === ServiceLogType.Amazon_ELB && <ELBDesc />}
     {logType === ServiceLogType.Amazon_WAF && (
-      <WAFDesc engineType={engineType} />
+      <WAFDesc
+        ingestLogType={ingestLogType}
+        changeIngestLogType={changeIngestLogType}
+      />
     )}
     {logType === ServiceLogType.Amazon_VPCLogs && (
-      <VPCDesc engineType={engineType} />
+      <VPCDesc
+        ingestLogType={ingestLogType}
+        changeIngestLogType={changeIngestLogType}
+      />
     )}
     {logType === ServiceLogType.Amazon_Config && <ConfigDesc />}
   </>
 );
+
+export default ServicePipelineDesc;

@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import S3Arch from "assets/images/desc/s3LogArch.webp";
-import ExtLink from "components/ExtLink";
-import { S3_ACCESS_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 const S3Desc: React.FC = () => {
   const { t } = useTranslation();
@@ -25,32 +22,7 @@ const S3Desc: React.FC = () => {
       <div className="ingest-desc-title">
         {t("servicelog:create.service.s3")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:s3.desc.ingest")}
-        <ExtLink to={S3_ACCESS_LOG_LINK}>
-          {t("servicelog:s3.desc.s3Log")}
-        </ExtLink>{" "}
-        {t("intoDomain")}
-      </div>
-      <div>
-        <ul>
-          <li>{t("servicelog:s3.desc.good1")}</li>
-          <li>{t("servicelog:s3.desc.good2")}</li>
-          <li>{t("servicelog:s3.desc.good3")}</li>
-        </ul>
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:s3.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
-      <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={S3Arch}
-        />
-      </div>
+      <div className="ingest-desc-desc">{t("servicelog:s3.desc.ingest")}</div>
     </div>
   );
 };

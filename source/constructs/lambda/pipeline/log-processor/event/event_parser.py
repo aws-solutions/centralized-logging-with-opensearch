@@ -99,6 +99,11 @@ class EventType(ABC):
         super().__init__()
 
         self._parser_name = log_type
+
+        # NOTE: Due to bypass CWL for RDS, the rds logs stored in s3 bucket will be json format.
+        if self._parser_name == "RDS":
+            self._parser_name = "JSON"
+
         if sub_category:
             self._parser_name = self._parser_name + "With" + sub_category
 
@@ -244,68 +249,6 @@ class MSK(EventType):
         self._put_metric(len(total), len(failed_records))
 
 
-class WAFSampled(EventType):
-    def process_event(self, event):
-        records = []
-        web_acls_resp = waf_client.list_web_acls(Scope=scope, Limit=100)
-        now = self.get_event_time(event)
-        for acl in web_acls_resp["WebACLs"]:
-            if acl["Name"] not in web_acl_list:
-                continue
-            records.extend(self.get_records_for_acl(acl, now))
-
-        total, failed_records = self._bulk(records)
-        restorer.export_failed_records(
-            plugin_modules,
-            failed_records,
-            restorer._get_export_prefix(),
-        )
-        self._put_metric(len(total), len(failed_records))
-
-    def get_event_time(self, event):
-        if dt := event.get("time", ""):
-            return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
-        else:
-            logger.info("Unknown event time, use current datetime")
-            return datetime.now()
-
-    def get_records_for_acl(self, acl, now):
-        response = waf_client.get_web_acl(
-            Name=acl["Name"],
-            Scope=scope,
-            Id=acl["Id"],
-        )
-
-        rules = [response["WebACL"]]
-        rules.extend(response["WebACL"]["Rules"])
-        if len(rules) == 0:
-            logger.info("No metrics found for %s", acl["Name"])
-            return []
-
-        records = []
-        for rule in rules:
-            cfg = rule["VisibilityConfig"]
-            if cfg["SampledRequestsEnabled"]:
-                metric_name = cfg["MetricName"]
-
-                # Delay for 5 minute + interval
-                response = waf_client.get_sampled_requests(
-                    WebAclArn=acl["ARN"],
-                    RuleMetricName=metric_name,
-                    Scope=scope,
-                    TimeWindow={
-                        "StartTime": now - timedelta(minutes=5 + interval),
-                        "EndTime": now - timedelta(minutes=5),
-                    },
-                    MaxItems=500,
-                )
-
-                for req in response["SampledRequests"]:
-                    req["WebaclName"] = acl["Name"]
-                    records.append(req)
-        return records
-
-
 class Counter:
     def __init__(self):
         self._value = 0
@@ -406,6 +349,13 @@ class SQS(EventType):
         while b := list(islice(iterator, batch_size)):
             yield b
 
+    def is_event_valid(self, event):
+        return (
+            "Records" in event
+            and "eventSource" in event["Records"][0]
+            and event["Records"][0]["eventSource"] == "aws:sqs"
+        )
+
     def process_event(self, event):
         """
         config = {
@@ -417,39 +367,37 @@ class SQS(EventType):
             "is_gzip": False,
         }
         """
-        if (
-            "Records" in event
-            and "eventSource" in event["Records"][0]
-            and event["Records"][0]["eventSource"] == "aws:sqs"
-        ):
-            failed_records_count = 0
-            total_logs_counter = Counter()
-            for bucket, key in self.get_bucket_and_keys(event):
-                lines = self.s3_read_object_by_lines(bucket, key)
-                if CONFIG_JSON:
-                    log_entry_iter = self.get_log_entry_iter(lines)
-                    # log format is LogEntry type
-                    logs = self._counter_iter(
-                        (log.dict(self._time_key) for log in log_entry_iter),
-                        total_logs_counter,
-                    )
+        if not self.is_event_valid(event):
+            return
 
-                else:
-                    # service log and application log with s3 data buffer
-                    log_iter = self._log_parser.parse(lines)
+        failed_records_count = 0
+        total_logs_counter = Counter()
+        for bucket, key in self.get_bucket_and_keys(event):
+            lines = self.s3_read_object_by_lines(bucket, key)
+            if CONFIG_JSON:
+                log_entry_iter = self.get_log_entry_iter(lines)
+                # log format is LogEntry type
+                logs = self._counter_iter(
+                    (log.dict(self._time_key) for log in log_entry_iter),
+                    total_logs_counter,
+                )
 
-                    logs = self._counter_iter(log_iter, total_logs_counter)
+            else:
+                # service log and application log with s3 data buffer
+                log_iter = self._log_parser.parse(lines)
 
-                batches = self._batch_iter(logs, batch_size)
-                for idx, records in enumerate(batches):
-                    total, failed_records = self._bulk(records)
-                    failed_records_count += len(failed_records)
-                    restorer.export_failed_records(
-                        plugin_modules,
-                        failed_records,
-                        restorer._get_export_prefix(idx, bucket, key),
-                    )
-                self._put_metric(total_logs_counter.value, failed_records_count)
+                logs = self._counter_iter(log_iter, total_logs_counter)
+
+            batches = self._batch_iter(logs, batch_size)
+            for idx, records in enumerate(batches):
+                total, failed_records = self._bulk(records)
+                failed_records_count += len(failed_records)
+                restorer.export_failed_records(
+                    plugin_modules,
+                    failed_records,
+                    restorer._get_export_prefix(idx, bucket, key),
+                )
+            self._put_metric(total_logs_counter.value, failed_records_count)
 
     def get_log_entry_iter(self, lines):
         if self._parser_name != "JSONWithS3":
@@ -477,6 +425,17 @@ class SQS(EventType):
         else:
             # application log with s3 data buffer, JSON format log from FLB
             return self._log_parser.parse_iterable(lines)
+
+
+class EventBridge(SQS):
+    def is_event_valid(self, event: dict):
+        return event.get("detail")
+
+    def get_bucket_and_keys(self, eb_event):
+        detail = eb_event["detail"]
+        bucket = detail["bucket"]["name"]
+        key = detail["object"]["key"]
+        return [(bucket, key)]
 
 
 class LogProcessor:

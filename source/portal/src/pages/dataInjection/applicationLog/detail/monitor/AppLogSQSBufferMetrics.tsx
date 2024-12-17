@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import React from "react";
-import { AppPipeline, PipelineType, MetricName } from "API";
+import { AppPipeline, PipelineType, MetricName, LogEventQueueType } from "API";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
 import { defaultStr } from "assets/js/utils";
 
@@ -30,7 +30,7 @@ const AppLogSQSBufferMetrics: React.FC<AppLogBufferMetricsProps> = (
   props: AppLogBufferMetricsProps
 ) => {
   const { pipelineInfo, startDate, endDate, refreshCount } = props;
-  const AppLogSQSBufferMetricsChartList = [
+  let AppLogBufferMetricsChartList = [
     {
       title: MetricName.SQSNumberOfMessagesSent,
       graphTitle: MetricName.SQSNumberOfMessagesSent,
@@ -52,11 +52,35 @@ const AppLogSQSBufferMetrics: React.FC<AppLogBufferMetricsProps> = (
       yUnit: "Count",
     },
   ];
+  if (pipelineInfo?.logEventQueueType === LogEventQueueType.EventBridge) {
+    AppLogBufferMetricsChartList = [
+      {
+        title: MetricName.EvtMatchedEvents,
+        graphTitle: MetricName.EvtMatchedEvents,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtInvocations,
+        graphTitle: MetricName.EvtInvocations,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtTriggeredRules,
+        graphTitle: MetricName.EvtTriggeredRules,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtFailedInvocations,
+        graphTitle: MetricName.EvtFailedInvocations,
+        yUnit: "Count",
+      },
+    ];
+  }
   return (
     <MonitorMetrics
       type={PipelineType.APP}
       taskId={defaultStr(pipelineInfo?.pipelineId)}
-      metrics={AppLogSQSBufferMetricsChartList}
+      metrics={AppLogBufferMetricsChartList}
       startTime={startDate}
       endTime={endDate}
       refreshCount={refreshCount}

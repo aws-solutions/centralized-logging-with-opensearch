@@ -25,7 +25,6 @@ import {
   accountNameChanged,
   configDocChanged,
   configDocWindowsChanged,
-  fbUploadSNSArnChanged,
   installDocChanged,
   installDocWindowsChanged,
   instanceProfileChanged,
@@ -202,21 +201,6 @@ const LinkAccountComp: React.FC<LinkAccountCompProps> = (
           value={memberAccount.data.subAccountIamInstanceProfileArn}
           onChange={(event) => {
             dispatch(instanceProfileChanged(event.target.value));
-          }}
-        />
-      </FormItem>
-
-      <FormItem
-        optionTitle={t("resource:crossAccount.link.fbConfigUploadSNSTopicArn")}
-        optionDesc={t(
-          "resource:crossAccount.link.fbConfigUploadSNSTopicArnDesc"
-        )}
-        errorText={displayI18NMessage(memberAccount.fbUploadSNSArnError)}
-      >
-        <TextInput
-          value={memberAccount.data.subAccountFlbConfUploadingEventTopicArn}
-          onChange={(event) => {
-            dispatch(fbUploadSNSArnChanged(event.target.value));
           }}
         />
       </FormItem>

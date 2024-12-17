@@ -41,12 +41,13 @@ solution_version = os.environ.get("SOLUTION_VERSION")
 fluent_bit_eks_cluster_namespace = os.environ.get(
     "FLUENT_BIT_EKS_CLUSTER_NAME_SPACE", "logging"
 )
-fluent_bit_mem_buf_limit = os.environ.get("FLUENT_BIT_MEM_BUF_LIMIT", "30M")
+
 container_log_path = os.environ.get("CONTAINER_LOG_PATH", "/var/log/containers/")
 cwl_monitor_role_arn = os.environ.get("CWL_MONITOR_ROLE_ARN")
 stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 fluent_bit_image = os.environ.get(
-    "FLUENT_BIT_IMAGE", "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12"
+    "FLUENT_BIT_IMAGE",
+    "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.2.20241008",
 )
 fluent_bit_log_group_name = os.environ["FLUENT_BIT_LOG_GROUP_NAME"]
 s3_address = os.environ.get("FLB_S3_ADDR")
@@ -216,7 +217,6 @@ class FluentBitDataPipelineBuilder(object):
             output_name=self._ingestion.output.name,
             ingestion_id=self._ingestion.id,
             time_key=self._time_key,
-            mem_buf_limit=fluent_bit_mem_buf_limit,
         )
         if self._ingestion.input.name == "syslog":
             flb_data_pipeline.syslog = self.build_syslog_input()
@@ -456,9 +456,7 @@ class K8sFlb(Flb):
             params["fluent_bit_log_group_name"] = fluent_bit_log_group_name
             params["cwl_monitor_role_arn"] = self._sub_account_cwl_monitor_role_arn
             params["placeholder"] = "    "
-            params["fluent_bit_image"] = self.get_flb_image().get(
-                "flb_img", fluent_bit_image
-            )
+            params["fluent_bit_image"] = fluent_bit_image
             eks_cluster_version = self._eks_source.k8sVersion
             if self._eks_source.deploymentKind == DeploymentKindEnum.DAEMON_SET:
                 params["configmap_list"] = self._configmap_list
@@ -507,9 +505,6 @@ class K8sFlb(Flb):
             content = k8s_template.render(params)
 
         return content
-
-    def get_flb_image(self):
-        return self.get_s3_object(key=f"{solution_version}/flb_version.txt")
 
     def get_kubectl(self):
         return self.get_s3_object(key="kubectl_version.txt")

@@ -26,10 +26,11 @@ import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import { identity } from "lodash";
 import { SelectAnalyticsEngine } from "../common/SelectAnalyticsEngine";
-import { PipelineType } from "API";
+import { IngestionMode, PipelineType } from "API";
 import { AppLogSourceMap } from "./common/AppPipelineDesc";
 import { AnalyticEngineTypes } from "types";
 import CommonLayout from "pages/layout/CommonLayout";
+import IngestionModeSelector from "./create/s3/IngestionModeSelector";
 
 const AppLogSourceList = [
   AppLogSourceMap[AppLogSourceType.EC2],
@@ -46,7 +47,7 @@ const SelectLogSource: React.FC = () => {
       name: t("applog:name"),
       link: "/log-pipeline/application-log",
     },
-    { name: t("applog:selectLogSource.name") },
+    { name: t("applog:selectLogSource.create") },
   ];
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -54,13 +55,19 @@ const SelectLogSource: React.FC = () => {
   const [appLogSourceType, setAppLogSourceType] = useState(
     AppLogSourceType.EC2
   );
+  const [ingestLogType, setIngestLogType] = useState<string>("");
   const [engineType, setEngineType] = useState(AnalyticEngineTypes.OPENSEARCH);
 
   const goToCreatePage = () => {
-    navigate(`/log-pipeline/application-log/create/${appLogSourceType}`);
-    navigate(
-      `/log-pipeline/application-log/create/${appLogSourceType}?engineType=${engineType}`
-    );
+    if (appLogSourceType === AppLogSourceType.S3) {
+      navigate(
+        `/log-pipeline/application-log/create/${appLogSourceType}?engineType=${engineType}&ingestLogType=${ingestLogType}`
+      );
+    } else {
+      navigate(
+        `/log-pipeline/application-log/create/${appLogSourceType}?engineType=${engineType}`
+      );
+    }
   };
 
   useEffect(() => {
@@ -92,6 +99,11 @@ const SelectLogSource: React.FC = () => {
                             onClick={() => {
                               setAppLogSourceType(element.value);
                               setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                              if (element.value === AppLogSourceType.S3) {
+                                setIngestLogType(IngestionMode.ON_GOING);
+                              } else {
+                                setIngestLogType("");
+                              }
                             }}
                             checked={element.value === appLogSourceType}
                             name="service"
@@ -111,14 +123,45 @@ const SelectLogSource: React.FC = () => {
                   );
                 })}
               </div>
+              <div className="ingest-desc-title">
+                {t(AppLogSourceMap[appLogSourceType].name)}
+              </div>
+              {AppLogSourceMap[appLogSourceType].descLink.i18nKey &&
+                t(AppLogSourceMap[appLogSourceType].descLink.i18nKey)}
+              {t(`applog:logSourceDesc.${appLogSourceType}.desc`)}
+              <div>
+                <ul>
+                  <li>{t(`applog:logSourceDesc.${appLogSourceType}.li1`)}</li>
+                  <li>{t(`applog:logSourceDesc.${appLogSourceType}.li2`)}</li>
+                  <li>{t(`applog:logSourceDesc.${appLogSourceType}.li3`)}</li>
+                </ul>
+              </div>
+              {appLogSourceType === AppLogSourceType.S3 && (
+                <div className="mt-10">
+                  <IngestionModeSelector
+                    value={ingestLogType}
+                    setValue={(type) => {
+                      if (type === IngestionMode.ONE_TIME) {
+                        setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                      }
+                      setIngestLogType(type);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </HeaderPanel>
         </PagePanel>
         <SelectAnalyticsEngine
+          disableLightEngine={
+            appLogSourceType === AppLogSourceType.S3 &&
+            ingestLogType === IngestionMode.ONE_TIME
+          }
           pipelineType={PipelineType.APP}
           appLogType={appLogSourceType}
           engineType={engineType}
           setEngineType={setEngineType}
+          ingestLogType={ingestLogType}
         />
         <div className="button-action text-right">
           <Button

@@ -16,8 +16,17 @@ limitations under the License.
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useParams } from "react-router-dom";
 import AppIngestionDetail from "../AppIngestionDetail";
+import { appSyncRequestQuery } from "assets/js/request";
+import { MockAppLogDetailData } from "test/applog.mock";
+import { instanceGroupMockData } from "test/instance.mock";
+
+// Mock the useParams hook before importing the component
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"), // preserve other exports
+  useParams: jest.fn(), // mock useParams
+}));
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,12 +43,41 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
+  const mockParams = { id: "xxxxx", version: "1" };
+  // Make useParams return the mock parameters
+  (useParams as any).mockReturnValue(mockParams);
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("AppIngestionDetail", () => {
   it("renders without errors", () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getAppPipeline: { ...MockAppLogDetailData },
+        getLogSource: instanceGroupMockData,
+        getAppLogIngestion: {
+          id: "xxxxxx",
+          stackId: null,
+          stackName: null,
+          appPipelineId: "xxxxxxx",
+          logPath: "%2Fvar%2Flog%2Fcontainers%2Fsolax.log",
+          sourceId: "b3dbe785-376b-44f1-b085-c0ba187d6edf",
+          sourceType: "EC2",
+          createdAt: "2024-03-26T09:32:34Z",
+          status: "ACTIVE",
+          tags: [],
+          accountId: "123456789012",
+          region: "us-west-2",
+          __typename: "AppLogIngestion",
+        },
+      },
+    });
     const { getByTestId } = renderWithProviders(
       <MemoryRouter>
         <AppIngestionDetail />

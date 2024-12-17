@@ -18,6 +18,22 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import CreateLambda from "../CreateLambda";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { mockOpenSearchStateData } from "test/domain.mock";
+import {
+  MockLambdaList,
+  MockResourceLoggingBucketData,
+  MockSelectProcessorState,
+} from "test/servicelog.mock";
+
+// Mock SelectLogProcessor
+jest.mock("pages/comps/processor/SelectLogProcessor", () => {
+  return {
+    __esModule: true,
+    default: () => <div>SelectLogProcessor</div>,
+  };
+});
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -43,24 +59,105 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("CreateLambda", () => {
-  it("renders without errors", () => {
-    const { getByTestId } = renderWithProviders(
-      <MemoryRouter
-        initialEntries={[
-          "/log-pipeline/service-log/create/lambda?engineType=OPENSEARCH",
-        ]}
-      >
-        <CreateLambda />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
+describe("CreateConfig", () => {
+  it("renders with data for openSearch", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listResources: MockLambdaList,
+        getResourceLoggingBucket: {
+          ...MockResourceLoggingBucketData,
+          enabled: true,
         },
-      }
+        checkOSIAvailability: true,
+        getAccountUnreservedConurrency: 1000,
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { createPipelineParams: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateLambda />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            openSearch: {
+              ...mockOpenSearchStateData,
+            },
+            selectProcessor: {
+              ...MockSelectProcessorState,
+            },
+          },
+        }
+      );
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-next-button"));
+    });
+
+    const autocomplete = screen.getByPlaceholderText(
+      "servicelog:lambda.selectLambda"
     );
-    expect(getByTestId("test-create-lambda")).toBeInTheDocument();
+    // const input = within(autocomplete).getByRole("textbox");
+    autocomplete.focus();
+    // the value here can be any string you want, so you may also consider to
+    // wrapper it as a function and pass in inputValue as parameter
+    fireEvent.change(autocomplete, { target: { value: "a" } });
+    fireEvent.keyDown(autocomplete, { key: "ArrowDown" });
+    fireEvent.keyDown(autocomplete, { key: "Enter" });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-next-button"));
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-next-button"));
+    });
+
+    // input shard number
+    const shardNum = screen.getByPlaceholderText(
+      "servicelog:cluster.inputShardNum"
+    );
+    fireEvent.change(shardNum, { target: { value: 1 } });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-next-button"));
+    });
+
+    // click next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-next-button"));
+    });
+
+    // click create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-create-button"));
+    });
+
+    // click previous button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-previous-button"));
+    });
+
+    // click cancel button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("lambda-cancel-button"));
+    });
   });
 });

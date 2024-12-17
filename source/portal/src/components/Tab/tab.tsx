@@ -19,11 +19,10 @@ import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
 import Typography from "@material-ui/core/Typography";
 
-interface StyledTabProps {
-  label: string;
+type StyledTabProps = {
   value?: string;
   className?: string;
-}
+} & React.ComponentProps<typeof Tab>
 
 const AntTabs = withStyles({
   root: {
@@ -34,7 +33,7 @@ const AntTabs = withStyles({
   },
 })(Tabs);
 
-const AntTab = withStyles((theme: Theme) =>
+export const getColoredTab = (color = "#ec7211") => withStyles((theme: Theme) =>
   createStyles({
     root: {
       textTransform: "none",
@@ -43,20 +42,22 @@ const AntTab = withStyles((theme: Theme) =>
       // borderRight: "1px solid #f00",
       marginRight: theme.spacing(4),
       "&:hover": {
-        color: "#ec7211",
+        color,
         opacity: 1,
       },
       "&$selected": {
-        color: "#ec7211",
+        color,
         fontWeight: "bold",
       },
       "&:focus": {
-        color: "#ec7211",
+        color,
       },
     },
     selected: {},
   })
 )((props: StyledTabProps) => <Tab disableRipple {...props} />);
+
+const AntTab = getColoredTab();
 
 interface TabPanelProps {
   children?: any;

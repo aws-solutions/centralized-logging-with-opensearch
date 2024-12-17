@@ -47,14 +47,13 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
       reloadDetailInfo();
     } catch (error) {
       setLoadingDelete(false);
-      console.error(error);
     }
   };
 
   const buildAlarmValue = (value?: any, type?: AlarmType | null) => {
-    if (Number.isInteger(parseInt(value || ""))) {
+    if (Number.isInteger(parseInt(defaultStr(value)))) {
       if (type === AlarmType.FREE_STORAGE_SPACE) {
-        return parseFloat(value || "") / 1024;
+        return parseFloat(defaultStr(value)) / 1024;
       } else {
         return value;
       }
@@ -72,6 +71,7 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
               (domainInfo.alarmStatus === StackStatus.ENABLED ||
                 domainInfo.alarmStatus === StackStatus.ERROR) && (
                 <Button
+                  data-testid="delete-alarm-button"
                   onClick={() => {
                     setOpenDeleteModal(true);
                   }}
@@ -127,6 +127,7 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               disabled={loadingDelete}
               btnType="text"
               onClick={() => {
@@ -136,6 +137,7 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

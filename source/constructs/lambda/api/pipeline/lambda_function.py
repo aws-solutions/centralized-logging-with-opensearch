@@ -12,6 +12,7 @@ from commonlib import AWSConnection, handle_error, AppSyncRouter
 from commonlib import DynamoDBUtil, LinkAccountHelper
 from commonlib.dao import SvcPipelineDao, ETLLogDao
 from commonlib.model import (
+    LogEventQueueType,
     PipelineMonitorStatus,
     PipelineAlarmStatus,
     EngineType,
@@ -22,9 +23,7 @@ from commonlib.model import (
 )
 from commonlib.exception import APIException, ErrorCode
 from commonlib.utils import paginate, create_stack_name
-from commonlib.aws import (
-    verify_s3_bucket_prefix_overlap_for_event_notifications,
-)
+
 
 logger = get_logger(__name__)
 
@@ -53,6 +52,9 @@ account_helper = LinkAccountHelper(link_account_table_name)
 current_account_id = os.environ.get("ACCOUNT_ID")
 current_region = os.environ.get("REGION")
 current_partition = os.environ.get("PARTITION")
+
+grafana_secret_arn = os.environ.get("GRAFANA_SECRET_ARN")
+secretsmanager = conn.get_client("secretsmanager")
 
 
 @handle_error
@@ -223,9 +225,9 @@ def get_light_engine_service_pipeline_logs(**args):
         execution_tasks["lastEvaluatedKey"] = response["LastEvaluatedKey"]
 
     for item in execution_tasks["items"]:
-        item[
-            "executionArn"
-        ] = f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
+        item["executionArn"] = (
+            f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
+        )
         item.pop("pipelineIndexKey", None)
 
     return execution_tasks
@@ -257,27 +259,8 @@ def get_light_engine_service_pipeline_detail(**args):
     return service_pipeline_detail
 
 
-def verify_s3_bucket_prefix_overlap(
-    log_source_account_assume_role,
-    service_type,
-    logging_bucket_name,
-    logging_bucket_prefix,
-):
-    s3_client = conn.get_client(
-        "s3",
-        current_region,
-        sts_role_arn=log_source_account_assume_role,
-    )
-    if service_type.lower() in ("lambda", "rds"):
-        s3_client = conn.get_client("s3", current_region)
-
-    verify_s3_bucket_prefix_overlap_for_event_notifications(
-        s3_client, logging_bucket_name, logging_bucket_prefix
-    )
-
-
 @router.route(field_name="createServicePipeline")
-def create_service_pipeline(**args):
+def create_service_pipeline(**args):  # NOSONAR
     """Create a service pipeline deployment"""
     logger.info("Create Service Pipeline")
 
@@ -287,7 +270,7 @@ def create_service_pipeline(**args):
     service_type = args["type"]
     source = args["source"]
     target = args["target"]
-    log_processor_concurrency = args["logProcessorConcurrency"]
+    log_processor_concurrency = args.get("logProcessorConcurrency", "0")
     monitor = args.get("monitor") or {"status": PipelineMonitorStatus.ENABLED}
     osi_params = args.get("osiParams")
     destination_type = args["destinationType"]
@@ -298,6 +281,14 @@ def create_service_pipeline(**args):
 
     account = account_helper.get_link_account(account_id, region)
     log_source_account_assume_role = account.get("subAccountRoleArn", "")
+
+    if service_type == "RDS":
+        args["parameters"].append(
+            {
+                "parameterKey": "dbIdentifier",
+                "parameterValue": source,
+            }
+        )
 
     args["parameters"].append(
         {
@@ -336,28 +327,18 @@ def create_service_pipeline(**args):
     )
 
     enable_autoscaling = "no"
-    logging_bucket_name = ""
-    logging_bucket_prefix = ""
+
     for p in args["parameters"]:
         if p["parameterKey"] == "enableAutoScaling":
             enable_autoscaling = p["parameterValue"]
             continue
-        if p["parameterKey"] == "logBucketName":
-            logging_bucket_name = p["parameterValue"]
-        if p["parameterKey"] == "logBucketPrefix":
-            logging_bucket_prefix = p["parameterValue"]
         params.append(
             {
                 "ParameterKey": p["parameterKey"],
                 "ParameterValue": p["parameterValue"],
             }
         )
-    verify_s3_bucket_prefix_overlap(
-        log_source_account_assume_role,
-        service_type,
-        logging_bucket_name,
-        logging_bucket_prefix,
-    )
+
     if osi_params is not None:
         if osi_params["maxCapacity"] != 0 and osi_params["minCapacity"] != 0:
             params.append(
@@ -418,6 +399,8 @@ def create_service_pipeline(**args):
         "osiPipelineName": f"cl-{pipeline_id[:23]}",
         "engineType": EngineType.OPEN_SEARCH,
         "status": "CREATING",
+        "logProcessorLastConcurrency": int(log_processor_concurrency),
+        "logEventQueueType": LogEventQueueType.EVENT_BRIDGE,
     }
     ddb_util.put_item(item)
     return pipeline_id
@@ -437,7 +420,11 @@ def create_light_engine_service_pipeline(**args):
     region = args.get("logSourceRegion") or account_helper.default_region
 
     account = account_helper.get_link_account(account_id, region)
-    log_source_account_assume_role = account.get("subAccountRoleArn", "")
+    log_source_account_assume_role = (
+        ""
+        if service_type in ("RDS", "WAFSampled")
+        else account.get("subAccountRoleArn", "")
+    )
 
     stack_name = create_stack_name("SvcPipe", pipeline_id)
     monitor_detail = MonitorDetail(**monitor)
@@ -465,13 +452,16 @@ def create_light_engine_service_pipeline(**args):
         ),
         logMergerSchedule=get_value_through_parameter_key(
             key="logMergerSchedule", parameters=parameters
-        ),
+        )
+        or "cron(0 1 * * ? *)",
         logArchiveSchedule=get_value_through_parameter_key(
             key="logArchiveSchedule", parameters=parameters
-        ),
+        )
+        or "cron(0 2 * * ? *)",
         logMergerAge=get_value_through_parameter_key(
             key="logMergerAge", parameters=parameters
-        ),
+        )
+        or "7",
         logArchiveAge=get_value_through_parameter_key(
             key="logArchiveAge", parameters=parameters
         ),
@@ -487,21 +477,11 @@ def create_light_engine_service_pipeline(**args):
         light_engine_params.enrichmentPlugins = get_value_through_parameter_key(
             key="enrichmentPlugins", parameters=parameters
         )
-    logging_bucket_name = get_value_through_parameter_key(
-        key="logBucketName", parameters=parameters
-    )
-    logging_bucket_prefix = get_value_through_parameter_key(
-        key="logBucketPrefix", parameters=parameters
-    )
-    verify_s3_bucket_prefix_overlap(
-        log_source_account_assume_role,
-        service_type,
-        logging_bucket_name,
-        logging_bucket_prefix,
-    )
+
     context = get_value_through_parameter_key(key="context", parameters=parameters)
     svc_pipeline_dao = SvcPipelineDao(pipeline_table_name)
     svc_pipeline = SvcPipeline(
+        logEventQueueType=LogEventQueueType.EVENT_BRIDGE,
         id=pipeline_id,
         type=service_type,
         source=source,
@@ -521,6 +501,13 @@ def create_light_engine_service_pipeline(**args):
         grafana = grafana_ddb_util.get_item(
             {"id": svc_pipeline.lightEngineParams.grafanaId}
         )
+        if not grafana.get("token"):
+            secret_str = secretsmanager.get_secret_value(SecretId=grafana_secret_arn)[
+                "SecretString"
+            ]
+            grafana_secret = json.loads(secret_str)
+            token = grafana_secret.get(svc_pipeline.lightEngineParams.grafanaId)
+            grafana["token"] = token
 
     sfn_parameters = svc_pipeline_dao.get_light_engine_stack_parameters(
         service_pipeline=svc_pipeline, grafana=grafana
@@ -535,6 +522,9 @@ def create_light_engine_service_pipeline(**args):
         "bucket": args["ingestion"]["bucket"],
         "prefix": args["ingestion"]["prefix"],
         "context": context or "{}",
+        "services": {
+            "s3EventDriver": "EventBridge",
+        },
     }
 
     sfn_args = {
@@ -561,6 +551,7 @@ def get_service_pipeline(id: str):
     """Get a service pipeline detail"""
 
     item = ddb_util.get_item({"id": id})
+    item["logProcessorConcurrency"] = item.get("logProcessorLastConcurrency", "-")
 
     # Get the error log prefix
     error_log_prefix = get_error_export_info(item)

@@ -3,13 +3,14 @@
 
 import uuid
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from pydantic import (
     BaseModel,
     Field,
     constr,
     validator,
+    root_validator,
 )
 
 DEFAULT_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -61,6 +62,7 @@ class BufferTypeEnum(CommonEnum):
     KDS = "KDS"
     S3 = "S3"
     MSK = "MSK"
+    CloudWatch = "CloudWatch"
 
 
 class DomainImportStatusEnum(CommonEnum):
@@ -74,8 +76,10 @@ class DomainImportStatusEnum(CommonEnum):
 
 class StatusEnum(CommonEnum):
     ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
     INACTIVE = "INACTIVE"
     CREATING = "CREATING"
+    UPDATING = "UPDATING"
     DELETING = "DELETING"
     ERROR = "ERROR"
     REGISTERED = "REGISTERED"
@@ -163,8 +167,10 @@ class PipelineType(CommonEnum):
 
 
 class PipelineAlarmType(CommonEnum):
+    DEAD_LETTER_INVOCATIONS = "DEAD_LETTER_INVOCATIONS"
     OLDEST_MESSAGE_AGE_ALARM = "OLDEST_MESSAGE_AGE_ALARM"
     PROCESSOR_ERROR_INVOCATION_ALARM = "PROCESSOR_ERROR_INVOCATION_ALARM"
+    PROCESSOR_ERROR_RATE_ALARM = "PROCESSOR_ERROR_RATE_ALARM"
     PROCESSOR_ERROR_RECORD_ALARM = "PROCESSOR_ERROR_RECORD_ALARM"
     PROCESSOR_DURATION_ALARM = "PROCESSOR_DURATION_ALARM"
     KDS_THROTTLED_RECORDS_ALARM = "KDS_THROTTLED_RECORDS_ALARM"
@@ -203,6 +209,11 @@ class NotificationService(CommonEnum):
     SES = "SES"
 
 
+class LogEventQueueType(CommonEnum):
+    EVENT_BRIDGE = "EventBridge"
+    SQS = "SQS"
+
+
 class Tag(BaseModel):
     key: str
     value: str
@@ -235,7 +246,7 @@ class CommonModel(BaseModel):
 
 class Vpc(BaseModel):
     privateSubnetIds: str
-    publicSubnetIds: str
+    publicSubnetIds: str = ""
     securityGroupId: str
     vpcId: str
 
@@ -310,12 +321,14 @@ class AppPipeline(CommonModel):
     osHelperFnArn: str = ""
     queueArn: str = ""
     logProcessorRoleArn: str = ""
+    logProcessorLastConcurrency: Optional[int] = None
     error: str = ""
     monitor: MonitorDetail
     osiParams: Optional[OpenSearchIngestionInput] = None
     processorLogGroupName: str = ""
     helperLogGroupName: str = ""
     logEventQueueName: str = ""
+    logEventQueueType: LogEventQueueType = LogEventQueueType.SQS
     osiPipelineName: Optional[str] = None
     engineType: EngineType = EngineType.OPEN_SEARCH
     logStructure: Optional[LogStructure] = None
@@ -381,6 +394,7 @@ class LogConfig(CommonModel):
     timeKeyRegex: str = ""
     userLogFormat: str = ""
     userSampleLog: str = ""
+    description: str = ""
 
     @staticmethod
     def find_in_regex_field_specs(
@@ -534,6 +548,7 @@ class S3Source(BaseModel):
 
 class LogSource(CommonModel):
     sourceId: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: Optional[str] = None
     type: LogSourceTypeEnum = LogSourceTypeEnum.EC2
     accountId: str = ""
     region: str = ""
@@ -583,6 +598,16 @@ class LogSource(CommonModel):
             raise ValueError("s3 cannot be None when type is s3")
         return v
 
+    @root_validator()
+    def _add_name(cls, values):
+        if values["type"] == LogSourceTypeEnum.EC2 and "ec2" in values:
+            values["name"] = values["ec2"].groupName
+        elif values["type"] == LogSourceTypeEnum.EKSCluster and "eks" in values:
+            values["name"] = values["eks"].eksClusterName
+        else:
+            values["name"] = ""
+        return values
+
 
 class Instance(CommonModel):
     id: str
@@ -617,11 +642,13 @@ class SvcPipeline(CommonModel):
     helperLogGroupName: str = ""
     logEventQueueArn: str = ""
     logEventQueueName: str = ""
+    logEventQueueType: LogEventQueueType = LogEventQueueType.SQS
     logSourceAccountId: str = ""
     logSourceRegion: str = ""
     monitor: MonitorDetail
     parameters: List[Parameter] = []
     processorLogGroupName: str = ""
+    logProcessorLastConcurrency: Optional[int] = None
     lightEngineParams: Optional[LightEngineParams] = None
     source: str = ""
     stackId: str = ""
@@ -654,11 +681,65 @@ class ETLLog(CommonModel):
     status: ExecutionStatus
 
 
-class OpenSearchDomain(BaseModel):
+class ProxyVpc(BaseModel):
+    privateSubnetIds: str
+    publicSubnetIds: str
+    securityGroupId: str
+    vpcId: str
+
+
+class ProxyInput(BaseModel):
+    certificateArn: str
+    cognitoEndpoint: str
+    customEndpoint: str
+    elbAccessLogBucketName: str = ""
+    keyName: str
+    proxyInstanceNumber: str = ""
+    proxyInstanceType: str = ""
+    vpc: ProxyVpc
+
+
+class Resource(BaseModel):
+    name: str
+    status: str
+    values: List[Optional[str]]
+
+
+class OpenSearchDomain(CommonModel):
     # NOTE: This model can only match partial fields in DDB due to the limited time.
     id: str
+    accountId: str
+    alarmStackId: str = ""
+    alarmInput: Optional[dict] = None
+    alarmStatus: str
     domainArn: str
+    domainInfo: dict
     domainName: str
     endpoint: str
+    engine: str
+    importedDt: str
+    importMethod: str
     masterRoleArn: Optional[str]
+    error: str = ""
+    proxyALB: str = ""
+    proxyError: str = ""
+    proxyInput: Optional[ProxyInput] = None
+    proxyStackId: str = ""
+    proxyStatus: str
+    region: str
+    resources: List[Resource]
+    version: str
+    vpc: Vpc
     status: DomainImportStatusEnum = DomainImportStatusEnum.INACTIVE
+
+    @validator("proxyInput", pre=True)
+    def parse_proxy_input_empty_dict(cls, value):
+        if value == {}:
+            return None
+        return value
+
+    @validator("alarmInput", pre=True)
+    def parse_alarm_input_empty_dict(cls, value):  # NOSONAR
+        if value == {}:
+            return None
+        return value

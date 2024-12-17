@@ -15,9 +15,9 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import LinkAccountComp from "../LinkAccountComp";
+import { screen, act, fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -38,22 +38,35 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("CrossAccountDetail", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter>
-        <LinkAccountComp />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
+describe("LinkAccountComp", () => {
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <LinkAccountComp />
+        </MemoryRouter>
+      );
+    });
     expect(
-      getByText(/resource:crossAccount.link.accountNameDesc/i)
+      screen.getByText(/resource:crossAccount.link.accountNameDesc/i)
     ).toBeInTheDocument();
+  });
+
+  it("renders with data and edit", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <LinkAccountComp />
+        </MemoryRouter>
+      );
+    });
+
+    // get all input elements
+    const inputs = screen.getAllByRole("textbox");
+
+    // foreach and fire input action
+    inputs.forEach((input, index) => {
+      fireEvent.change(input, { target: { value: `value-${index}` } });
+    });
   });
 });

@@ -13,93 +13,57 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo, useState } from "react";
-import WAFArch from "assets/images/desc/wafArch.webp";
-import wafSamplingArch from "assets/images/desc/wafSamplingArch.webp";
-import wafLightEngineArch from "assets/images/desc/wafLightEngineArch.webp";
-import ExtLink from "components/ExtLink";
-import { WAF_ACCESS_LOG_LINK } from "assets/js/const";
+import { FormControlLabel, RadioGroup } from "@material-ui/core";
+import FormItem from "components/FormItem";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes } from "types";
+import Radio from "components/Radio";
+import { WAFIngestOption } from "types";
 
 export interface WAFDescProps {
-  engineType: AnalyticEngineTypes;
+  ingestLogType: string;
+  changeIngestLogType: (type: string) => void;
 }
 
-const WAFDesc = ({ engineType }: WAFDescProps) => {
+const WAFDesc: React.FC<WAFDescProps> = (props: WAFDescProps) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("fullRequest");
-  const isLightEngine = useMemo(
-    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
-    [engineType]
-  );
+  const { ingestLogType, changeIngestLogType } = props;
+
   return (
     <div>
       <div className="ingest-desc-title">
         {t("servicelog:create.service.waf")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:waf.desc.ingest")}
-        <ExtLink to={WAF_ACCESS_LOG_LINK}>
-          {t("servicelog:waf.desc.wafLog")}
-        </ExtLink>{" "}
-        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:waf.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">
-        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
-      </div>
-      {!isLightEngine ? (
-        <>
-          <AntTabs
-            value={activeTab}
-            onChange={(event, newTab) => {
-              setActiveTab(newTab);
+      <div className="ingest-desc-desc">{t("servicelog:waf.desc.ingest")}</div>
+      <div className="mt-10">
+        <FormItem
+          optionTitle={t("servicelog:create.ingestLogType")}
+          optionDesc={t("servicelog:create.ingestLogTypeDesc")}
+        >
+          <RadioGroup
+            className="radio-group"
+            value={ingestLogType}
+            onChange={(e) => {
+              changeIngestLogType(e.target.value);
             }}
           >
-            <AntTab
-              label={t("servicelog:waf.fullRequest")}
-              value="fullRequest"
+            <FormControlLabel
+              value={WAFIngestOption.FullRequest}
+              control={<Radio />}
+              label={t(
+                `servicelog:create.ingestType${WAFIngestOption.FullRequest}`
+              )}
             />
-            <AntTab
-              label={t("servicelog:waf.sampledRequest")}
-              value="wafSampling"
+            <FormControlLabel
+              value={WAFIngestOption.SampledRequest}
+              control={<Radio />}
+              label={t(
+                `servicelog:create.ingestType${WAFIngestOption.SampledRequest}`
+              )}
             />
-          </AntTabs>
-          <TabPanel value={activeTab} index="fullRequest">
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={WAFArch}
-              />
-            </div>
-          </TabPanel>
-          <TabPanel value={activeTab} index="wafSampling">
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={wafSamplingArch}
-              />
-            </div>
-          </TabPanel>
-        </>
-      ) : (
-        <div className="mt-10">
-          <img
-            className="img-border"
-            alt="architecture"
-            width="80%"
-            src={wafLightEngineArch}
-          />
-        </div>
-      )}
+          </RadioGroup>
+        </FormItem>
+      </div>
     </div>
   );
 };

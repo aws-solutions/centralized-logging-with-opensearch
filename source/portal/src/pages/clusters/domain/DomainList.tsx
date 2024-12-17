@@ -38,12 +38,15 @@ import {
   buildSGLink,
   buildVPCPeeringLink,
   defaultStr,
+  formatNumber,
   humanFileSize,
 } from "assets/js/utils";
 import { handleErrorMessage } from "assets/js/alert";
 import { RootState } from "reducer/reducers";
 import ButtonRefresh from "components/ButtonRefresh";
 import CommonLayout from "pages/layout/CommonLayout";
+import { FormControlLabel, RadioGroup } from "@material-ui/core";
+import Radio from "components/Radio";
 
 interface ResourceListType {
   name: string;
@@ -67,7 +70,6 @@ const ESDomainList: React.FC = () => {
   const [selectedDomains, setSelectedDomains] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingResources, setLoadingResources] = useState(false);
-  const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [curTipsDomain, setCurTipsDomain] = useState<ImportedDomain>();
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
@@ -168,14 +170,6 @@ const ESDomainList: React.FC = () => {
     setRemoveErrorMessage(undefined);
   };
 
-  const clickToReviewDetail = () => {
-    navigate(
-      `/clusters/opensearch-domains/detail/${encodeURIComponent(
-        selectedDomains[0].id
-      )}`
-    );
-  };
-
   const handleReverseChange = (event: {
     target: { value: React.SetStateAction<string> };
   }) => {
@@ -189,7 +183,6 @@ const ESDomainList: React.FC = () => {
         id: curTipsDomain?.id,
         isReverseConf: reverseOrKeep === "reverse",
       });
-      console.info("removeRes:", resData);
       const _domainRelevantResources: DomainRelevantResource[] =
         resData.data.removeDomain.resources;
       setDomainRelatedResources(_domainRelevantResources);
@@ -220,12 +213,6 @@ const ESDomainList: React.FC = () => {
   }, [curTipsDomain]);
 
   useEffect(() => {
-    console.info("selectedDomains:", selectedDomains);
-    if (selectedDomains.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
     if (selectedDomains.length > 0) {
       setDisabledDelete(false);
     } else {
@@ -299,7 +286,8 @@ const ESDomainList: React.FC = () => {
             {
               id: "searchableDocs",
               header: t("cluster:domain.searchDocs"),
-              cell: (e: ImportedDomain) => e.metrics?.searchableDocs,
+              cell: (e: ImportedDomain) =>
+                formatNumber(e.metrics?.searchableDocs ?? 0),
             },
             {
               id: "freeSpace",
@@ -317,6 +305,7 @@ const ESDomainList: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 disabled={loadingData}
                 btnType="icon"
                 onClick={() => {
@@ -326,14 +315,7 @@ const ESDomainList: React.FC = () => {
                 <ButtonRefresh loading={loadingData} />
               </Button>
               <Button
-                onClick={() => {
-                  clickToReviewDetail();
-                }}
-                disabled={disabledDetail}
-              >
-                {t("button.viewDetail")}
-              </Button>
-              <Button
+                data-testid="remove-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeImportDomain();
@@ -342,6 +324,7 @@ const ESDomainList: React.FC = () => {
                 {t("button.remove")}
               </Button>
               <Button
+                data-testid="import-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/clusters/import-opensearch-cluster");
@@ -366,6 +349,7 @@ const ESDomainList: React.FC = () => {
           <div className="button-action no-pb text-right">
             {!removeCancel && (
               <Button
+                data-testid="cancel-remove-button"
                 disabled={loadingDelete}
                 btnType="text"
                 onClick={() => {
@@ -376,12 +360,10 @@ const ESDomainList: React.FC = () => {
               </Button>
             )}
             <Button
+              data-testid="confirm-remove-button"
               loading={loadingDelete}
               btnType="primary"
-              disabled={
-                (selectedDomains.length === 1 && reverseOrKeep === "unset") ||
-                loadingResources
-              }
+              disabled={selectedDomains.length < 1 || loadingResources}
               onClick={() => {
                 if (!removeCancel) {
                   confirmRemoveImportDomain();
@@ -403,7 +385,6 @@ const ESDomainList: React.FC = () => {
           <TablePanel
             trackId="name"
             hideFilterAndPagination
-            title=""
             loading={loadingResources}
             selectType={SelectType.NONE}
             changeSelected={(items: any) => {
@@ -412,7 +393,7 @@ const ESDomainList: React.FC = () => {
             columnDefinitions={[
               {
                 id: "resourceName",
-                header: t("cluster:domain.resourceName"),
+                header: t("cluster:domain.type"),
                 cell: (e: ResourceListType) => {
                   const mappedName = resourceNameMap[e.name] || e.name;
                   return mappedName;
@@ -444,33 +425,52 @@ const ESDomainList: React.FC = () => {
             </div>
           )}
           <div className="mt-10">
-            {/* For old version (v1.x), not allow customer to choose reverse changes */}
-            {!removeCancel && domainRelatedResources.length > 0 && (
-              <div key="keep">
-                <label>
-                  <input
-                    type="radio"
+            <RadioGroup
+              className="radio-group"
+              value={reverseOrKeep}
+              onChange={(e) => {
+                handleReverseChange(e);
+              }}
+            >
+              {!removeCancel && domainRelatedResources.length > 0 && (
+                <div key="keep">
+                  <FormControlLabel
                     value="keep"
-                    checked={reverseOrKeep === "keep"}
-                    onChange={handleReverseChange}
+                    control={<Radio />}
+                    label={
+                      <div>
+                        <div className="radio-title">
+                          {t("cluster:domain.retain")}
+                        </div>
+                        <div className="radio-desc">
+                          {t("cluster:domain.retainDesc")}
+                        </div>
+                      </div>
+                    }
                   />
-                  &nbsp;{t("cluster:domain.chooseKeep")}
-                </label>
-              </div>
-            )}
-            {!removeCancel && domainRelatedResources.length > 0 && (
-              <div key="reverse">
-                <label>
-                  <input
-                    type="radio"
+                </div>
+              )}
+              {/* For old version (v1.x), not allow customer to choose reverse changes */}
+              {!removeCancel && domainRelatedResources.length > 0 && (
+                <div key="reverse">
+                  <FormControlLabel
+                    data-testid="reverse-input-radio"
                     value="reverse"
-                    checked={reverseOrKeep === "reverse"}
-                    onChange={handleReverseChange}
+                    control={<Radio />}
+                    label={
+                      <div>
+                        <div className="radio-title">
+                          {t("cluster:domain.rollback")}
+                        </div>
+                        <div className="radio-desc">
+                          {t("cluster:domain.rollbackDesc")}
+                        </div>
+                      </div>
+                    }
                   />
-                  &nbsp;{t("cluster:domain.chooseReverse")}
-                </label>
-              </div>
-            )}
+                </div>
+              )}
+            </RadioGroup>
           </div>
         </div>
       </Modal>

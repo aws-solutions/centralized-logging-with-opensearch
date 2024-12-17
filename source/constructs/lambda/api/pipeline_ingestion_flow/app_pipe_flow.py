@@ -163,6 +163,7 @@ def update_status(pipeline_id: str, args, result, item):
     # Define status mapping
     status_mapping = {
         "CREATE_COMPLETE": "ACTIVE",
+        "UPDATE_COMPLETE": "ACTIVE",
         "DELETE_COMPLETE": "INACTIVE",
     }
 

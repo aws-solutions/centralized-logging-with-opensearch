@@ -14,46 +14,46 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { Aws, RemovalPolicy, CfnOutput } from "aws-cdk-lib";
-import { Database } from "@aws-cdk/aws-glue-alpha";
+import { Aws, CfnOutput, aws_ssm as ssm } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
 
-export interface  InitGlueProps {
+export interface InitGlueProps {
   readonly solutionId: string;
   readonly solutionName: string;
   readonly stackPrefix: string;
 }
 
 export class InitGlueStack extends Construct {
-    readonly microBatchCentralizedDatabase: Database;
-    readonly microBatchTmpDatabase: Database;
-    readonly microBatchCentralizedCatalog: string;
-    
-    constructor(scope: Construct, id: string, props: InitGlueProps) {
-      super(scope, id);
+  readonly microBatchCentralizedDatabaseName: string;
+  readonly microBatchTmpDatabaseName: string;
+  readonly microBatchCentralizedCatalog: string;
 
-      let centralizedDatabaseName = 'amazon_' + props.stackPrefix.toLowerCase() +'_centralized';
-      let tmpDatabaseName = 'amazon_' + props.stackPrefix.toLowerCase() + '_tmp';
-      this.microBatchCentralizedCatalog = 'AwsDataCatalog';
+  constructor(scope: Construct, id: string, props: InitGlueProps) {
+    super(scope, id);
 
-      this.microBatchCentralizedDatabase = new Database(this, 'CentralizedDatabase', {
-        databaseName: centralizedDatabaseName,
-      });
+    this.microBatchCentralizedDatabaseName =
+      'amazon_' + props.stackPrefix.toLowerCase() + '_centralized';
+    this.microBatchTmpDatabaseName =
+      'amazon_' + props.stackPrefix.toLowerCase() + '_tmp';
+    this.microBatchCentralizedCatalog = 'AwsDataCatalog';
 
-      this.microBatchCentralizedDatabase.applyRemovalPolicy(RemovalPolicy.DESTROY);
+    const SSMCentralizedDatabaseArn = new ssm.StringParameter(
+      this,
+      'SSMCentralizedDatabaseArn',
+      {
+        parameterName: '/MicroBatch/CentralizedDatabaseArn',
+        stringValue: `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:database/${this.microBatchCentralizedDatabaseName}`,
+      }
+    );
 
-      this.microBatchTmpDatabase = new Database(this, 'TmpDatabase', {
-        databaseName: tmpDatabaseName,
-      });
+    // Override the logical ID
+    const cfnSSMCentralizedDatabaseArn = SSMCentralizedDatabaseArn.node
+      .defaultChild as ssm.CfnParameter;
+    cfnSSMCentralizedDatabaseArn.overrideLogicalId('SSMCentralizedDatabaseArn');
 
-      this.microBatchTmpDatabase.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
-      new CfnOutput(this, 'CentralizedDatabaseArn', {
-        description: 'Centralized Database Arn',
-        value: this.microBatchCentralizedDatabase.databaseArn,
-        exportName: `${Aws.STACK_NAME}::CentralizedDatabaseArn`,
-      }).overrideLogicalId('CentralizedDatabaseArn');
-
-    }
+    new CfnOutput(this, 'CentralizedDatabaseArn', {
+      description: 'Centralized Database Arn',
+      value: `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:database/${this.microBatchCentralizedDatabaseName}`,
+    }).overrideLogicalId('CentralizedDatabaseArn');
+  }
 }
-

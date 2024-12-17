@@ -26,13 +26,13 @@ import { SelectItem } from "components/Select/select";
 import { getResourceLoggingBucket, listResources } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { LambdaTaskProps } from "../CreateLambda";
-import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { buildLambdaLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import { RootState } from "reducer/reducers";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import { CreateLogMethod } from "assets/js/const";
 
 interface SpecifySettingsProps {
   lambdaTask: LambdaTaskProps;
@@ -113,9 +113,19 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:create.service.lambda")}>
+          <LogSourceEnable
+            disabledManual
+            value={CreateLogMethod.Automatic}
+            onChange={(value) => {
+              console.info(value);
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <Alert content={t("servicelog:lambda.alert")} />
               <div className="pb-50">
@@ -132,20 +142,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 />
                 <FormItem
                   optionTitle={t("servicelog:lambda.name")}
-                  optionDesc={
-                    <div>
-                      {t("servicelog:lambda.nameDesc")}
-                      <ExtLink
-                        to={buildLambdaLink(
-                          amplifyConfig.aws_project_region,
-                          ""
-                        )}
-                      >
-                        {t("servicelog:lambda.curAccount")}
-                      </ExtLink>
-                      .
-                    </div>
-                  }
+                  optionDesc={t("servicelog:lambda.nameDesc")}
                   errorText={
                     lambdaEmptyError ? t("servicelog:lambda.lambdaError") : ""
                   }

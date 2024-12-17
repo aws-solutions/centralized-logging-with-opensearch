@@ -5,23 +5,23 @@
 class DataSource:
     def __init__(self, api):
         self.api = api
-        
+
     def get_datasource(self, datasource_uid) -> dict:
         """
 
         :param datasource_name:
         :return:
         """
-        get_datasource_path = f'/datasources/uid/{datasource_uid}'
+        get_datasource_path = f"/datasources/uid/{datasource_uid}"
         return self.api.get(path=get_datasource_path)
-    
+
     def get_datasource_by_name(self, datasource_name) -> dict:
         """
 
         :param datasource_name:
         :return:
         """
-        get_datasource_path = f'/datasources/name/{datasource_name}'
+        get_datasource_path = f"/datasources/name/{datasource_name}"
         return self.api.get(path=get_datasource_path)
 
     def create_datasource(self, datasource):
@@ -32,7 +32,7 @@ class DataSource:
         """
         create_datasource_path = "/datasources"
         return self.api.post(path=create_datasource_path, json=datasource)
-    
+
     def update_datasource(self, datasource_uid, datasource):
         """
 

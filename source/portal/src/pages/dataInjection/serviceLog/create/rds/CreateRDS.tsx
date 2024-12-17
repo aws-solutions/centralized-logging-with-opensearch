@@ -25,15 +25,12 @@ import {
   createServicePipeline,
 } from "graphql/mutations";
 import { DestinationType, ServiceType, MonitorInput } from "API";
-import { AmplifyConfigType, AnalyticEngineTypes } from "types";
+import { AmplifyConfigType, AnalyticEngineTypes, RDSIngestOption } from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
-  RDS_LOG_GROUP_SUFFIX_AUDIT,
-  RDS_LOG_GROUP_SUFFIX_ERROR,
-  RDS_LOG_GROUP_SUFFIX_GENERAL,
-  RDS_LOG_GROUP_SUFFIX_SLOWQUERY,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { useDispatch, useSelector } from "react-redux";
@@ -43,7 +40,6 @@ import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -57,6 +53,7 @@ import {
   defaultStr,
 } from "assets/js/utils";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -134,7 +131,7 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
   target: "",
   logSourceAccountId: "",
   logSourceRegion: "",
-  destinationType: DestinationType.CloudWatch,
+  destinationType: DestinationType.S3,
   params: {
     taskType: CreateLogMethod.Automatic,
     rdsObj: null,
@@ -180,7 +177,8 @@ const CreateRDS: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
-
+  const ingestLogType =
+    searchParams.get("ingestLogType") ?? RDSIngestOption.MySQL;
   const totalStep =
     searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 2 : 3;
   const isLightEngine = useMemo(
@@ -200,60 +198,15 @@ const CreateRDS: React.FC = () => {
   const [manualRDSEmptyError, setManualRDSEmptyError] = useState(false);
 
   const [rdsIsChanging, setRDSIsChanging] = useState(false);
+  const [subAccountRoleArn, setSubAccountRoleArn] = useState("");
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
   const openSearch = useOpenSearch();
   const appDispatch = useDispatch<AppDispatch>();
-
-  const getGroupNamesForAutomatic = () => {
-    // Add logGroupNames by User Select
-    const groupNames: string[] = [];
-    if (rdsPipelineTask.params.errorLogEnable) {
-      groupNames.push(
-        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_ERROR
-      );
-    }
-    if (rdsPipelineTask.params.queryLogEnable) {
-      groupNames.push(
-        rdsPipelineTask.params.autoLogGroupPrefix +
-          RDS_LOG_GROUP_SUFFIX_SLOWQUERY
-      );
-    }
-    if (rdsPipelineTask.params.generalLogEnable) {
-      groupNames.push(
-        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_GENERAL
-      );
-    }
-    if (rdsPipelineTask.params.auditLogEnable) {
-      groupNames.push(
-        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_AUDIT
-      );
-    }
-    return groupNames;
-  };
-
-  const getGroupNamesForManual = () => {
-    // Add logGroupNames by User Select
-    const groupNames: string[] = [];
-    // Add logGroupNames by User Select
-    if (rdsPipelineTask.params.errorLogEnable) {
-      groupNames.push(rdsPipelineTask.params.errorLogARN);
-    }
-    if (rdsPipelineTask.params.queryLogEnable) {
-      groupNames.push(rdsPipelineTask.params.queryLogARN);
-    }
-    if (rdsPipelineTask.params.generalLogEnable) {
-      groupNames.push(rdsPipelineTask.params.generalLogARN);
-    }
-    if (rdsPipelineTask.params.auditLogEnable) {
-      groupNames.push(rdsPipelineTask.params.auditLogARN);
-    }
-    return groupNames;
-  };
 
   const confirmCreateLightEnginePipeline = useCallback(async () => {
     const params = covertSvcTaskToLightEngine(rdsPipelineTask, lightEngine);
@@ -310,25 +263,6 @@ const CreateRDS: React.FC = () => {
       openSearch
     );
 
-    // Automatic Task
-    let tmpLogGroupNameArr: string[] = [];
-    if (rdsPipelineTask.params.taskType === CreateLogMethod.Automatic) {
-      tmpLogGroupNameArr = tmpLogGroupNameArr.concat(
-        getGroupNamesForAutomatic()
-      );
-    }
-
-    // Manual Task
-    if (rdsPipelineTask.params.taskType === CreateLogMethod.Manual) {
-      tmpLogGroupNameArr = tmpLogGroupNameArr.concat(getGroupNamesForManual());
-    }
-
-    // Add logGroupNames
-    tmpParamList.push({
-      parameterKey: "logGroupNames",
-      parameterValue: tmpLogGroupNameArr.join(","),
-    });
-
     // Add Default Failed Log Bucket
     tmpParamList.push({
       parameterKey: "backupBucketName",
@@ -340,6 +274,18 @@ const CreateRDS: React.FC = () => {
       parameterKey: "defaultCmkArnParam",
       parameterValue: amplifyConfig.default_cmk_arn,
     });
+
+    if (isLightEngine) {
+      // only for RDS task
+      const paramValue = {
+        DBIdentifiers: [rdsPipelineTask.source],
+        role: subAccountRoleArn,
+      };
+      tmpParamList.push({
+        parameterKey: "context",
+        parameterValue: `${JSON.stringify(paramValue)}`,
+      });
+    }
 
     createPipelineParams.parameters = tmpParamList;
     try {
@@ -385,6 +331,9 @@ const CreateRDS: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   const validateRDSInput = () => {
@@ -430,32 +379,20 @@ const CreateRDS: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-rds">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
+              ingestLogType={ingestLogType}
               engineType={engineType}
               rdsTask={rdsPipelineTask}
               setISChanging={(status) => {
@@ -463,7 +400,10 @@ const CreateRDS: React.FC = () => {
               }}
               manualRDSEmptyError={manualRDSEmptyError}
               autoRDSEmptyError={autoRDSEmptyError}
-              changeCrossAccount={(id) => {
+              changeCrossAccount={(id, accountInfo) => {
+                setSubAccountRoleArn(
+                  defaultStr(accountInfo?.subAccountRoleArn)
+                );
                 setRDSPipelineTask((prev: RDSTaskProps) => {
                   return {
                     ...prev,
@@ -497,50 +437,6 @@ const CreateRDS: React.FC = () => {
                       generalLogEnable: false,
                       auditLogEnable: false,
                       manualDBType: type,
-                    },
-                  };
-                });
-              }}
-              changeErrorARN={(arn: string) => {
-                setRDSPipelineTask((prev: RDSTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      errorLogARN: arn,
-                    },
-                  };
-                });
-              }}
-              changeQeuryARN={(arn: string) => {
-                setRDSPipelineTask((prev: RDSTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      queryLogARN: arn,
-                    },
-                  };
-                });
-              }}
-              changeGeneralARN={(arn: string) => {
-                setRDSPipelineTask((prev: RDSTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      generalLogARN: arn,
-                    },
-                  };
-                });
-              }}
-              changeAuditARN={(arn: string) => {
-                setRDSPipelineTask((prev: RDSTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      auditLogARN: arn,
                     },
                   };
                 });
@@ -664,6 +560,7 @@ const CreateRDS: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="rds-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -673,6 +570,7 @@ const CreateRDS: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="rds-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -685,6 +583,7 @@ const CreateRDS: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
+                data-testid="rds-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -716,6 +615,7 @@ const CreateRDS: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="rds-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

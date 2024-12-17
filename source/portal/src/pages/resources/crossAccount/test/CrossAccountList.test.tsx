@@ -15,9 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import CrossAccountList from "../CrossAccountList";
+import { screen, act, waitFor, fireEvent } from "@testing-library/react";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { MockMemberAccountData } from "test/store.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,26 +36,91 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("CrossAccountList", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/link-account"]}>
-        <CrossAccountList />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountList />
+        </MemoryRouter>
+      );
+    });
+
     expect(
-      getByText(/resource:crossAccount.list.accountName/i)
+      screen.getByText(/resource:crossAccount.list.accountName/i)
     ).toBeInTheDocument();
+  });
+
+  it("renders with list data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listSubAccountLinks: {
+          subAccountLinks: [{ ...MockMemberAccountData }],
+          total: 1,
+        },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountList />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("should click refresh and remove button", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listSubAccountLinks: {
+          subAccountLinks: [{ ...MockMemberAccountData }],
+          total: 1,
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteSubAccountLink: "OK" },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CrossAccountList />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("gsui-loading")).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("link-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-test"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("remove-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-remove-button"));
+    });
   });
 });

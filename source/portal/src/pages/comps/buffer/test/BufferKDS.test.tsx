@@ -19,6 +19,7 @@ import BufferKDS from "../BufferKDS";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
+import { fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -35,11 +36,22 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+const mockBufferData = {
+  minCapacityError: "",
+  maxCapacityError: "",
+  data: {
+    enableAutoScaling: "",
+    shardCount: "1",
+    minCapacity: "1",
+    maxCapacity: "2",
+  },
+};
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("CreateLogConfig", () => {
+describe("BufferKDS", () => {
   it("renders without errors", () => {
     renderWithProviders(
       <MemoryRouter>
@@ -50,8 +62,47 @@ describe("CreateLogConfig", () => {
           app: {
             ...AppStoreMockData,
           },
+          kdsBuffer: mockBufferData,
         },
       }
+    );
+  });
+
+  it("renders auto scaling true", () => {
+    const { getByPlaceholderText } = renderWithProviders(
+      <MemoryRouter>
+        <BufferKDS />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+          kdsBuffer: {
+            ...mockBufferData,
+            data: {
+              ...mockBufferData.data,
+              enableAutoScaling: "true",
+            },
+          },
+        },
+      }
+    );
+
+    expect(
+      getByPlaceholderText("applog:create.ingestSetting.shardNum")
+    ).toBeInTheDocument();
+    fireEvent.change(
+      getByPlaceholderText("applog:create.ingestSetting.shardNum"),
+      { target: { value: "2" } }
+    );
+
+    expect(
+      getByPlaceholderText("applog:create.ingestSetting.maxShardNum")
+    ).toBeInTheDocument();
+    fireEvent.change(
+      getByPlaceholderText("applog:create.ingestSetting.maxShardNum"),
+      { target: { value: "3" } }
     );
   });
 });

@@ -1,0 +1,5 @@
+#foreach( $appPipelineId in $ctx.args.appPipelineIds )
+    $util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $appPipelineId), "Invalid AppPipeline Id")
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

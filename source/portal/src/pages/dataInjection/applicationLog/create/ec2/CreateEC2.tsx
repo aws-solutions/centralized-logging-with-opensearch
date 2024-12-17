@@ -59,7 +59,6 @@ import { useTranslation } from "react-i18next";
 import {
   buildLambdaConcurrency,
   buildOSIParamsValue,
-  checkIndexNameValidate,
   linkAccountMissingFields,
   ternary,
 } from "assets/js/utils";
@@ -77,7 +76,6 @@ import LogPathInput from "../../common/LogPathInput";
 import ChooseBufferLayer from "./ChooseBufferLayer";
 import CreateSampleDashboard from "../../common/CreateSampleDashboard";
 import { getAppPipeline } from "graphql/queries";
-import IndexName from "../../common/IndexName";
 import { Validator } from "pages/comps/Validator";
 import { buildInitPipelineData } from "assets/js/init";
 import AlarmAndTags from "pages/pipelineAlarm/AlarmAndTags";
@@ -89,7 +87,6 @@ import {
   CreateAlarmActionTypes,
   validateAlarmInput,
 } from "reducer/createAlarm";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { Dispatch } from "redux";
 import { useLightEngine } from "assets/js/hooks/useLightEngine";
 import ConfigLightEngine from "pages/dataInjection/serviceLog/create/common/ConfigLightEngine";
@@ -111,7 +108,6 @@ import ConfigOpenSearch from "pages/dataInjection/serviceLog/create/common/Confi
 import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import {
   convertOpenSearchStateToAppLogOpenSearchParam,
-  indexPrefixChanged,
   isIndexDuplicated,
   isIndexPrefixOverlap,
   validateOpenSearch,
@@ -120,7 +116,6 @@ import {
 import { AppDispatch } from "reducer/store";
 import {
   convertS3BufferParameters,
-  logBucketPrefixChanged,
   setLogBucketAndCMKArn,
   validateS3Buffer,
   validateS3BufferParams,
@@ -138,6 +133,7 @@ import { DOMAIN_ALLOW_STATUS } from "assets/js/const";
 import { isWindowsEvent, isWindowsIISLog } from "reducer/createLogConfig";
 import EnrichedFields from "pages/dataInjection/common/EnrichFields";
 import IndexPrefixHandler from "../../common/IndexPrefixHandler";
+import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 
 const AppLogCreateEC2: React.FC = () => {
   const { t } = useTranslation();
@@ -154,7 +150,7 @@ const AppLogCreateEC2: React.FC = () => {
       name: id,
       link: "/log-pipeline/application-log/detail/" + id,
     },
-    { name: t("applog:logSourceDesc.ec2.title") },
+    { name: t("applog:logSourceDesc.ec2.create") },
   ].filter((each) => each.name);
 
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -193,7 +189,7 @@ const AppLogCreateEC2: React.FC = () => {
   const [indexErrorMessage, setIndexErrorMessage] = useState("");
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const lightEngine = useLightEngine();
   const osiParams = useSelectProcessor();
   const grafana = useGrafana();
@@ -305,14 +301,6 @@ const AppLogCreateEC2: React.FC = () => {
   const logConfigValidator = new Validator(() => {
     if (!logConfigJSON) {
       throw new Error(t("applog:logSourceDesc.eks.step2.selectConfig"));
-    }
-  });
-  const indexNameValidator = new Validator(() => {
-    if (!curApplicationLog.aosParams.indexPrefix) {
-      throw new Error(t("error.indexNameEmpty"));
-    }
-    if (!checkIndexNameValidate(curApplicationLog.aosParams.indexPrefix)) {
-      throw new Error(t("error.invalidIndexName"));
     }
   });
 
@@ -469,6 +457,9 @@ const AppLogCreateEC2: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -490,7 +481,7 @@ const AppLogCreateEC2: React.FC = () => {
 
   const stepComps = [
     {
-      name: t("applog:logSourceDesc.ec2.step1.naviTitle"),
+      name: t("step.logSource"),
       element: (
         <PagePanel title={t("applog:logSourceDesc.ec2.step1.title")}>
           <ChooseInstanceGroupTable
@@ -506,7 +497,10 @@ const AppLogCreateEC2: React.FC = () => {
             isIngestion={!!state}
             isWindowsLog={isWindowsLogConfig()}
           />
-          <HeaderPanel title={t("applog:logSourceDesc.ec2.step1.permissions")}>
+          <HeaderPanel
+            title={t("applog:logSourceDesc.ec2.step1.permissions")}
+            desc={t("applog:logSourceDesc.ec2.step1.permissionsTitleDesc")}
+          >
             <PermissionsModeSelector
               disableAuto={
                 currentInstanceGroups.length > 0 &&
@@ -531,10 +525,10 @@ const AppLogCreateEC2: React.FC = () => {
       validators: [instanceGroupValidator],
     },
     {
-      name: t("applog:logSourceDesc.s3.step2.naviTitle"),
+      name: t("step.logConfig"),
       element: (
         <PagePanel
-          title={t("applog:logSourceDesc.s3.step2.title")}
+          title={t("step.logConfig")}
           desc={state ? "" : t("applog:logSourceDesc.eks.step2.titleDesc")}
         >
           <HeaderPanel title={t("applog:logSourceDesc.s3.step2.panelName")}>
@@ -577,8 +571,11 @@ const AppLogCreateEC2: React.FC = () => {
             </>
           </HeaderPanel>
           <>
-            {logConfigJSON && !isWindowsEventConfig && (
-              <HeaderPanel title={t("resource:config.common.logPath")}>
+            {!isWindowsEventConfig && (
+              <HeaderPanel
+                title={t("resource:config.common.logPath")}
+                desc={t("resource:config.common.logPathTitleDesc")}
+              >
                 <LogPathInput
                   value={logPath}
                   setValue={setLogPath}
@@ -591,42 +588,50 @@ const AppLogCreateEC2: React.FC = () => {
               </HeaderPanel>
             )}
           </>
+          <>
+            {logConfigJSON && (
+              <HeaderPanel title={t("resource:config.detail.logParser")}>
+                <ConfigDetailComps
+                  hideBasicInfo
+                  curLogConfig={JSON.parse(logConfigJSON)}
+                />
+              </HeaderPanel>
+            )}
+          </>
         </PagePanel>
       ),
       validators: [logConfigValidator, logPathValidator],
     },
     {
-      name: t("applog:logSourceDesc.ec2.step3.naviTitle"),
+      name: t("step.analyticsEngine"),
+      disabled: !!state,
+      element: isLightEngine ? (
+        <ConfigLightEngine />
+      ) : (
+        <ConfigOpenSearch
+          onChangeIndexPrefix={(prefix) => {
+            setCurApplicationLog((prev) => {
+              return {
+                ...prev,
+                aosParams: {
+                  ...prev.aosParams,
+                  indexPrefix: prefix,
+                },
+              };
+            });
+          }}
+          taskType={LogSourceType.EC2}
+        />
+      ),
+      validators: [
+        isLightEngine ? lightEngineValidator : openSearchInputValidator,
+      ],
+    },
+    {
+      name: t("step.bufferLayer"),
       disabled: !!state,
       element: (
         <PagePanel title={t("applog:logSourceDesc.ec2.step3.panelTitle")}>
-          {isLightEngine ? (
-            <></>
-          ) : (
-            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-              <IndexName
-                value={curApplicationLog.aosParams.indexPrefix}
-                setValue={(value) => {
-                  appDispatch(indexPrefixChanged(value as string));
-                  appDispatch(
-                    logBucketPrefixChanged(
-                      `AppLogs/${value}/year=%Y/month=%m/day=%d/`
-                    )
-                  );
-                  setCurApplicationLog((prev) => {
-                    return {
-                      ...prev,
-                      aosParams: {
-                        ...prev.aosParams,
-                        indexPrefix: value as string,
-                      },
-                    };
-                  });
-                }}
-                validator={indexNameValidator}
-              />
-            </HeaderPanel>
-          )}
           <HeaderPanel
             title={t("applog:logSourceDesc.ec2.step3.title")}
             desc={t("applog:logSourceDesc.ec2.step3.desc")}
@@ -641,26 +646,11 @@ const AppLogCreateEC2: React.FC = () => {
           </HeaderPanel>
         </PagePanel>
       ),
-      validators: [bufferLayerValidator].concat(
-        isLightEngine ? [] : [indexNameValidator]
-      ),
+      validators: [bufferLayerValidator],
     },
+
     {
-      name: isLightEngine
-        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
-        : t("applog:logSourceDesc.eks.step4.naviTitle"),
-      disabled: !!state,
-      element: isLightEngine ? (
-        <ConfigLightEngine />
-      ) : (
-        <ConfigOpenSearch taskType={LogSourceType.EC2} />
-      ),
-      validators: [
-        isLightEngine ? lightEngineValidator : openSearchInputValidator,
-      ],
-    },
-    {
-      name: t("processor.logProcessorSettings"),
+      name: t("step.logProcessing"),
       disabled: !!state || engineType === AnalyticEngineTypes.LIGHT_ENGINE,
       element: (
         <>
@@ -704,7 +694,10 @@ const AppLogCreateEC2: React.FC = () => {
       validators: [selectProcessorValidator],
     },
     {
-      name: t("applog:logSourceDesc.s3.step5.naviTitle"),
+      name:
+        osiParams.logProcessorType === LogProcessorType.OSI
+          ? t("step.tags")
+          : t("step.alarmTags"),
       disabled: !!state,
       element: (
         <AlarmAndTags
@@ -807,6 +800,7 @@ const AppLogCreateEC2: React.FC = () => {
           {stepComps[currentStep].element}
           <div className="button-action text-right">
             <Button
+              data-testid="ec2-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/application-log");
@@ -816,6 +810,7 @@ const AppLogCreateEC2: React.FC = () => {
             </Button>
             {currentStep > 0 && (
               <Button
+                data-testid="ec2-previous-button"
                 onClick={() => {
                   setCurrentStep(Math.max(currentStep - 1, 0));
                 }}
@@ -825,6 +820,7 @@ const AppLogCreateEC2: React.FC = () => {
             )}
             {currentStep < stepComps.length - 1 && (
               <Button
+                data-testid="ec2-next-button"
                 btnType="primary"
                 disabled={isNextDisabled()}
                 onClick={() => {
@@ -842,6 +838,7 @@ const AppLogCreateEC2: React.FC = () => {
             )}
             {currentStep === stepComps.length - 1 && (
               <Button
+                data-testid="ec2-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

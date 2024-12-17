@@ -7,7 +7,7 @@ import boto3
 import pytest
 import json
 
-from moto import mock_dynamodb, mock_sts, mock_iam
+from moto import mock_dynamodb, mock_sts, mock_iam, mock_events
 from moto.core import DEFAULT_ACCOUNT_ID as ACCOUNT_ID
 from commonlib import LinkAccountHelper
 from commonlib.exception import APIException, ErrorCode
@@ -39,12 +39,14 @@ class TestLinkAccountHelperTrustAccountExists:
     mock_dynamodb = mock_dynamodb()
     mock_sts = mock_sts()
     mock_iam = mock_iam()
+    mock_events = mock_events()
 
     def setup_method(self):
         default_region = os.environ.get("AWS_REGION")
         self.mock_dynamodb.start()
         self.mock_sts.start()
         self.mock_iam.start()
+        self.mock_events.start()
         self.account_table_name = "test-table"
 
         self.ddb_client = boto3.resource("dynamodb", region_name=default_region)
@@ -95,6 +97,7 @@ class TestLinkAccountHelperTrustAccountExists:
         self.mock_dynamodb.stop()
         self.mock_sts.stop()
         self.mock_iam.stop()
+        self.mock_events.stop()
 
     def test_link_account_ops_corner_case(self):
         assert self.acc_helper.default_account_id == os.environ.get("MOTO_ACCOUNT_ID")
@@ -214,12 +217,14 @@ class TestLinkAccountHelperTrustAccountNotExists:
     mock_dynamodb = mock_dynamodb()
     mock_sts = mock_sts()
     mock_iam = mock_iam()
+    mock_events = mock_events()
 
     def setup_method(self):
         default_region = os.environ.get("AWS_REGION")
         self.mock_dynamodb.start()
         self.mock_sts.start()
         self.mock_iam.start()
+        self.mock_events.start()
         self.account_table_name = "test-table"
 
         self.ddb_client = boto3.resource("dynamodb", region_name=default_region)
@@ -264,6 +269,7 @@ class TestLinkAccountHelperTrustAccountNotExists:
         self.mock_dynamodb.stop()
         self.mock_sts.stop()
         self.mock_iam.stop()
+        self.mock_events.stop()
 
     def test_link_account_ops(self):
         """Test the CRUD of link accounts"""

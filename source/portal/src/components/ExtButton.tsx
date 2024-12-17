@@ -26,12 +26,13 @@ function openLinkInNewTab(url: string) {
 type ExtButtonProps = {
   to: string;
   children: any;
-} & ButtonProps
+} & ButtonProps;
 
 export default function ExtButton(props: ExtButtonProps) {
-  const {to, children, ...restProps} = props
+  const { to, children, ...restProps } = props;
   return (
     <Button
+      data-testid="ext-button"
       {...restProps}
       btnType="icon"
       onClick={() => {

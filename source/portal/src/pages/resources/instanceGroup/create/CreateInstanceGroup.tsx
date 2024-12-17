@@ -221,6 +221,7 @@ const CreateInstanceGroup: React.FC = () => {
       </div>
       <div className="mt-20 button-action text-right">
         <Button
+          data-testid="cancel-create-instance-group-button"
           btnType="text"
           onClick={() => {
             navigate("/resources/instance-group");
@@ -229,6 +230,7 @@ const CreateInstanceGroup: React.FC = () => {
           {t("button.cancel")}
         </Button>
         <Button
+          data-testid="create-instance-group-button"
           btnType="primary"
           disabled={createButtonDisabled}
           loading={loadingCreate}

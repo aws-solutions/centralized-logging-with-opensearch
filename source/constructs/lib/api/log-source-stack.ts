@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import * as path from 'path';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Aws,
   Duration,
+  aws_appsync as appsync,
   aws_dynamodb as ddb,
   aws_lambda as lambda,
   aws_iam as iam,
@@ -44,30 +44,28 @@ export interface LogSourceStackProps {
   readonly stackPrefix: string;
 }
 export class LogSourceStack extends Construct {
-
-
   constructor(scope: Construct, id: string, props: LogSourceStackProps) {
     super(scope, id);
 
     // Create a lambda layer with required python packages.
-    const eksLayer = new lambda.LayerVersion(this, "EKSClusterLayer", {
+    const eksLayer = new lambda.LayerVersion(this, 'EKSClusterLayer', {
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../lambda/api/log_source/"),
+        path.join(__dirname, '../../lambda/api/log_source/'),
         {
           bundling: {
             image: lambda.Runtime.PYTHON_3_11.bundlingImage,
-            platform: "linux/amd64",
+            platform: 'linux/amd64',
             command: [
-              "bash",
-              "-c",
-              "pip install -r requirements.txt -t /asset-output/python && cp . -r /asset-output/python/",
+              'bash',
+              '-c',
+              'pip install -r requirements.txt -t /asset-output/python && cp . -r /asset-output/python/',
             ],
           },
         }
       ),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
       compatibleArchitectures: [lambda.Architecture.X86_64],
-      description: "Default Lambda layer for EKS Cluster",
+      description: 'Default Lambda layer for EKS Cluster',
     });
 
     // Create a log source handler function
@@ -86,7 +84,7 @@ export class LogSourceStack extends Construct {
         APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
         SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
         STACK_PREFIX: props.stackPrefix,
-        EKS_OIDC_CLIENT_ID: "sts.amazonaws.com",
+        EKS_OIDC_CLIENT_ID: 'sts.amazonaws.com',
         SOLUTION_ID: props.solutionId,
         SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
       },
@@ -101,27 +99,26 @@ export class LogSourceStack extends Construct {
     // add eks policy documents
     logSourceHandler.addToRolePolicy(
       new iam.PolicyStatement({
-        sid: "eks",
+        sid: 'eks',
         actions: [
-          "eks:DescribeCluster",
-          "eks:ListIdentityProviderConfigs",
-          "eks:UpdateClusterConfig",
-          "eks:ListClusters",
+          'eks:DescribeCluster',
+          'eks:ListIdentityProviderConfigs',
+          'eks:UpdateClusterConfig',
+          'eks:ListClusters',
         ],
         effect: iam.Effect.ALLOW,
         resources: [`arn:${Aws.PARTITION}:eks:*:${Aws.ACCOUNT_ID}:cluster/*`],
       })
     );
 
-
     logSourceHandler.addToRolePolicy(
       new iam.PolicyStatement({
-        sid: "IamOidc",
+        sid: 'IamOidc',
         actions: [
-          "iam:GetServerCertificate",
-          "iam:GetOpenIDConnectProvider",
-          "iam:TagOpenIDConnectProvider",
-          "iam:CreateOpenIDConnectProvider",
+          'iam:GetServerCertificate',
+          'iam:GetOpenIDConnectProvider',
+          'iam:TagOpenIDConnectProvider',
+          'iam:CreateOpenIDConnectProvider',
         ],
         effect: iam.Effect.ALLOW,
         resources: [
@@ -132,15 +129,11 @@ export class LogSourceStack extends Construct {
     );
     logSourceHandler.addToRolePolicy(
       new iam.PolicyStatement({
-        sid: "iam",
-        actions: [
-          "iam:TagRole",
-          "iam:CreateRole",
-        ],
+        sid: 'iam',
+        actions: ['iam:TagRole', 'iam:CreateRole'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*-EKS-LogAgent-Role-*`,
-
         ],
       })
     );
@@ -168,7 +161,6 @@ export class LogSourceStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-
     LogSourceLambdaDS.createResolver('getLogSource', {
       typeName: 'Query',
       fieldName: 'getLogSource',
@@ -189,7 +181,6 @@ export class LogSourceStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
-
 
     LogSourceLambdaDS.createResolver('checkCustomPort', {
       typeName: 'Query',

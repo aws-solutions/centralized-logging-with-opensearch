@@ -62,6 +62,6 @@ describe("AppPipelineDesc", () => {
         },
       }
     );
-    expect(getByText(/applog:logSourceDesc.ec2.title/i)).toBeInTheDocument();
+    expect(getByText(/archDesc/i)).toBeInTheDocument();
   });
 });

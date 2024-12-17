@@ -15,7 +15,6 @@ limitations under the License.
 */
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import CreateStep from "components/CreateStep";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createAppLogIngestion, createLogSource } from "graphql/mutations";
 import { CreateAppLogIngestionMutationVariables, LogSourceType } from "API";
@@ -26,12 +25,9 @@ import { useTranslation } from "react-i18next";
 import Button from "components/Button";
 import { checkCustomPort } from "graphql/queries";
 import StepChooseSyslogSource from "./steps/StepChooseSyslogSource";
-import PagePanel from "components/PagePanel";
 import { Alert } from "assets/js/alert";
 import { IngestionFromSysLogPropsType } from "./CreateSyslog";
-import { Validator } from "pages/comps/Validator";
 import { useTags } from "assets/js/hooks/useTags";
-import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import { Actions } from "reducer/reducers";
 import { Dispatch } from "redux";
 import { defaultStr } from "assets/js/utils";
@@ -54,7 +50,6 @@ const OnlySyslogIngestion: React.FC = () => {
     { name: t("applog:logSourceDesc.syslog.title") },
   ];
 
-  const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch<Dispatch<Actions>>();
   const [loadingCreate, setLoadingCreate] = useState(false);
@@ -64,8 +59,8 @@ const OnlySyslogIngestion: React.FC = () => {
   const [loadingCreateSource, setLoadingCreateSource] = useState(false);
   const [loadingCheckPort, setLoadingCheckPort] = useState(false);
   const [protocolRequireError, setProtocolRequireError] = useState(false);
-  const [portConfictError, setPortConfictError] = useState(false);
-  const [portOutofRangeError, setPortOutofRangeError] = useState(false);
+  const [portConflictError, setPortConflictError] = useState(false);
+  const [portOutOfRangeError, setPortOutOfRangeError] = useState(false);
 
   const [portChanged, setPortChanged] = useState(false);
 
@@ -109,19 +104,6 @@ const OnlySyslogIngestion: React.FC = () => {
       tags: [],
     });
 
-  const logSourceValidator = new Validator(() => {
-    if (!ingestionInfo.syslogProtocol) {
-      setProtocolRequireError(true);
-      throw new Error("Protocol is required");
-    }
-    if (!portConfictError) {
-      throw new Error("Port is conflict");
-    }
-    if (!portOutofRangeError) {
-      throw new Error("Port is out of range");
-    }
-  });
-
   const handleNotRecommendedPort = (checkRes: any) => {
     if (checkRes?.data?.checkCustomPort?.isAllowedPort) {
       createSysLogSource();
@@ -129,12 +111,12 @@ const OnlySyslogIngestion: React.FC = () => {
       checkRes?.data?.checkCustomPort?.isAllowedPort === false &&
       checkRes?.data?.checkCustomPort?.msg === "Conflict"
     ) {
-      setPortConfictError(true);
+      setPortConflictError(true);
     } else if (
       checkRes?.data?.checkCustomPort?.isAllowedPort === false &&
       checkRes?.data?.checkCustomPort?.msg === "OutofRange"
     ) {
-      setPortOutofRangeError(true);
+      setPortOutOfRangeError(true);
     } else {
       Alert(checkRes?.data?.checkCustomPort?.msg);
     }
@@ -204,13 +186,7 @@ const OnlySyslogIngestion: React.FC = () => {
       );
       setLoadingCreateSource(false);
       if (createRes.data?.createLogSource) {
-        setIngestionInfo((prev) => {
-          return {
-            ...prev,
-            logSourceId: createRes.data.createLogSource,
-          };
-        });
-        setCurrentStep(1);
+        confirmCreateIngestion(createRes.data.createLogSource);
       }
     } catch (error) {
       setLoadingCreateSource(false);
@@ -218,70 +194,12 @@ const OnlySyslogIngestion: React.FC = () => {
     }
   };
 
-  const stepComps = [
-    {
-      name: t("applog:logSourceDesc.syslog.step1.naviTitle"),
-      element: (
-        <PagePanel
-          title={t("applog:logSourceDesc.syslog.step1.title")}
-          desc={t("applog:logSourceDesc.syslog.step1.titleDesc")}
-        >
-          <StepChooseSyslogSource
-            ingestionInfo={ingestionInfo}
-            loadingProtocol={loadingProtocol}
-            protocolRequireError={protocolRequireError}
-            portConfictError={portConfictError}
-            portOutofRangeError={portOutofRangeError}
-            changeSyslogProtocol={(protocol) => {
-              setProtocolRequireError(false);
-              setIngestionInfo((prev) => {
-                return {
-                  ...prev,
-                  syslogProtocol: protocol,
-                };
-              });
-            }}
-            enableCustomPort={(enable) => {
-              setIngestionInfo((prev) => {
-                return {
-                  ...prev,
-                  syslogPortEnable: enable,
-                };
-              });
-            }}
-            changeSyslogPort={(port) => {
-              setPortChanged(true);
-              setPortConfictError(false);
-              setPortOutofRangeError(false);
-              setIngestionInfo((prev) => {
-                return {
-                  ...prev,
-                  syslogPort: port,
-                };
-              });
-            }}
-          />
-        </PagePanel>
-      ),
-      validators: [logSourceValidator],
-    },
-    {
-      name: t("applog:logSourceDesc.syslog.step5.naviTitle"),
-      element: (
-        <PagePanel title={t("applog:logSourceDesc.syslog.step5.title")}>
-          <CreateTags />
-        </PagePanel>
-      ),
-      validators: [],
-    },
-  ];
-
-  const confirmCreateIngestion = async () => {
+  const confirmCreateIngestion = async (logSourceId: string) => {
     try {
       setLoadingCreate(true);
 
       const ingestionParams: CreateAppLogIngestionMutationVariables = {
-        sourceId: ingestionInfo.logSourceId,
+        sourceId: logSourceId,
         appPipelineId: defaultStr(appPipelineId),
         tags,
         logPath: "",
@@ -307,86 +225,76 @@ const OnlySyslogIngestion: React.FC = () => {
 
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
-      <div className="create-wrapper">
-        <div
-          className="create-step"
-          data-testid="test-create-app-syslog-ingestion"
-        >
-          <CreateStep list={stepComps} activeIndex={currentStep} />
-        </div>
-        <div className="create-content">
-          {stepComps[currentStep].element}
-          <div className="button-action text-right">
-            <Button
-              btnType="text"
-              onClick={() => {
-                navigate(
-                  `/log-pipeline/application-log/detail/${appPipelineId}`
-                );
-              }}
-            >
-              {t("button.cancel")}
-            </Button>
-            {currentStep > 0 && (
-              <Button
-                onClick={() => {
-                  setCurrentStep(Math.max(currentStep - 1, 0));
-                }}
-              >
-                {t("button.previous")}
-              </Button>
-            )}
-            {currentStep < stepComps.length - 1 && (
-              <Button
-                loading={loadingCheckPort || loadingCreateSource}
-                disabled={loadingProtocol}
-                btnType="primary"
-                onClick={() => {
-                  if (currentStep === 0) {
-                    if (!ingestionInfo.syslogProtocol) {
-                      setProtocolRequireError(true);
-                      return;
-                    }
-                    if (portChanged) {
-                      checkSysLogCustomPort();
-                    } else if (!ingestionInfo.logSourceId) {
-                      createSysLogSource();
-                    }
-                  }
-                  if (portConfictError || portOutofRangeError) {
-                    return;
-                  }
-                  if (
-                    stepComps[currentStep].validators
-                      .map((each) => each.validate())
-                      .every(Boolean)
-                  ) {
-                    setCurrentStep(Math.min(currentStep + 1, stepComps.length));
-                  }
-                }}
-              >
-                {t("button.next")}
-              </Button>
-            )}
-            {currentStep === stepComps.length - 1 && (
-              <Button
-                loading={loadingCreate}
-                btnType="primary"
-                onClick={() => {
-                  if (
-                    !stepComps[currentStep].validators
-                      .map((each) => each.validate())
-                      .every(Boolean)
-                  ) {
-                    return;
-                  }
-                  confirmCreateIngestion();
-                }}
-              >
-                {t("button.create")}
-              </Button>
-            )}
-          </div>
+      <div className="create-content m-w-1024">
+        <StepChooseSyslogSource
+          ingestionInfo={ingestionInfo}
+          loadingProtocol={loadingProtocol}
+          protocolRequireError={protocolRequireError}
+          portConfictError={portConflictError}
+          portOutofRangeError={portOutOfRangeError}
+          changeSyslogProtocol={(protocol) => {
+            setProtocolRequireError(false);
+            setIngestionInfo((prev) => {
+              return {
+                ...prev,
+                syslogProtocol: protocol,
+              };
+            });
+          }}
+          enableCustomPort={(enable) => {
+            setIngestionInfo((prev) => {
+              return {
+                ...prev,
+                syslogPortEnable: enable,
+              };
+            });
+          }}
+          changeSyslogPort={(port) => {
+            setPortChanged(true);
+            setPortConflictError(false);
+            setPortOutOfRangeError(false);
+            setIngestionInfo((prev) => {
+              return {
+                ...prev,
+                syslogPort: port,
+              };
+            });
+          }}
+        />
+        <div className="button-action text-right">
+          <Button
+            data-testid="syslog-cancel-button"
+            btnType="text"
+            onClick={() => {
+              navigate(`/log-pipeline/application-log/detail/${appPipelineId}`);
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+
+          <Button
+            data-testid="syslog-create-button"
+            loading={
+              loadingCreate ||
+              loadingCreateSource ||
+              loadingCheckPort ||
+              loadingProtocol
+            }
+            btnType="primary"
+            onClick={() => {
+              if (!ingestionInfo.syslogProtocol) {
+                setProtocolRequireError(true);
+                return;
+              }
+              if (portChanged) {
+                checkSysLogCustomPort();
+              } else {
+                createSysLogSource();
+              }
+            }}
+          >
+            {t("button.create")}
+          </Button>
         </div>
       </div>
     </CommonLayout>

@@ -14,18 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { DomainDetails, EngineType, StorageType } from "API";
+import {
+  AlarmType,
+  DomainDetails,
+  DomainHealth,
+  EngineType,
+  ResourceStatus,
+  StackStatus,
+  StorageType,
+} from "API";
 import { ImportedDomainType } from "pages/clusters/importcluster/ImportCluster";
 
 export const domainMockData: DomainDetails = {
   id: "xxxx",
-  domainArn:
-    "arn:aws:es:us-example-2:11111111111:domain/test-us-example-2-opensearch",
-  domainName: "test-us-example-2-opensearch",
+  domainArn: "arn:aws:es:us-example-2:11111111111:domain/test-domain",
+  domainName: "test-domain",
   engine: EngineType.Elasticsearch,
   version: "2.5",
-  endpoint:
-    "vpc-test-us-example-2-opensearch-xxxxx.us-example-2.es.amazonaws.com",
+  endpoint: "vpc-test-domain-xxxxx.us-example-2.es.amazonaws.com",
   region: "us-example-2",
   accountId: "11111111111",
   vpc: {
@@ -70,7 +76,7 @@ export const domainMockData: DomainDetails = {
     __typename: "Cognito",
   },
   tags: [],
-  //   proxyStatus: "ENABLED",
+  proxyStatus: StackStatus.ENABLED,
   proxyALB: "CL-Pr-xxxxxxxx.us-example-2.elb.example.com",
   proxyError: "",
   proxyInput: {
@@ -88,7 +94,7 @@ export const domainMockData: DomainDetails = {
     cognitoEndpoint: "",
     __typename: "ProxyInfo",
   },
-  //   alarmStatus: "ENABLED",
+  alarmStatus: StackStatus.ENABLED,
   alarmError: "",
   alarmInput: {
     alarms: [
@@ -101,6 +107,7 @@ export const domainMockData: DomainDetails = {
         __typename: "AlarmInfo",
       },
       {
+        type: AlarmType.FREE_STORAGE_SPACE,
         value: "20480",
         __typename: "AlarmInfo",
       },
@@ -148,7 +155,7 @@ export const domainMockData: DomainDetails = {
   metrics: {
     searchableDocs: 73530784,
     freeStorageSpace: 71414.792,
-    // health: "GREEN",
+    health: DomainHealth.GREEN,
     __typename: "DomainMetrics",
   },
   status: "IMPORTED",
@@ -156,7 +163,7 @@ export const domainMockData: DomainDetails = {
     {
       name: "VPCPeering",
       values: [null],
-      //   status: "CREATED",
+      status: ResourceStatus.CREATED,
       __typename: "DomainRelevantResource",
     },
   ],
@@ -178,4 +185,245 @@ export const domainMockImportedCluster: ImportedDomainType = {
     privateSubnetIds: "subnet-123456789,subnet-123456789",
     vpcId: "vpc-123456789",
   },
+};
+
+export const mockImportedDomainList = [
+  {
+    id: "xxxxx",
+    domainName: "xxxx-test",
+    engine: "OpenSearch",
+    version: "2.11",
+    endpoint: "xxxx-.us-example-1.es.example.com",
+    metrics: {
+      searchableDocs: 3141,
+      freeStorageSpace: 78699.73,
+      health: "GREEN",
+      __typename: "DomainMetrics",
+    },
+    __typename: "ImportedDomain",
+  },
+];
+
+export const mockListResource = [
+  {
+    id: "vpc-1",
+    name: "Vpc1",
+  },
+  {
+    id: "vpc-2",
+    name: "Vpc2",
+  },
+  { id: "subnet-123", name: "Subnet123" },
+  { id: "subnet-234", name: "Subnet234" },
+  { id: "sg-123", name: "SecurityGroup1" },
+  { id: "key-123", name: "Key1" },
+  { id: "cert-456", name: "Certificate1" },
+];
+
+export const mockVPCResourceList = [
+  {
+    id: "vpc-xxx",
+    name: "xxx-xxx-vpc-vpc",
+    parentId: null,
+    description: null,
+    __typename: "Resource",
+  },
+  {
+    id: "vpc-xxxx-1",
+    name: "us-example-1-vpc",
+    parentId: null,
+    description: null,
+    __typename: "Resource",
+  },
+];
+
+export const mockDomainNames = [
+  {
+    domainName: "test-us-domain",
+    status: "ACTIVE",
+    __typename: "DomainNameAndStatus",
+  },
+];
+
+export const mockDomainStatusCheckData = {
+  status: "PASSED",
+  details: [
+    {
+      name: "OpenSearchDomainEngine",
+      values: ["OpenSearch"],
+      errorCode: null,
+      status: "PASSED",
+      __typename: "DomainStatusCheckDetail",
+    },
+    {
+      name: "OpenSearchDomainVersion",
+      values: ["2.11"],
+      errorCode: null,
+      status: "PASSED",
+      __typename: "DomainStatusCheckDetail",
+    },
+    {
+      name: "OpenSearchDomainNetworkType",
+      values: ["private"],
+      errorCode: null,
+      status: "PASSED",
+      __typename: "DomainStatusCheckDetail",
+    },
+    {
+      name: "SolutionPrivateSubnetWithNAT",
+      values: ["subnet-1", "subnet-1"],
+      errorCode: null,
+      status: "PASSED",
+      __typename: "DomainStatusCheckDetail",
+    },
+  ],
+  multiAZWithStandbyEnabled: false,
+  __typename: "DomainStatusCheckResponse",
+};
+
+export const mockDomainVpc = {
+  vpcId: "vpc-1",
+  subnetIds: ["subnet-1"],
+  availabilityZones: ["us-example-1a"],
+  securityGroupIds: ["sg-1"],
+  __typename: "ESVPCInfo",
+};
+
+export const mockImportResult = {
+  id: "xxxxxx",
+  resources: [
+    {
+      name: "VPCPeering",
+      values: [],
+      status: "CREATED",
+      __typename: "DomainRelevantResource",
+    },
+    {
+      name: "OpenSearchSecurityGroup",
+      values: [],
+      status: "CREATED",
+      __typename: "DomainRelevantResource",
+    },
+    {
+      name: "OpenSearchNetworkACL",
+      values: [],
+      status: "CREATED",
+      __typename: "DomainRelevantResource",
+    },
+    {
+      name: "OpenSearchRouteTables",
+      values: [],
+      status: "CREATED",
+      __typename: "DomainRelevantResource",
+    },
+    {
+      name: "solutionRouteTableDetailItem",
+      values: [],
+      status: "CREATED",
+      __typename: "DomainRelevantResource",
+    },
+  ],
+  __typename: "ImportDomainResponse",
+};
+
+export const mockOpenSearchStateData: any = {
+  domainLoading: false,
+  domainNameError: false,
+  domainCheckedStatus: {
+    status: "PASSED",
+    details: [
+      {
+        name: "OpenSearchDomainEngine",
+        values: ["OpenSearch"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "OpenSearchDomainVersion",
+        values: ["2.11"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "OpenSearchDomainNetworkType",
+        values: ["private"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "SolutionPrivateSubnetWithNAT",
+        values: ["subnet-1", "subnet-1"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "CheckOpenSearchSecurityGroup",
+        values: ["sg-1"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "CheckOpenSearchNetworkACL",
+        values: ["acl-1"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "CheckOpenSearchVPCRouteTable",
+        values: ["subnet-1"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+      {
+        name: "CheckSolutionVPCRouteTable",
+        values: ["subnet-0340e66e2160db14b", "subnet-0e447ddfd88ce78c3"],
+        errorCode: null,
+        status: "PASSED",
+        __typename: "DomainStatusCheckDetail",
+      },
+    ],
+    multiAZWithStandbyEnabled: false,
+    __typename: "DomainStatusCheckResponse",
+  },
+  shardsError: "",
+  capacityError: "",
+  warmLogError: "",
+  coldLogError: "",
+  retentionLogError: "",
+  indexPrefixError: "",
+  showAdvancedSetting: false,
+  needCreateLogging: false,
+  engineType: "OpenSearch",
+  warmEnable: false,
+  coldEnable: false,
+  endpoint: "vpc-xxx.example.com",
+  domainName: "opensearch-for-clo",
+  opensearchArn:
+    "arn:aws:es:us-example-2:111111111111:domain/opensearch-for-clo",
+  esDomainId: "2864694e441928e0d6f8bbbcb619facd",
+  indexPrefix: "xxxx",
+  createDashboard: "Yes",
+  vpcId: "vpc-1",
+  subnetIds: "subnet-1,subnet-1",
+  publicSubnetIds: "",
+  securityGroupId: "sg-1",
+  shardNumbers: "",
+  replicaNumbers: "1",
+  warmTransitionType: "IMMEDIATELY",
+  warmAge: "0",
+  coldAge: "60",
+  retainAge: "180",
+  rolloverSize: "30gb",
+  indexSuffix: "yyyy-MM-dd",
+  appIndexSuffix: "yyyy_MM_dd",
+  codec: "best_compression",
+  refreshInterval: "1s",
+  rolloverSizeNotSupport: false,
 };

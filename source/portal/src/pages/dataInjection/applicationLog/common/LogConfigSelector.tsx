@@ -5,11 +5,11 @@ import Select, { SelectItem } from "components/Select/select";
 import FormItem from "components/FormItem";
 import { listLogConfigs } from "graphql/queries";
 import { LogConfig, LogSourceType, LogType } from "API";
-import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import Alert from "components/Alert";
 import { Validator } from "pages/comps/Validator";
 import { useAutoValidation } from "assets/js/hooks/useAutoValidation";
 import { AnalyticEngineTypes } from "types";
+import { SelectLogConfigRevision } from "./SelectLogConfigRevision";
 
 export interface LogConfigSelectorProps {
   value: string;
@@ -31,7 +31,7 @@ const LogConfigSelector: React.FC<LogConfigSelectorProps> = (
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [options, setOptions] = useState<SelectItem[]>([]);
-  const [currentConfig, setCurrentConfig] = useState();
+  const [currentConfig, setCurrentConfig] = useState<LogConfig>();
 
   const EC2_WINDOWS_CONFIG = [
     LogType.JSON,
@@ -168,15 +168,36 @@ const LogConfigSelector: React.FC<LogConfigSelectorProps> = (
           disabled={!!props.forceLogConfig}
           loading={isLoading}
           optionList={options}
-          value={props.value}
+          // find matched logConfig by ID since the value string contains version and may not exactly match the selected version.
+          value={
+            (props.value &&
+              options.find(
+                ({ value }) =>
+                  JSON.parse(value).id === JSON.parse(props.value).id
+              )?.value) ??
+            ""
+          }
           placeholder={t("applog:logSourceDesc.s3.step2.chooseALogConfig")}
           hasRefresh={!props.forceLogConfig}
           clickRefresh={() => fetchLogConfigList().catch(console.error)}
-          onChange={(event: any) => props.setValue?.(event.target.value)}
+          onChange={(event: any) =>
+            setCurrentConfig(JSON.parse(event.target.value))
+          }
           createNewLink={props.forceLogConfig ? undefined : props.createNewLink}
           viewDetailsLink={props.viewDetailsLink}
         />
       </FormItem>
+      {currentConfig && (
+        <FormItem>
+          <SelectLogConfigRevision
+            logConfig={currentConfig}
+            onRevisionChange={(logConfig) => {
+              props.setValue?.(JSON.stringify(logConfig));
+              console.log(logConfig);
+            }}
+          />
+        </FormItem>
+      )}
       <div className="mt-10 m-w-75p">
         {props.logType === LogSourceType.S3 && (
           <>
@@ -194,11 +215,6 @@ const LogConfigSelector: React.FC<LogConfigSelectorProps> = (
           )}
         />
       </div>
-      {!props.hideDetail && props.value && (
-        <div className="plr-10">
-          <ConfigDetailComps curLogConfig={currentConfig} />
-        </div>
-      )}
     </>
   );
 };

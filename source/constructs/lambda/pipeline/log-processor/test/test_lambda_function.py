@@ -48,14 +48,6 @@ class TestParseEvents:
         msk_mock.assert_called_with("Nginx")
         msk_mock.return_value.process_event.assert_called_with(event)
 
-    @patch("lambda_function.WAFSampled")
-    @patch("lambda_function.log_type", "WAFSampled")
-    def test_parse_waf_event(self, waf_mock):
-        event = {"records": [1, 2, 3]}
-        parse_event_bridge_event(event)
-        waf_mock.assert_called_with()
-        waf_mock.return_value.process_event.assert_called_with(event)
-
 
 @pytest.fixture
 def sqs_event():

@@ -43,7 +43,7 @@ describe("instance group SelectType", () => {
         changeGroupType={mockChangeGroupType}
       />
     );
-    expect(getByText(/resource:group.instancesDesc/i)).toBeInTheDocument();
+    expect(getByText(/resource:group.manualsDesc/i)).toBeInTheDocument();
   });
 
   it("calls changeGroupType on selection change", () => {

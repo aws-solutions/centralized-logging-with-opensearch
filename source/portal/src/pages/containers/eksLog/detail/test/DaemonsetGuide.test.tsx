@@ -39,6 +39,7 @@ jest.mock("react-i18next", () => ({
 
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
+  jest.spyOn(console, "warn").mockImplementation(jest.fn());
 });
 
 describe("DaemonsetGuide", () => {

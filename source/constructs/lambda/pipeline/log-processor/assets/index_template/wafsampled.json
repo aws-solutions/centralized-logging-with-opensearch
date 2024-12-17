@@ -56,7 +56,13 @@
             "Weight": {
                 "type": "integer"
             },
-            "WebaclName": {
+            "WebAclName": {
+                "type": "keyword"
+            },
+            "WebAclId": {
+                "type": "keyword"
+            },
+            "WebAclArn": {
                 "type": "keyword"
             }
         }

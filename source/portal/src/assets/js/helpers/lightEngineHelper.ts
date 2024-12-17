@@ -28,6 +28,7 @@ import { cloneDeep } from "lodash";
 import { ApiResponse, appSyncRequestMutation } from "../request";
 import { createLightEngineAppPipeline } from "graphql/mutations";
 import { S3BufferState } from "reducer/configBufferS3";
+import { defaultStr, ternary } from "../utils";
 
 export const CENTRALIZED_BUCKET_PREFIX = "datalake";
 
@@ -48,29 +49,34 @@ export const createLightEngineApplicationPipeline = async (
     logStructure,
     tags,
     bufferParams: CovertObjToParameterKeyValue(
-      Object.assign(cloneDeep(s3BufferData.data), {
-        compressionType:
-          s3BufferData.data.compressionType === CompressionType.NONE
-            ? undefined
-            : s3BufferData.data.compressionType,
+      Object?.assign(cloneDeep(s3BufferData.data) ?? {}, {
+        compressionType: ternary(
+          s3BufferData.data.compressionType === CompressionType.NONE,
+          undefined,
+          s3BufferData.data.compressionType
+        ),
         logBucketPrefix: `LightEngine/AppLogs/${lightEngine.centralizedTableName}`,
       })
     ),
     params: {
-      centralizedBucketName: lightEngine.centralizedBucketName ?? "",
+      centralizedBucketName: defaultStr(lightEngine.centralizedBucketName),
       centralizedBucketPrefix: CENTRALIZED_BUCKET_PREFIX,
-      centralizedTableName: lightEngine.centralizedTableName ?? "",
+      centralizedTableName: defaultStr(lightEngine.centralizedTableName),
       logProcessorSchedule: `rate(${lightEngine.logProcessorScheduleTime} ${lightEngine.logProcessorScheduleScale})`,
-      logMergerSchedule: lightEngine.logMergerSchedule ?? "",
-      logArchiveSchedule: lightEngine.logArchiveSchedule ?? "",
+      logMergerSchedule: defaultStr(lightEngine.logMergerSchedule),
+      logArchiveSchedule: defaultStr(lightEngine.logArchiveSchedule),
       logMergerAge: `${lightEngine.logMergerAge}`,
       logArchiveAge: `${lightEngine.logArchiveAge}`,
-      importDashboards:
-        lightEngine.sampleDashboard === YesNo.Yes ? "true" : "false",
-      grafanaId:
-        lightEngine.sampleDashboard === YesNo.Yes
-          ? lightEngine.grafanaId
-          : null,
+      importDashboards: ternary(
+        lightEngine.sampleDashboard === YesNo.Yes,
+        "true",
+        "false"
+      ),
+      grafanaId: ternary(
+        lightEngine.sampleDashboard === YesNo.Yes,
+        lightEngine.grafanaId,
+        null
+      ),
       recipients: "",
     },
   };

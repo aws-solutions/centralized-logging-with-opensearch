@@ -14,8 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { CfnOutput, Aws, aws_s3 as s3, aws_ecs as ecs, aws_sqs as sqs, aws_iam as iam } from 'aws-cdk-lib';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
+import {
+  CfnOutput,
+  Aws,
+  aws_appsync as appsync,
+  aws_s3 as s3,
+  aws_sns as sns,
+  aws_ecs as ecs,
+  aws_iam as iam,
+  aws_kms as kms,
+} from 'aws-cdk-lib';
 import { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
@@ -32,18 +40,20 @@ import { CrossAccountStack } from './cross-account-stack';
 import { CloudWatchStack } from './cwl-stack';
 import { Ec2IamInstanceProfileStack } from './ec2-iam-instance-profile';
 import { FluentBitConfigStack } from './fluent-bit-config-stack';
+import { GrafanaStack } from './grafana-stack';
 import { InstanceStack } from './instance-stack';
+import { CloudWatchAlarmManagerSingleton } from './lambda-construct';
 import { LogConfStack } from './log-conf-stack';
 import { LogSourceStack } from './log-source-stack';
 
 import { PipelineAlarmStack } from './pipeline-alarm-stack';
-import { GrafanaStack } from './grafana-stack';
 
-import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { SvcPipelineStack } from './svc-pipeline-stack';
+import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { CfnFlowStack } from '../main/cfn-flow-stack';
 
-const TEMPLATE_OUTPUT_BUCKET = process.env.TEMPLATE_OUTPUT_BUCKET || 'solutions-features-reference';
+const TEMPLATE_OUTPUT_BUCKET =
+  process.env.TEMPLATE_OUTPUT_BUCKET || 'solutions-features-reference';
 
 export interface APIProps {
   /**
@@ -71,7 +81,6 @@ export interface APIProps {
    *
    */
   readonly subnetIds: string[];
-
 
   readonly processSg: SecurityGroup;
 
@@ -111,9 +120,11 @@ export interface APIProps {
 
   readonly microBatchStack: MicroBatchStack;
 
-  readonly flbConfUploadingEventQueue: sqs.Queue;
-
   readonly aosMasterRole: iam.Role;
+
+  readonly encryptionKey: kms.IKey;
+
+  readonly snsEmailTopic: sns.Topic;
 }
 
 /**
@@ -136,20 +147,22 @@ export class APIStack extends Construct {
     });
 
     apiStack.graphqlApi
-      .addHttpDataSource('LatestVersionDS', "https://s3.amazonaws.com")
-      .createResolver("LatestVersionResolver", {
+      .addHttpDataSource('LatestVersionDS', 'https://s3.amazonaws.com')
+      .createResolver('LatestVersionResolver', {
         typeName: 'Query',
         fieldName: 'latestVersion',
-        requestMappingTemplate: appsync.MappingTemplate.fromString(JSON.stringify({
-          "version": "2018-05-29",
-          "method": "GET",
-          "resourcePath": `/${TEMPLATE_OUTPUT_BUCKET}/centralized-logging-with-opensearch/latest/version`,
-          "params": {
-            "headers": {
-              "Content-Type": "application/json"
-            }
-          },
-        })),
+        requestMappingTemplate: appsync.MappingTemplate.fromString(
+          JSON.stringify({
+            version: '2018-05-29',
+            method: 'GET',
+            resourcePath: `/${TEMPLATE_OUTPUT_BUCKET}/centralized-logging-with-opensearch/latest/version`,
+            params: {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
+          })
+        ),
         responseMappingTemplate: appsync.MappingTemplate.fromString(
           `#if($ctx.error)
   {"version": "unknown", "reason": $util.toJson($ctx.error)}
@@ -159,16 +172,21 @@ export class APIStack extends Construct {
   #else
       {"version": "unknown"}
   #end
-#end`),
+#end`
+        ),
       });
 
     // Create the Cross Account API stack
     const crossAccountStack = new CrossAccountStack(this, `CrossAccountStack`, {
       graphqlApi: apiStack.graphqlApi,
       solutionId: props.solutionId,
+      encryptionKey: props.encryptionKey,
     });
 
-    crossAccountStack.centralAssumeRolePolicy.attachToRole(props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilderRole);
+    crossAccountStack.centralAssumeRolePolicy.attachToRole(
+      props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack
+        .PipelineResourcesBuilderRole
+    );
 
     // Create a common orchestration flow for CloudFormation deployment
     const cfnFlow = new CfnFlowStack(this, 'CfnFlow', {
@@ -216,6 +234,7 @@ export class APIStack extends Construct {
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
       microBatchStack: props.microBatchStack,
+      encryptionKey: props.encryptionKey,
     });
 
     // Create the Service Pipeline APIs stack
@@ -224,10 +243,12 @@ export class APIStack extends Construct {
       cfnFlowSMArn: cfnFlowSMArn,
       subAccountLinkTable: crossAccountStack.subAccountLinkTable,
       grafanaTable: grafanaStack.grafanaTable,
+      grafanaSecret: grafanaStack.grafanaSecret,
       centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
-      microBatchStack: props.microBatchStack
+      microBatchStack: props.microBatchStack,
+      encryptionKey: props.encryptionKey,
     });
     NagSuppressions.addResourceSuppressions(
       svcPipelineStack,
@@ -240,7 +261,9 @@ export class APIStack extends Construct {
       true
     );
 
-    const appTableStack = new AppTableStack(this, 'AppTables');
+    const appTableStack = new AppTableStack(this, 'AppTables', {
+      encryptionKey: props.encryptionKey,
+    });
 
     // Create the Logging Source Appsync API stack
     const logSourceStack = new LogSourceStack(this, 'LogSourceAPI', {
@@ -271,34 +294,6 @@ export class APIStack extends Construct {
       logConfTable: appTableStack.logConfTable,
     });
 
-    // Create the App Pipeline APIs stack
-    const appPipelineStack = new AppPipelineStack(this, 'AppPipelineAPI', {
-      aosMasterRole: props.aosMasterRole,
-      graphqlApi: apiStack.graphqlApi,
-      cfnFlowSMArn: cfnFlowSMArn,
-      vpc: props.vpc,
-      subnetIds: props.subnetIds,
-      processSg: props.processSg,
-      centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
-      solutionId: props.solutionId,
-      stackPrefix: props.stackPrefix,
-      logConfigTable: appTableStack.logConfTable,
-      appPipelineTable: appTableStack.appPipelineTable,
-      appLogIngestionTable: appTableStack.appLogIngestionTable,
-      grafanaTable: grafanaStack.grafanaTable,
-      microBatchStack: props.microBatchStack,
-    });
-    NagSuppressions.addResourceSuppressions(
-      appPipelineStack,
-      [
-        {
-          id: 'AwsSolutions-IAM5',
-          reason: 'Lambda need get dynamic resources',
-        },
-      ],
-      true
-    );
-
     const instanceStack = new InstanceStack(this, 'InstanceAPI', {
       graphqlApi: apiStack.graphqlApi,
       subAccountLinkTable: crossAccountStack.subAccountLinkTable,
@@ -317,22 +312,61 @@ export class APIStack extends Construct {
     );
 
     // Create the OpenSearch cluster related APIs stack
-    const clusterStack = this.clusterStack = new ClusterStack(this, 'ClusterAPI', {
-      graphqlApi: apiStack.graphqlApi,
+    const clusterStack = (this.clusterStack = new ClusterStack(
+      this,
+      'ClusterAPI',
+      {
+        graphqlApi: apiStack.graphqlApi,
+        aosMasterRole: props.aosMasterRole,
+        cfnFlowSMArn: cfnFlowSMArn,
+        vpc: props.vpc,
+        subnetIds: props.subnetIds,
+        processSgId: props.processSgId,
+        defaultLoggingBucket: props.defaultLoggingBucket.bucketName,
+        centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
+        appPipelineTable: appTableStack.appPipelineTable,
+        svcPipelineTable: svcPipelineStack.svcPipelineTable,
+        solutionId: props.solutionId,
+        stackPrefix: props.stackPrefix,
+        encryptionKey: props.encryptionKey,
+      }
+    ));
+    NagSuppressions.addResourceSuppressions(
+      clusterStack,
+      [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Lambda need get dynamic resources',
+        },
+      ],
+      true
+    );
+
+    // Create the App Pipeline APIs stack
+    const appPipelineStack = new AppPipelineStack(this, 'AppPipelineAPI', {
       aosMasterRole: props.aosMasterRole,
+      graphqlApi: apiStack.graphqlApi,
       cfnFlowSMArn: cfnFlowSMArn,
       vpc: props.vpc,
       subnetIds: props.subnetIds,
-      processSgId: props.processSgId,
-      defaultLoggingBucket: props.defaultLoggingBucket.bucketName,
+      processSg: props.processSg,
       centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
-      appPipelineTable: appTableStack.appPipelineTable,
-      svcPipelineTable: svcPipelineStack.svcPipelineTable,
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
+      logConfigTable: appTableStack.logConfTable,
+      appPipelineTable: appTableStack.appPipelineTable,
+      svcPipelineTable: svcPipelineStack.svcPipelineTable,
+      appLogIngestionTable: appTableStack.appLogIngestionTable,
+      logSourceTable: appTableStack.logSourceTable,
+      clusterTable: clusterStack.clusterTable,
+      grafanaTable: grafanaStack.grafanaTable,
+      grafanaSecret: grafanaStack.grafanaSecret,
+      microBatchStack: props.microBatchStack,
+      defaultLoggingBucket: props.defaultLoggingBucket.bucketName,
+      defaultCmkArn: props.cmkKeyArn,
     });
     NagSuppressions.addResourceSuppressions(
-      clusterStack,
+      appPipelineStack,
       [
         {
           id: 'AwsSolutions-IAM5',
@@ -356,13 +390,13 @@ export class APIStack extends Construct {
     Ec2IamInstanceProfile.Ec2IamInstanceProfilePolicy.addStatements(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: [
-          "sts:AssumeRole",
-        ],
+        actions: ['sts:AssumeRole'],
         resources: [
-          props.microBatchStack.microBatchIAMStack.AthenaPublicAccessRole.roleArn
+          props.microBatchStack.microBatchIAMStack.AthenaPublicAccessRole
+            .roleArn,
         ],
-      }),);
+      })
+    );
 
     // Create the CloudWatch API stack
     const cloudWatchStack = new CloudWatchStack(this, 'CloudWatchAPI', {
@@ -370,10 +404,10 @@ export class APIStack extends Construct {
       centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
-      appPipelineTableArn: appTableStack.appPipelineTable.tableArn,
-      svcPipelineTableArn: svcPipelineStack.svcPipelineTable.tableArn,
-      appLogIngestionTableArn: appTableStack.appLogIngestionTable.tableArn,
-      logSourceTableArn: appTableStack.logSourceTable.tableArn,
+      appPipelineTable: appTableStack.appPipelineTable,
+      svcPipelineTable: svcPipelineStack.svcPipelineTable,
+      appLogIngestionTable: appTableStack.appLogIngestionTable,
+      logSourceTable: appTableStack.logSourceTable,
     });
     NagSuppressions.addResourceSuppressions(
       cloudWatchStack,
@@ -399,7 +433,8 @@ export class APIStack extends Construct {
         logConfTable: appTableStack.logConfTable,
         appPipelineTable: appTableStack.appPipelineTable,
         appLogIngestionTable: appTableStack.appLogIngestionTable,
-        instanceIngestionDetailTable: appTableStack.instanceIngestionDetailTable,
+        instanceIngestionDetailTable:
+          appTableStack.instanceIngestionDetailTable,
         logSourceTable: appTableStack.logSourceTable,
         instanceTable: appTableStack.instanceTable,
         configFileBucket: props.defaultLoggingBucket,
@@ -411,7 +446,6 @@ export class APIStack extends Construct {
         stackPrefix: props.stackPrefix,
         cwlAccessRole: crossAccountStack.cwlAccessRole,
         fluentBitLogGroupName: cloudWatchStack.fluentBitLogGroup,
-        flbConfUploadingEventQueue: props.flbConfUploadingEventQueue,
         microBatchStack: props.microBatchStack,
       }
     );
@@ -441,14 +475,16 @@ export class APIStack extends Construct {
         centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
         solutionId: props.solutionId,
         stackPrefix: props.stackPrefix,
-        appPipelineTableArn: appTableStack.appPipelineTable.tableArn,
-        svcPipelineTableArn: svcPipelineStack.svcPipelineTable.tableArn,
-        appLogIngestionTableArn: appTableStack.appLogIngestionTable.tableArn,
+        appPipelineTable: appTableStack.appPipelineTable,
+        svcPipelineTable: svcPipelineStack.svcPipelineTable,
+        appLogIngestionTable: appTableStack.appLogIngestionTable,
         microBatchStack: props.microBatchStack,
       }
     );
     //Create the FluentBit Configuration stack
     /* NOSONAR */ new FluentBitConfigStack(this, 'FluentBitConfigAPI', {
+      graphqlApi: apiStack.graphqlApi,
+      solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
     });
     NagSuppressions.addResourceSuppressions(
@@ -469,5 +505,16 @@ export class APIStack extends Construct {
     }).overrideLogicalId('GraphQLAPIEndpoint');
 
     this.apiEndpoint = apiStack.graphqlApi.graphqlUrl;
+
+    const throttleFunc = new CloudWatchAlarmManagerSingleton(
+      this,
+      'AlarmHandlerFn',
+      { SNS_EMAIL_TOPIC_ARN: props.snsEmailTopic.topicArn }
+    ).throttleFunc;
+
+    appTableStack.appPipelineTable.grantReadWriteData(throttleFunc);
+    svcPipelineStack.svcPipelineTable.grantReadWriteData(throttleFunc);
+
+    props.snsEmailTopic.grantPublish(throttleFunc);
   }
 }

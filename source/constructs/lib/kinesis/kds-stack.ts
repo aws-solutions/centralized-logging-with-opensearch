@@ -77,17 +77,17 @@ export interface KDSStackProps {
   readonly indexPrefix: string;
 
   /**
- * OpenSearch Domain Name
- *
- * @default - None.
- */
+   * OpenSearch Domain Name
+   *
+   * @default - None.
+   */
   readonly domainName: string;
 
   /**
- * Wheather to create Sample Dashboard
- *
- * @default - Yes.
- */
+   * Wheather to create Sample Dashboard
+   *
+   * @default - Yes.
+   */
   readonly createDashboard?: string;
 
   /**
@@ -134,8 +134,8 @@ export interface KDSStackProps {
   readonly shardNumbers?: string;
   readonly replicaNumbers?: string;
   readonly solutionId: string;
-  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL'
-  readonly indexTemplateGzipBase64?: string,
+  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL';
+  readonly indexTemplateGzipBase64?: string;
   /**
    * A gzip base64 encoded string of OpenSearch index template.
    */
@@ -189,7 +189,7 @@ export class KDSStack extends Construct {
       domainName: props.domainName,
       createDashboard: props.createDashboard,
       backupBucketName: props.backupBucketName,
-      source: "KDS",
+      source: 'KDS',
       subCategory: props.subCategory,
       shardNumbers: props.shardNumbers,
       replicaNumbers: props.replicaNumbers,
@@ -206,7 +206,7 @@ export class KDSStack extends Construct {
       stackPrefix: props.stackPrefix,
       enableConfigJsonParam: false,
       indexTemplateGzipBase64: props.indexTemplateGzipBase64,
-      logProcessorConcurrency: props.logProcessorConcurrency
+      logProcessorConcurrency: props.logProcessorConcurrency,
     });
     NagSuppressions.addResourceSuppressions(logProcessor, [
       {
@@ -451,8 +451,9 @@ export class KDSStack extends Construct {
       );
 
       // Override the logical ID
-      const cfnKinesisScaleOut = kinesisScaleOut.node.defaultChild as appscaling.CfnScalingPolicy;
-      cfnKinesisScaleOut.overrideLogicalId("KinesisScaleOut");
+      const cfnKinesisScaleOut = kinesisScaleOut.node
+        .defaultChild as appscaling.CfnScalingPolicy;
+      cfnKinesisScaleOut.overrideLogicalId('KinesisScaleOut');
 
       // Scale in
       const kinesisScaleIn = new appscaling.StepScalingAction(
@@ -472,8 +473,9 @@ export class KDSStack extends Construct {
       alarmIn.addAlarmAction(new cwa.ApplicationScalingAction(kinesisScaleIn));
 
       // Override the logical ID
-      const cfnKinesisScaleIn = kinesisScaleIn.node.defaultChild as appscaling.CfnScalingPolicy;
-      cfnKinesisScaleIn.overrideLogicalId("KinesisScaleIn");
+      const cfnKinesisScaleIn = kinesisScaleIn.node
+        .defaultChild as appscaling.CfnScalingPolicy;
+      cfnKinesisScaleIn.overrideLogicalId('KinesisScaleIn');
 
       scaler.addToRolePolicy(
         new iam.PolicyStatement({
@@ -550,7 +552,7 @@ export class KDSStack extends Construct {
 
 // /* istanbul ignore next */
 class InjectCondition implements IAspect {
-  public constructor(private condition: CfnCondition) { }
+  public constructor(private condition: CfnCondition) {}
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {

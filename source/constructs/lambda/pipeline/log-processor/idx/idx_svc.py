@@ -55,13 +55,16 @@ init_ism_job = int(os.environ.get("INIT_ISM_JOB", "0"))
 init_template_job = int(os.environ.get("INIT_TEMPLATE_JOB", "0"))
 init_dashboard_job = int(os.environ.get("INIT_DASHBOARD_JOB", "0"))
 init_alias_job = int(os.environ.get("INIT_ALIAS_JOB", "0"))
+init_index_pattern_job = int(os.environ.get("INIT_INDEX_PATTERN_JOB", "0"))
+rollover_index_job = int(os.environ.get("ROLLOVER_INDEX_JOB", "1"))
+stack_name = os.environ.get("STACK_NAME", "")
 
 CONFIG_JSON = os.environ.get("CONFIG_JSON", "")
 sub_category = str(os.environ.get("SUB_CATEGORY", ""))
 
 no_buffer_access_role_arn = str(os.environ.get("NO_BUFFER_ACCESS_ROLE_ARN", ""))
 
-IS_APP_PIPELINE = "apppipe" in current_role_arn.lower() or CONFIG_JSON
+IS_APP_PIPELINE = "apppipe" in stack_name.lower() or CONFIG_JSON
 IS_SVC_PIPELINE = not IS_APP_PIPELINE
 
 opensearch_util = OpenSearchUtil(
@@ -70,7 +73,6 @@ opensearch_util = OpenSearchUtil(
     index_prefix=index_prefix,
     log_type=log_type,
 )
-opensearch_util.index_name_has_log_type_suffix(IS_SVC_PIPELINE)
 
 
 class AosIdxService:
@@ -130,6 +132,7 @@ class AosIdxService:
         self._init_dashboard()
         self._init_template()
         self._init_alias()
+        self._rollover_index()
         if CONFIG_JSON and sub_category == "FLB":
             self.adjust_lambda_env_var(env_name="SUB_CATEGORY", val="S3")
 
@@ -281,6 +284,34 @@ class AosIdxService:
         else:
             if int(os.environ.get("INIT_ALIAS_JOB", "0")) == 0:
                 self.adjust_lambda_env_var(env_name="INIT_ALIAS_JOB", val=1)
+
+    def put_index_pattern(self):
+        global init_index_pattern_job
+        try:
+            if init_index_pattern_job == 0:
+                opensearch_util.put_index_pattern()
+                init_index_pattern_job = 1
+                self.adjust_lambda_env_var(env_name="INIT_INDEX_PATTERN_JOB", val=1)
+            else:
+                if int(os.environ.get("INIT_INDEX_PATTERN_JOB", "0")) == 0:
+                    self.adjust_lambda_env_var(env_name="INIT_INDEX_PATTERN_JOB", val=1)
+        except Exception as e:
+            logger.warning(e)
+
+    def _rollover_index(self):
+        logger.info("Rollover index with prefix %s", index_prefix)
+        global rollover_index_job
+        if rollover_index_job == 0 and init_alias_job == 1:
+            kwargs = {}
+            self.run_func_with_retry(
+                opensearch_util.request_index_rollover, "Rollover index ", **kwargs
+            )
+            rollover_index_job = 1
+            self.adjust_lambda_env_var(env_name="ROLLOVER_INDEX_JOB", val=1)
+
+        else:
+            if int(os.environ.get("ROLLOVER_INDEX_JOB", "0")) == 0:
+                self.adjust_lambda_env_var(env_name="ROLLOVER_INDEX_JOB", val=1)
 
     def _create_bulk_records(self, records: list, need_json_serial=False) -> str:
         """Helper function to create payload for bulk load"""

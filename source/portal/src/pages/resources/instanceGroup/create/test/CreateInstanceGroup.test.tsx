@@ -13,22 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
-import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
-import { MemoryRouter } from "react-router-dom";
-import CreateInstanceGroup from "../CreateInstanceGroup";
-import "pages/resources/common/InstanceTable";
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useParams: jest.fn(),
-}));
 
-jest.mock("pages/resources/common/InstanceTable", () => {
-  return function InstanceTable() {
-    return <div>InstanceTable</div>;
-  };
-});
+import React from "react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import CreateInstanceGroup from "../CreateInstanceGroup";
+import { renderWithProviders } from "test-utils";
+import { MemoryRouter } from "react-router-dom";
+import { AppStoreMockData, MockMemberAccountData } from "test/store.mock";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { MockGetAgentStatus, MockListInstances } from "test/instance.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -45,24 +38,216 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("apollo-link", () => {
+  return {
+    ApolloLink: {
+      from: jest.fn(),
+    },
+  };
+});
+
+jest.mock("aws-appsync-auth-link", () => {
+  return {
+    AUTH_TYPE: {
+      OPENID_CONNECT: "OPENID_CONNECT",
+      AMAZON_COGNITO_USER_POOLS: "AMAZON_COGNITO_USER_POOLS",
+    },
+    createAuthLink: jest.fn(),
+  };
+});
+
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("CreateInstanceGroup", () => {
-  it("renders without errors", () => {
-    const { getByTestId } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/create-instance-group"]}>
-        <CreateInstanceGroup />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listInstances: MockListInstances,
+        getInstanceAgentStatus: MockGetAgentStatus,
+        listSubAccountLinks: {
+          subAccountLinks: [{ ...MockMemberAccountData }],
+          total: 1,
         },
-      }
+      },
+    });
+  });
+
+  it("renders without  errors and create asg no instance", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateInstanceGroup />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
+
+    // click create instance group button
+    const createInstanceGroupButton = screen.getByTestId(
+      "create-instance-group-button"
     );
-    expect(getByTestId("test-create-instance-group")).toBeInTheDocument();
+    expect(createInstanceGroupButton).toBeInTheDocument();
+    fireEvent.click(createInstanceGroupButton);
+  });
+
+  it("renders without errors and create ec2 instance group", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listInstances: MockListInstances,
+        getInstanceAgentStatus: {
+          commandId: "xxxx",
+          instanceAgentStatusList: [
+            {
+              instanceId: "i-xxx1",
+              status: "Online",
+            },
+          ],
+        },
+        listSubAccountLinks: {
+          subAccountLinks: [{ ...MockMemberAccountData }],
+          total: 1,
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        createLogSource: {
+          success: true,
+        },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateInstanceGroup />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
+
+    await waitFor(
+      () => {
+        const loadings = screen.queryAllByTestId("gsui-loading");
+        expect(loadings).toHaveLength(0);
+      },
+      { timeout: 3000 }
+    );
+
+    // select instance item
+    await waitFor(() => {
+      const instanceItem = screen.getByTestId("table-item-i-xxx1");
+      expect(instanceItem).toBeInTheDocument();
+      fireEvent.click(instanceItem);
+    });
+
+    // click install agent button
+    const installAgentButton = screen.getByTestId("install-agent-button");
+    expect(installAgentButton).toBeInTheDocument();
+    fireEvent.click(installAgentButton);
+
+    // input instance group name
+    const groupNameInput = screen.getByPlaceholderText("log-example-group");
+    expect(groupNameInput).toBeInTheDocument();
+    fireEvent.change(groupNameInput, { target: { value: "Test Group" } });
+
+    // click create instance group button
+    const createInstanceGroupButton = screen.getByTestId(
+      "create-instance-group-button"
+    );
+    expect(createInstanceGroupButton).toBeInTheDocument();
+    fireEvent.click(createInstanceGroupButton);
+
+    // click cancel button
+    const cancelButton = screen.getByTestId(
+      "cancel-create-instance-group-button"
+    );
+    expect(cancelButton).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(cancelButton);
+    });
+  });
+
+  it("renders without  errors and create asg instance group", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listInstances: MockListInstances,
+        getInstanceAgentStatus: {
+          commandId: "xxxx",
+          instanceAgentStatusList: [
+            {
+              instanceId: "i-xxx1",
+              status: "Online",
+            },
+          ],
+        },
+        listLogSources: [
+          {
+            id: "xxxx",
+            name: "asg-1",
+            description: "asg description",
+            parentId: null,
+          },
+        ],
+        listSubAccountLinks: {
+          subAccountLinks: [{ ...MockMemberAccountData }],
+          total: 1,
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        createLogSource: {
+          success: true,
+        },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateInstanceGroup />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
+
+    // input instance group name
+    const groupNameInput = screen.getByPlaceholderText("log-example-group");
+    expect(groupNameInput).toBeInTheDocument();
+    fireEvent.change(groupNameInput, { target: { value: "Test Group" } });
+
+    // click create instance group button
+    const createInstanceGroupButton = screen.getByTestId(
+      "create-instance-group-button"
+    );
+    expect(createInstanceGroupButton).toBeInTheDocument();
+    fireEvent.click(createInstanceGroupButton);
   });
 });

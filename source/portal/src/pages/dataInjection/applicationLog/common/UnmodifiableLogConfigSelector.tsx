@@ -4,10 +4,8 @@ import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getLogConfig } from "graphql/queries";
 import Alert from "components/Alert";
-import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
 import { LogSourceType } from "API";
-import LoadingText from "components/LoadingText";
 
 export interface UnmodifiableLogConfigSelectorProps {
   configId: string;
@@ -19,6 +17,7 @@ export interface UnmodifiableLogConfigSelectorProps {
   hideViewDetailButton?: boolean;
   hideDetail?: boolean;
   logType?: LogSourceType;
+  hideAlert?: boolean;
 }
 const UnmodifiableLogConfigSelector: React.FC<
   UnmodifiableLogConfigSelectorProps
@@ -27,7 +26,6 @@ const UnmodifiableLogConfigSelector: React.FC<
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [viewDetailsLink, setViewDetailsLink] = useState("");
   const [logConfigName, setLogConfigName] = useState("");
-  const [currentConfig, setCurrentConfig] = useState();
 
   useEffect(() => {
     setViewDetailsLink("/resources/log-config/detail/" + props.configId);
@@ -40,7 +38,6 @@ const UnmodifiableLogConfigSelector: React.FC<
         id: props.configId,
         version: props.configVersion,
       });
-      setCurrentConfig(queryRes.data.getLogConfig);
       setLogConfigName(queryRes.data.getLogConfig.name);
       setLoadingConfig(false);
     } catch (error: any) {
@@ -72,21 +69,17 @@ const UnmodifiableLogConfigSelector: React.FC<
             props.hideViewDetailButton ? undefined : viewDetailsLink
           }
         />
-        <div className="mt-10">{loadingConfig && <LoadingText />}</div>
       </FormItem>
-      <div className="mt-10 m-w-75p" data-testid="unmodifiable-config-comp">
-        {props.logType === LogSourceType.S3 && (
-          <Alert content={t("applog:logSourceDesc.s3.step2.alert")} />
-        )}
-        <Alert
-          content={t(
-            "applog:logSourceDesc.s3.step2.alertCanNotChangeLogConfig"
+      {!props.hideAlert && (
+        <div className="mt-10 m-w-75p" data-testid="unmodifiable-config-comp">
+          {props.logType === LogSourceType.S3 && (
+            <Alert content={t("applog:logSourceDesc.s3.step2.alert")} />
           )}
-        />
-      </div>
-      {!props.hideDetail && currentConfig && (
-        <div className="plr-10">
-          <ConfigDetailComps curLogConfig={currentConfig} />
+          <Alert
+            content={t(
+              "applog:logSourceDesc.s3.step2.alertCanNotChangeLogConfig"
+            )}
+          />
         </div>
       )}
     </>

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct, IConstruct } from "constructs";
+import * as path from 'path';
 import {
   Aws,
   Duration,
@@ -27,11 +27,12 @@ import {
   aws_iam as iam,
   aws_lambda as lambda,
   custom_resources as cr,
-} from "aws-cdk-lib";
+  aws_sns as sns,
+} from 'aws-cdk-lib';
+import { Construct, IConstruct } from 'constructs';
 
-import * as path from "path";
-import { SharedPythonLayer } from "../layer/layer";
-import { APIStack } from "../api/api-stack";
+import { APIStack } from '../api/api-stack';
+import { SharedPythonLayer } from '../layer/layer';
 
 export interface CRProps {
   /**
@@ -61,6 +62,13 @@ export interface CRProps {
    * @default - None.
    */
   readonly defaultLoggingBucket: string;
+
+  /**
+   * staging Bucket Name
+   *
+   * @default - None.
+   */
+  readonly stagingBucket: string;
 
   /**
    * Default KMS-CMK Arn
@@ -106,11 +114,11 @@ export interface CRProps {
    */
   readonly oidcClientId: string;
 
-
   readonly openSearchMasterRoleArn: string;
 
   readonly apiStack: APIStack;
   readonly webUILoggingBucket: string;
+  readonly snsEmailTopic: sns.Topic;
 }
 
 /**
@@ -123,37 +131,38 @@ export class CustomResourceStack extends Construct {
     super(scope, id);
 
     const templateBucket =
-      process.env.TEMPLATE_OUTPUT_BUCKET || "aws-gcr-solutions";
-    const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || "log-hub"; // Old name
+      process.env.TEMPLATE_OUTPUT_BUCKET || 'aws-gcr-solutions';
+    const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || 'log-hub'; // Old name
 
     // If in China Region, disable install latest aws-sdk
-    const isCN = new CfnCondition(this, "isCN", {
-      expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
+    const isCN = new CfnCondition(this, 'isCN', {
+      expression: Fn.conditionEquals(Aws.PARTITION, 'aws-cn'),
     });
 
     const installLatestAwsSdk = Fn.conditionIf(
       isCN.logicalId,
-      "false",
-      "true"
+      'false',
+      'true'
     ).toString();
 
     Aspects.of(this).add(new InjectCustomerResourceConfig(installLatestAwsSdk));
 
     // This Lambda is to perform necessary actions during stack creation or update
     // Including export the aws-exports.json to web portal bucket etc.
-    this.initConfigFn = new lambda.Function(this, "InitConfig", {
+    this.initConfigFn = new lambda.Function(this, 'InitConfig', {
       runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../lambda/custom-resource")
+        path.join(__dirname, '../../lambda/custom-resource')
       ),
-      handler: "lambda_function.lambda_handler",
+      handler: 'lambda_function.lambda_handler',
       layers: [SharedPythonLayer.getInstance(this)],
       timeout: Duration.minutes(5),
       memorySize: 128,
       environment: {
         WEB_BUCKET_NAME: props.portalBucketName,
         OPENSEARCH_MASTER_ROLE_ARN: props.openSearchMasterRoleArn,
-        OPENSEARCH_DOMAIN_TABLE: props.apiStack.clusterStack.clusterTable.tableName,
+        OPENSEARCH_DOMAIN_TABLE:
+          props.apiStack.clusterStack.clusterTable.tableName,
         API_ENDPOINT: props.apiStack.apiEndpoint,
         OIDC_PROVIDER: props.oidcProvider,
         OIDC_CLIENT_ID: props.oidcClientId,
@@ -164,11 +173,13 @@ export class CustomResourceStack extends Construct {
         USER_POOL_ID: props.userPoolId,
         USER_POOL_CLIENT_ID: props.userPoolClientId,
         DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
+        STAGING_BUCKET: props.stagingBucket,
         DEFAULT_CMK_ARN: props.cmkKeyArn,
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         TEMPLATE_OUTPUT_BUCKET: templateBucket,
         SOLUTION_NAME: solutionName,
-        ACCESS_LOGGING_BUCKET: props.webUILoggingBucket
+        ACCESS_LOGGING_BUCKET: props.webUILoggingBucket,
+        SNS_EMAIL_TOPIC_ARN: props.snsEmailTopic.topicArn,
       },
       description: `${Aws.STACK_NAME} - Init Config Handler`,
     });
@@ -188,23 +199,18 @@ export class CustomResourceStack extends Construct {
     this.initConfigFn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: [
-          's3:PutBucketLogging',
-          's3:GetBucketLogging',
-        ],
+        actions: ['s3:PutBucketLogging', 's3:GetBucketLogging'],
         resources: [
           `arn:${Aws.PARTITION}:s3:::${props.defaultLoggingBucket}`,
+          `arn:${Aws.PARTITION}:s3:::${props.stagingBucket}`,
         ],
       })
     );
     this.initConfigFn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: [
-          'es:DescribeDomainConfig',
-          'es:UpdateDomainConfig',
-        ],
-        resources: ["*"],
+        actions: ['es:DescribeDomainConfig', 'es:UpdateDomainConfig'],
+        resources: ['*'],
       })
     );
     this.initConfigFn.addToRolePolicy(
@@ -217,20 +223,22 @@ export class CustomResourceStack extends Construct {
         resources: ['*'],
       })
     );
-    props.apiStack.clusterStack.clusterTable.grantReadWriteData(this.initConfigFn);
+    props.apiStack.clusterStack.clusterTable.grantReadWriteData(
+      this.initConfigFn
+    );
 
-    const CRLambdaProvider = new cr.Provider(this, "CRLambdaProvider", {
+    const CRLambdaProvider = new cr.Provider(this, 'CRLambdaProvider', {
       onEventHandler: this.initConfigFn,
     });
 
-    const crLambda = new CustomResource(this, "CRLambda", {
+    const crLambda = new CustomResource(this, 'CRLambda', {
       serviceToken: CRLambdaProvider.serviceToken,
       properties: {
-        service: "Lambda",
-        action: "invoke",
+        service: 'Lambda',
+        action: 'invoke',
         parameters: {
           FunctionName: this.initConfigFn.functionName,
-          InvocationType: "Event",
+          InvocationType: 'Event',
         },
         physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
@@ -244,8 +252,8 @@ class InjectCustomerResourceConfig implements IAspect {
   public constructor(private installLatestAwsSdk: string) { }
 
   public visit(node: IConstruct): void {
-    if (node instanceof CfnResource && node.cfnResourceType === "Custom::AWS") {
-      node.addPropertyOverride("InstallLatestAwsSdk", this.installLatestAwsSdk);
+    if (node instanceof CfnResource && node.cfnResourceType === 'Custom::AWS') {
+      node.addPropertyOverride('InstallLatestAwsSdk', this.installLatestAwsSdk);
     }
   }
 }

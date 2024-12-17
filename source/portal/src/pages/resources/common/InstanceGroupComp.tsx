@@ -76,83 +76,93 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
   return (
     <div>
       <PagePanel
-        title={t("resource:group.comp.instanceGroup")}
+        title={t("resource:group.comp.createInstanceGroup")}
         desc={t("resource:group.comp.instanceGroupDesc")}
       >
         <div>
-          <div className="ptb-10">
-            <ul>
-              {[1, 2, 3, 4, 5].map((item) => {
-                return (
-                  <li key={item}>{t(`resource:group.comp.tips${item}`)}</li>
-                );
-              })}
-            </ul>
-          </div>
-
-          {!hideAccountSetting && (
-            <HeaderPanel title={t("resource:crossAccount.accountSettings")}>
-              <CrossAccountSelect
-                disabled={instanceIsLoading}
-                accountId={accountId || ""}
-                changeAccount={(id, account) => {
-                  changeCurAccount(id, account);
-                }}
-              />
-            </HeaderPanel>
-          )}
-
           <HeaderPanel
             title={t("resource:group.comp.settings")}
             marginBottom={0}
           >
-            <FormItem
-              optionTitle={t("resource:group.comp.groupName")}
-              optionDesc={t("resource:group.comp.groupNameDesc")}
-              errorText={
-                showNameEmptyError
-                  ? t("resource:group.comp.groupNameError")
-                  : ""
-              }
-            >
-              <TextInput
-                className="m-w-75p"
-                value={defaultStr(instanceGroup?.groupName)}
-                onChange={(event) => {
-                  changeGroupName(event.target.value);
-                }}
-                placeholder="log-example-group"
-              />
-            </FormItem>
-          </HeaderPanel>
-          <div style={{ height: 1, borderBottom: "1px solid #ccc" }}></div>
-
-          <div className="mt-20">
-            <HeaderPanel title={t("resource:group.config")} contentNoPadding>
-              <>
+            <>
+              <FormItem
+                optionTitle={t("resource:group.comp.prerequisites")}
+                optionDesc={t("resource:group.comp.prerequisitesDesc")}
+              >
+                <ul>
+                  {[1, 2, 3, 4, 5].map((item) => {
+                    return (
+                      <li key={item}>{t(`resource:group.comp.tips${item}`)}</li>
+                    );
+                  })}
+                </ul>
+              </FormItem>
+              {!hideAccountSetting && (
+                <CrossAccountSelect
+                  disabled={instanceIsLoading}
+                  accountId={accountId || ""}
+                  changeAccount={(id, account) => {
+                    changeCurAccount(id, account);
+                  }}
+                />
+              )}
+              <FormItem
+                optionTitle={t("resource:group.comp.groupName")}
+                optionDesc={t("resource:group.comp.groupNameDesc")}
+                errorText={
+                  showNameEmptyError
+                    ? t("resource:group.comp.groupNameError")
+                    : ""
+                }
+              >
+                <TextInput
+                  className="m-w-75p"
+                  value={defaultStr(instanceGroup?.groupName)}
+                  onChange={(event) => {
+                    changeGroupName(event.target.value);
+                  }}
+                  placeholder="log-example-group"
+                />
+              </FormItem>
+              <FormItem
+                optionTitle={t("resource:group.comp.instanceGroupType")}
+                optionDesc={t("resource:group.comp.instanceGroupTypeDesc")}
+              >
                 <SelectType
                   groupType={instanceGroup?.groupType}
                   changeGroupType={(type) => {
                     changeGroupType(type);
                   }}
                 />
-                {instanceGroup?.groupType === LogSourceType.EC2 && (
-                  <InstanceTable
-                    platform={platform}
-                    accountId={accountId}
-                    changeInstanceSet={(sets) => {
-                      changeInstanceSet(sets);
-                    }}
-                    setCreateDisabled={(disable) => {
-                      setInstanceIsLoading(disable);
-                      setCreateDisabled(disable);
-                    }}
-                    changePlatform={(pf) => {
-                      changePlatform?.(pf);
-                    }}
-                  />
-                )}
-                {instanceGroup?.groupType === EC2GroupType.ASG && (
+              </FormItem>
+            </>
+          </HeaderPanel>
+          <div style={{ height: 1, borderBottom: "1px solid #ccc" }}></div>
+
+          <div className="mt-20">
+            <>
+              {instanceGroup?.groupType === LogSourceType.EC2 && (
+                <InstanceTable
+                  description={t("resource:group.comp.instances.titleDesc")}
+                  platform={platform}
+                  accountId={accountId}
+                  changeInstanceSet={(sets) => {
+                    changeInstanceSet(sets);
+                  }}
+                  setCreateDisabled={(disable) => {
+                    setInstanceIsLoading(disable);
+                    setCreateDisabled(disable);
+                  }}
+                  changePlatform={(pf) => {
+                    changePlatform?.(pf);
+                  }}
+                />
+              )}
+              {instanceGroup?.groupType === EC2GroupType.ASG && (
+                <HeaderPanel
+                  title={t("resource:group.comp.instances.title")}
+                  contentNoPadding
+                >
                   <ASGSelect
                     accountId={accountId}
                     instanceGroupInfo={instanceGroup}
@@ -164,9 +174,9 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
                       changePlatform?.(pf);
                     }}
                   />
-                )}
-              </>
-            </HeaderPanel>
+                </HeaderPanel>
+              )}
+            </>
           </div>
         </div>
       </PagePanel>

@@ -26,19 +26,17 @@ export function useAsyncData<T>(
 
   useEffect(() => {
     let mounted = true;
-    const dataPromise: PromiseLike<T> | null = getData();
-    if (!dataPromise || dataPromise === internalThis.dataPromise) {
-      setIsLoadingData(false);
-      return;
-    }
-    internalThis.dataPromise = dataPromise;
-    (async () => {
+
+    const setLoadingState = (loading: boolean) => {
+      setIsLoadingData(loading);
+    };
+
+    const handleData = async (dataPromise: PromiseLike<T>) => {
       try {
-        setIsLoadingData(true);
+        setLoadingState(true);
         let currentData: T = await dataPromise;
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
+
         const lastDataToBe = config.cleanData ? null : data;
         if (config.onDataReady) {
           const processedData = config.onDataReady(currentData, lastDataToBe);
@@ -46,14 +44,13 @@ export function useAsyncData<T>(
             currentData = processedData;
           }
         }
+
         setLastData(lastDataToBe);
         setData(currentData);
         setDataError(null);
-        setIsLoadingData(false);
       } catch (error) {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
+
         let dataError = error;
         if (config.onDataError) {
           const processedError = config.onDataError(error);
@@ -61,19 +58,39 @@ export function useAsyncData<T>(
             dataError = processedError;
           }
         }
+
         setDataError(dataError);
-        setIsLoadingData(false);
+      } finally {
+        if (mounted) {
+          setLoadingState(false);
+        }
       }
-    })();
+    };
+
+    const initiateDataFetch = () => {
+      const dataPromise: PromiseLike<T> | null = getData();
+      if (!dataPromise || dataPromise === internalThis.dataPromise) {
+        setLoadingState(false);
+        return;
+      }
+
+      internalThis.dataPromise = dataPromise;
+      handleData(dataPromise);
+    };
+
+    initiateDataFetch();
+
     return () => {
       mounted = false;
     };
   }, [...deps, reload]);
+
   return {
     data,
     isLoadingData,
     dataError,
     lastData,
     reloadData: () => setReload((prev) => !prev),
+    clearData: () => setData(undefined),
   };
 }

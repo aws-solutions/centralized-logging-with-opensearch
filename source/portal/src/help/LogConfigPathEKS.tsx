@@ -50,7 +50,7 @@ const LogConfigPathEKS: React.FC = () => {
           {t("info:logConfigPath.eks.stip2")}
         </div>
         <div className="mt-5">
-          <img width="100%" src={SIDE_CAR_IMG} />
+          <img alt="sidecar" width="100%" src={SIDE_CAR_IMG} />
         </div>
       </div>
     </div>

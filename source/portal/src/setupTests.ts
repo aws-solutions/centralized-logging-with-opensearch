@@ -17,6 +17,7 @@ limitations under the License.
 // allows you to do things like:
 // learn more: https://github.com/testing-library/jest-dom
 import "@testing-library/jest-dom";
-import { TextEncoder } from 'node:util'
+import { TextEncoder } from "node:util";
 
-global.TextEncoder = TextEncoder
+global.TextEncoder = TextEncoder;
+jest.setTimeout(30000);

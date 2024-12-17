@@ -18,6 +18,9 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import LogConfig from "../LogConfig";
+import { appSyncRequestQuery } from "assets/js/request";
+import { mockConfigData } from "test/config.mock";
+import { screen, act } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,26 +37,41 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+  refineErrorMessage: jest
+    .fn()
+    .mockReturnValue({ errorCode: "mockCode", message: "mockMessage" }),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("LogConfig", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter>
-        <LogConfig />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
+  it("renders without errors", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogConfig: { ...mockConfigData, id: "xxxx" },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <LogConfig configId="xxxx" version={1} />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
           },
-        },
-      }
-    );
-    expect(
-      getByText("ekslog:ingest.detail.configTab.name")
-    ).toBeInTheDocument();
+        }
+      );
+    });
+
+    expect(screen.getByText("test-json-config")).toBeInTheDocument();
   });
 });

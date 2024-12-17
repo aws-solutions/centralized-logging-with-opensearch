@@ -49,6 +49,8 @@ import { LightEngineTableName } from "help/LightEngineTableName";
 import { GeneralHelp, GeneralHelpProps } from "help/GeneralHelp";
 import { defaultStr } from "assets/js/utils";
 import LogConfigPathWindows from "help/LogConfigPathWindows";
+import { AppPipelineImport } from "help/AppPipelineImport";
+import ShardNumber from "help/ShardNumber";
 
 interface HelpPanelProps {
   className?: string;
@@ -194,6 +196,10 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
           )}
           {infoBarType === InfoBarTypes.PIPELINE_ALARM && <PipelineAlarms />}
           {infoBarType === InfoBarTypes.OSI_PIPELINE && <OSIPipeline />}
+          {infoBarType === InfoBarTypes.APP_PIPELINE_IMPORT && (
+            <AppPipelineImport />
+          )}
+          {infoBarType === InfoBarTypes.NUMBER_OF_SHARDS && <ShardNumber />}
           {infoBarType === InfoBarTypes.LIGHT_ENGINE_TABLE_NAME && (
             <LightEngineTableName />
           )}

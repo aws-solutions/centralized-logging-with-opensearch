@@ -21,13 +21,15 @@ import { getLogConfig } from "graphql/queries";
 import LoadingText from "components/LoadingText";
 import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
+import ConfigGeneral from "pages/resources/logConfig/ConfigGeneral";
 
 interface LogConfigProps {
   configId?: string;
+  version: number;
 }
 
-const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
-  const { configId } = props;
+const PipelineLogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
+  const { configId, version } = props;
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(false);
   const [curConfig, setCurConfig] = useState<ExLogConf>();
@@ -37,6 +39,7 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
       setLoadingData(true);
       const resConfigData: any = await appSyncRequestQuery(getLogConfig, {
         id: configId,
+        version: version,
       });
       console.info("resConfigData:", resConfigData);
       setLoadingData(false);
@@ -54,19 +57,18 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
     }
   }, []);
 
+  if (loadingData) {
+    return <LoadingText />;
+  }
+
   return (
     <div>
-      <HeaderPanel title={t("ekslog:ingest.detail.configTab.config")}>
-        {loadingData ? (
-          <LoadingText />
-        ) : (
-          <div>
-            <ConfigDetailComps hideBasicInfo={false} curLogConfig={curConfig} />
-          </div>
-        )}
+      <ConfigGeneral curLogConfig={curConfig} showRevision version={version} />
+      <HeaderPanel title={t("resource:config.detail.logParser")}>
+        <ConfigDetailComps hideBasicInfo={true} curLogConfig={curConfig} />
       </HeaderPanel>
     </div>
   );
 };
 
-export default LogConfig;
+export default PipelineLogConfig;

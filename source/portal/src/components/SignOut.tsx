@@ -31,7 +31,7 @@ const SignOut: React.FC<propsType> = (props: propsType) => {
   };
 
   return (
-    <span className={props.className} onClick={signOut}>
+    <span role="none" className={props.className} onClick={signOut}>
       {t("header.logout")}
     </span>
   );

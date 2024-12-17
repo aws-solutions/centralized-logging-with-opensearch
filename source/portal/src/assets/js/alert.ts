@@ -38,7 +38,7 @@ import { ErrorCode } from "API";
 import { t } from "i18next";
 
 export const handleErrorMessage = (errorMessage: string) => {
-  if (!errorMessage || !refineErrorMessage(errorMessage)?.errorCode) {
+  if (!errorMessage || !refineErrorMessage?.(errorMessage)?.errorCode) {
     return;
   }
   const { errorCode, message } = refineErrorMessage(errorMessage);
@@ -46,7 +46,7 @@ export const handleErrorMessage = (errorMessage: string) => {
     errorCode === ErrorCode.SVC_PIPELINE_NOT_CLEANED ||
     errorCode === ErrorCode.APP_PIPELINE_NOT_CLEANED
   ) {
-    Alert(t("cluster:domain.removeErrorIngestionExists"), "error");
+    Alert(t("cluster:domain.removeErrorIngestionExists"));
     return false;
   }
 
@@ -60,7 +60,7 @@ export const handleErrorMessage = (errorMessage: string) => {
       break;
 
     case ErrorCode.ASSOCIATED_STACK_UNDER_PROCESSING:
-      Alert(t("cluster:domain.removeErrorSubstackUnderProcessing"), "error");
+      Alert(t("cluster:domain.removeErrorSubstackUnderProcessing"));
       break;
 
     case ErrorCode.UPDATE_CWL_ROLE_FAILED:

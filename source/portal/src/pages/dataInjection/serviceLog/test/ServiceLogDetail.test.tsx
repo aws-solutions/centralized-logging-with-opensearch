@@ -15,9 +15,12 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter, useParams } from "react-router-dom";
 import ServiceLogDetail from "../ServiceLogDetail";
+import { act } from "@testing-library/react";
+import { appSyncRequestQuery } from "assets/js/request";
+import { mockServiceLogDetailData } from "test/servicelog.mock";
+import { DestinationType, ServiceType } from "API";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,29 +42,204 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
-  const mockParams = { id: "i-xxxxxxxx", version: "1" };
+  const mockParams = { id: "xxxx", version: "1" };
   // Make useParams return the mock parameters
   (useParams as any).mockReturnValue(mockParams);
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("ServiceLogDetail", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter
-        initialEntries={["/log-pipeline/service-log/detail/xxx-xxx"]}
-      >
-        <ServiceLogDetail />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders with data s3", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: { ...mockServiceLogDetailData },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data cloudtrail", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.CloudTrail,
         },
-      }
-    );
-    expect(getByText(/servicelog:name/i)).toBeInTheDocument();
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data cloudfront", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.CloudFront,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data cloudfront kds", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.CloudFront,
+          destinationType: DestinationType.KDS,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data elb", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.ELB,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data waf", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.WAF,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data vpc", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.VPC,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data config", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.Config,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data rds", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.RDS,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with data lambda", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getServicePipeline: {
+          ...mockServiceLogDetailData,
+          type: ServiceType.Lambda,
+        },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ServiceLogDetail />
+        </MemoryRouter>
+      );
+    });
   });
 });

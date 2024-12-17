@@ -68,6 +68,8 @@ import { GrafanaList } from "pages/lightEngine/grafana/GrafanaList";
 import { ImportGrafana } from "pages/lightEngine/grafana/importGrafana/ImportGrafana";
 import { UpdateGrafana } from "pages/lightEngine/grafana/importGrafana/UpdateGrafana";
 import CommonLayout from "pages/layout/CommonLayout";
+import { ApplicationLogImport } from "pages/dataInjection/applicationLog/ApplicationLogImport";
+import ApplicationLogEdit from "pages/dataInjection/applicationLog/ApplicationLogEdit";
 
 const AppRouter: React.FC = () => {
   const { t } = useTranslation();
@@ -171,6 +173,10 @@ const AppRouter: React.FC = () => {
             element={<ApplicationLogDetail />}
           />
           <Route
+            path="/log-pipeline/application-log/edit/:id"
+            element={<ApplicationLogEdit />}
+          />
+          <Route
             path="/log-pipeline/application-log/detail/:id/create-ingestion-instance"
             element={<AppLogCreateEC2 />}
           />
@@ -185,6 +191,10 @@ const AppRouter: React.FC = () => {
           <Route
             path="/log-pipeline/application-log/ingestion/detail/:id"
             element={<AppIngestionDetail />}
+          />
+          <Route
+            path="/log-pipeline/application-log/import"
+            element={<ApplicationLogImport />}
           />
           {/* Application Log Router End */}
 
@@ -238,7 +248,7 @@ const AppRouter: React.FC = () => {
             element={<ConfigDetail />}
           />
           <Route
-            path="/resources/log-config/detail/:id/edit"
+            path="/resources/log-config/detail/:id/revision/:revision/edit"
             element={<EditLogConfig />}
           />
           <Route

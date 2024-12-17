@@ -57,6 +57,6 @@ describe("InstancePermission", () => {
         },
       }
     );
-    expect(getByText(/applog:instancePermission.title/i)).toBeInTheDocument();
+    expect(getByText(/resource:group.detail.permissions/i)).toBeInTheDocument();
   });
 });

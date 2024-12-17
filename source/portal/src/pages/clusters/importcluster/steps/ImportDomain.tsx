@@ -164,7 +164,7 @@ const ImportDomain: React.FC<ImportDomainProps> = (
 
   return (
     <div>
-      <HeaderPanel title={t("cluster:import.selectDomain.osDomain")}>
+      <HeaderPanel title={t("cluster:import.name")}>
         <>
           {importedCluster.creationMethod === CreateLogMethod.Automatic && (
             <div>

@@ -75,6 +75,8 @@ import {
   domainIsValid,
   buildOSILink,
   containsNonLatinCodepoints,
+  downloadFileByLink,
+  buildEventRuleLink,
 } from "../utils";
 import { LogProcessorType } from "reducer/selectProcessor";
 
@@ -1016,6 +1018,26 @@ describe("buildSQSLink", () => {
   });
 });
 
+describe("buildEventRuleLink", () => {
+  it("should build the event rule link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const ruleName = "myRule";
+    const link = buildEventRuleLink(region, ruleName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/events/home?region=${region}#/eventbus/default/rules/${ruleName}`
+    );
+  });
+
+  it("should build the event rule link for China regions", () => {
+    const region = "cn-example-1";
+    const ruleName = "myRule";
+    const link = buildEventRuleLink(region, ruleName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/events/home?region=${region}#/eventbus/default/rules/${ruleName}`
+    );
+  });
+});
+
 describe("buildNLBLinkByDNS", () => {
   it("should build the NLB link for standard AWS regions", () => {
     const region = "us-example-1";
@@ -1547,6 +1569,26 @@ describe("isEmpty", () => {
       const domain = "test-error-domain";
       const result = domainIsValid(domain);
       expect(result).toBe(false);
+    });
+  });
+
+  describe("downloadFileByLink", () => {
+    it("should trigger a download when a valid URL is provided", () => {
+      document.createElement = jest.fn().mockReturnValue({
+        style: {},
+        href: "",
+        click: jest.fn(),
+        parentNode: {
+          removeChild: jest.fn(),
+        },
+      });
+      document.body.appendChild = jest.fn().mockReturnValue({});
+      const url = "http://example.com/file.pdf";
+      downloadFileByLink(url);
+      const link = (document.createElement as any).mock.results[0].value;
+      expect(document.createElement).toHaveBeenCalledWith("a");
+      expect(link.href).toBe(url);
+      expect(link.click).toHaveBeenCalled();
     });
   });
 });
