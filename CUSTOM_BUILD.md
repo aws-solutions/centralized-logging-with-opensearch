@@ -126,6 +126,6 @@ Once you have uploaded the distributable to your Amazon S3 bucket, you can start
     Then run:
     ```
     cd ./source/constructs
-    npx cdk deploy centralized-logging-with-opensearch --parameters adminEmail=<your email address>
+    npx cdk deploy CentralizedLogging --parameters adminEmail=<your email address>
     ```
 

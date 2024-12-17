@@ -18,7 +18,9 @@ import React from "react";
 import EksLogList from "../EksLogList";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
-import { AppStoreMockData } from "test/store.mock";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { MockEKSData } from "test/applog.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -35,23 +37,71 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("EksLogList", () => {
-  it("renders without errors", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <EksLogList />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogSources: {
+          logSources: [MockEKSData],
+          total: 1,
         },
-      }
-    );
+      },
+    });
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        deleteLogSource: "OK",
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/log-config"]}>
+          <EksLogList />
+        </MemoryRouter>
+      );
+    });
+
+    // click import button
+    await act(async () => {
+      const importButton = screen.getByTestId("import-button");
+      fireEvent.click(importButton);
+    });
+
+    // select item
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-xxxx"));
+    });
+
+    // click remove button
+    await act(async () => {
+      const removeButton = screen.getByTestId("remove-button");
+      fireEvent.click(removeButton);
+    });
+
+    // click confirm remove button
+    await act(async () => {
+      const confirmRemoveButton = screen.getByTestId("confirm-delete-button");
+      fireEvent.click(confirmRemoveButton);
+    });
+
+    // click cancel remove button
+    await act(async () => {
+      const cancelRemoveButton = screen.getByTestId("cancel-delete-button");
+      fireEvent.click(cancelRemoveButton);
+    });
+
+    // click refresh button
+    await act(async () => {
+      const refreshButton = screen.getByTestId("refresh-button");
+      fireEvent.click(refreshButton);
+    });
   });
 });

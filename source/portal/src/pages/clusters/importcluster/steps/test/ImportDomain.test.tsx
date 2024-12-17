@@ -18,8 +18,9 @@ import React from "react";
 import ImportDomain from "../ImportDomain";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
-import { domainMockImportedCluster } from "test/domain.mock";
-import { AppStoreMockData } from "test/store.mock";
+import { domainMockImportedCluster, mockImportResult } from "test/domain.mock";
+import { act } from "@testing-library/react";
+import { appSyncRequestMutation } from "assets/js/request";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -36,28 +37,47 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("ImportDomain", () => {
-  it("renders without errors", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <ImportDomain
-          importedCluster={{
-            ...domainMockImportedCluster,
-          }}
-          importedRes={[]}
-        />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
+  it("renders without errors", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ImportDomain
+            importedCluster={{
+              ...domainMockImportedCluster,
+            }}
+            importedRes={[]}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with imported result", async () => {
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        importDomain: mockImportResult,
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ImportDomain
+            importedCluster={{
+              ...domainMockImportedCluster,
+            }}
+            importedRes={mockImportResult.resources as any}
+          />
+        </MemoryRouter>
+      );
+    });
   });
 });

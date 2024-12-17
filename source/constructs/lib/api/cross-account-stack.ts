@@ -14,20 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import * as path from 'path';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Duration,
   Aws,
   RemovalPolicy,
+  aws_appsync as appsync,
   aws_iam as iam,
   aws_lambda as lambda,
   aws_dynamodb as ddb,
+  aws_kms as kms,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 import { SharedPythonLayer } from '../layer/layer';
 
 export interface CrossAccountStackProps {
+  readonly encryptionKey: kms.IKey;
   /**
    * Default Appsync GraphQL API for OpenSearch REST API Handler
    *
@@ -77,7 +79,8 @@ export class CrossAccountStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
       stream: ddb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
@@ -168,6 +171,13 @@ export class CrossAccountStack extends Construct {
     );
     crossAccountHandler.addToRolePolicy(
       new iam.PolicyStatement({
+        actions: ['events:RemovePermission', 'events:PutPermission'],
+        effect: iam.Effect.ALLOW,
+        resources: [`arn:*:events:*:${Aws.ACCOUNT_ID}:event-bus/default`],
+      })
+    );
+    crossAccountHandler.addToRolePolicy(
+      new iam.PolicyStatement({
         actions: [
           'iam:CreatePolicyVersion',
           'iam:SetDefaultPolicyVersion',
@@ -175,9 +185,7 @@ export class CrossAccountStack extends Construct {
           'iam:DeletePolicyVersion',
         ],
         effect: iam.Effect.ALLOW,
-        resources: [
-          this.centralAssumeRolePolicy.managedPolicyArn
-        ],
+        resources: [this.centralAssumeRolePolicy.managedPolicyArn],
       })
     );
 

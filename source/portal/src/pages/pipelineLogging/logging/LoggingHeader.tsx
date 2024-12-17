@@ -13,15 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { buildLambdaCWLGroupLink, formatLocalTime } from "assets/js/utils";
+import {
+  buildLambdaCWLGroupLink,
+  buildS3Link,
+  defaultStr,
+} from "assets/js/utils";
 import ExtLink from "components/ExtLink";
-import ValueWithLabel from "components/ValueWithLabel";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { AmplifyConfigType } from "types";
 import { LoggingProps } from "../Logging";
 import { RootState } from "reducer/reducers";
+import { PipelineType } from "API";
+import ValueWithLabel from "components/ValueWithLabel";
 
 interface LoggingHeaderProps extends LoggingProps {
   processorLambdaName?: string | null;
@@ -30,7 +35,7 @@ interface LoggingHeaderProps extends LoggingProps {
 const LoggingHeader: React.FC<LoggingHeaderProps> = (
   props: LoggingHeaderProps
 ) => {
-  const { pipelineInfo, servicePipeline, processorLambdaName } = props;
+  const { pipelineInfo, servicePipeline, processorLambdaName, type } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
@@ -50,10 +55,27 @@ const LoggingHeader: React.FC<LoggingHeaderProps> = (
         </ValueWithLabel>
       </div>
       <div className="flex-1 border-left-c">
-        <ValueWithLabel label={t("common:logging.creationTime")}>
+        <ValueWithLabel label={t("common:logging.detailedErrorLogs")}>
           <div>
-            {formatLocalTime(
-              pipelineInfo?.createdAt || servicePipeline?.createTime || ""
+            {type === PipelineType.APP ? (
+              <ExtLink
+                to={buildS3Link(
+                  amplifyConfig.aws_project_region,
+                  pipelineInfo?.monitor?.backupBucketName as string,
+                  pipelineInfo?.monitor?.errorLogPrefix as string
+                )}
+              >
+                {`s3://${pipelineInfo?.monitor?.backupBucketName}/${pipelineInfo?.monitor?.errorLogPrefix}`}
+              </ExtLink>
+            ) : (
+              <ExtLink
+                to={buildS3Link(
+                  amplifyConfig.aws_project_region,
+                  defaultStr(servicePipeline?.failedS3Bucket)
+                )}
+              >
+                {`s3://${servicePipeline?.failedS3Bucket}`}
+              </ExtLink>
             )}
           </div>
         </ValueWithLabel>

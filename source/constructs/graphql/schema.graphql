@@ -56,11 +56,22 @@ type Query {
   # List logging conf info v2
   listLogConfigs(page: Int!, count: Int!): ListLogConfigsResponse
 
+  # get all version of LogConfig
+  listLogConfigVersions(id: ID!): [LogConfig]
+
   # Get logging conf v2 info by ID
   getLogConfig(id: ID!, version: Int): LogConfig
 
   # List app pipeline info
   listAppPipelines(page: Int, count: Int): ListAppPipelineResponse
+
+  # batch export app pipeline info
+  batchExportAppPipelines(appPipelineIds: [ID!]!): String
+
+  # validate batch import app pipeline yaml
+  batchImportAppPipelinesAnalyzer(
+    contentString: String!
+  ): BatchImportAppPipelinesAnalyzerResponse
 
   # Get app pipeline info by ID
   getAppPipeline(id: ID!): AppPipeline
@@ -74,14 +85,6 @@ type Query {
     region: String
     accountId: String
   ): ListAppLogIngestionResponse
-
-  # List instance ingestion ssm detail
-  listInstanceIngestionDetails(
-    page: Int
-    count: Int
-    ingestionId: String
-    instanceId: String
-  ): ListInstanceIngestionDetailsResponse
 
   # Get app logging ingestion info by ID
   getAppLogIngestion(id: ID!): AppLogIngestion
@@ -102,13 +105,6 @@ type Query {
     accountId: String
     platformType: EC2GroupPlatform
   ): ListInstanceResponse
-
-  # Get logging Agent Status by instanceId
-  getLogAgentStatus(
-    instanceId: String!
-    region: String
-    accountId: String
-  ): LogAgentStatus
 
   # Get log Agent Status by instanceId
   getInstanceAgentStatus(
@@ -278,9 +274,6 @@ type Mutation {
     monitor: MonitorInput
   ): String
 
-  # Update a service pipeline
-  updateServicePipeline(id: ID!, monitor: MonitorInput): String
-
   # Remove a service pipeline
   deleteServicePipeline(id: ID!): String
 
@@ -334,6 +327,7 @@ type Mutation {
     timeKeyRegex: String
     userLogFormat: String
     userSampleLog: String
+    description: String
   ): String
 
   # Remove a logging conf v2
@@ -357,6 +351,7 @@ type Mutation {
     timeKeyRegex: String
     userLogFormat: String
     userSampleLog: String
+    description: String
   ): String
 
   createAppPipeline(
@@ -373,6 +368,8 @@ type Mutation {
     logProcessorConcurrency: String!
   ): ID
 
+  resumePipeline(id: ID!): String
+
   createLightEngineAppPipeline(
     params: LightEngineParameterInput!
     bufferParams: [BufferInput]
@@ -384,8 +381,12 @@ type Mutation {
     logStructure: LogStructure
   ): ID
   # Update a app pipeline
-  updateAppPipeline(id: ID!, monitor: MonitorInput): String
-
+  updateAppPipeline(
+    id: ID!
+    logConfigId: ID!
+    logConfigVersionNumber: Int!
+    logProcessorConcurrency: String!
+  ): String
   # Remove a app pipeline
   deleteAppPipeline(id: ID!): String
 
@@ -400,6 +401,9 @@ type Mutation {
 
   # Remove a app logging ingestion
   deleteAppLogIngestion(ids: [ID!]!): String
+
+  #regenerate the FLB conf by appPipeline ID
+  refreshAppLogIngestion(appPipelineId: ID!): String
 
   # request to install logging agent
   requestInstallLogAgent(
@@ -585,6 +589,11 @@ enum StorageType {
   Instance
 }
 
+enum LogEventQueueType {
+  EventBridge
+  SQS
+}
+
 # Volume Info
 type Volume {
   type: String!
@@ -638,9 +647,11 @@ enum StackStatus {
 
 enum PipelineStatus {
   ACTIVE
+  PAUSED
   INACTIVE
   CREATING
   DELETING
+  UPDATING
   ERROR
 }
 enum ServiceType {
@@ -705,6 +716,7 @@ type ServicePipeline {
   processorLogGroupName: String
   helperLogGroupName: String
   logEventQueueName: String
+  logEventQueueType: LogEventQueueType
   deliveryStreamName: String
   bufferResourceName: String
   stackId: String
@@ -712,6 +724,7 @@ type ServicePipeline {
   logSourceRegion: String
   engineType: AnalyticEngineType
   lightEngineParams: LightEngineParameter
+  logProcessorConcurrency: String
 }
 
 type LightEngineIngestionResp {
@@ -769,6 +782,7 @@ enum ResourceType {
   Lambda
   ELB
   WAF
+  WAFSampled
   Config
   EKSCluster
   ASG
@@ -808,6 +822,8 @@ type ProxyInfo {
   keyName: String
   customEndpoint: String
   cognitoEndpoint: String
+  proxyInstanceType: String
+  proxyInstanceNumber: String
 }
 
 enum AlarmType {
@@ -974,6 +990,7 @@ type LogConfig {
   timeKeyRegex: String
   userLogFormat: String
   userSampleLog: String
+  description: String
 }
 
 input ProcessorFilterRegexInput {
@@ -1010,6 +1027,7 @@ type ListLogConfigsResponse {
 
 type LogSource {
   sourceId: ID!
+  name: String
   type: LogSourceType
   accountId: String
   region: String
@@ -1177,6 +1195,7 @@ type LightEnginePipelineExecutionLog {
   endTime: String
   status: ExecutionStatus
 }
+
 type LightEnginePipelineExecutionLogsResponse {
   items: [LightEnginePipelineExecutionLog]
   lastEvaluatedKey: AWSJSON
@@ -1201,6 +1220,8 @@ type AppPipeline {
   processorLogGroupName: String
   helperLogGroupName: String
   logEventQueueName: String
+  logEventQueueType: LogEventQueueType
+  logProcessorConcurrency: String
   monitor: MonitorDetail
   osiParams: OpenSearchIngestionParams
   osiPipelineName: String
@@ -1216,6 +1237,50 @@ type AppPipeline {
 type ListAppPipelineResponse {
   appPipelines: [AppPipeline]
   total: Int
+}
+
+type BatchImportAppPipelinesAnalyzerFindingLocation {
+  path: String
+}
+
+enum BatchImportAppPipelinesAnalyzerFindingType {
+  ERROR
+  WARNING
+  SUGGESTION
+}
+
+enum BatchImportAppPipelinesAnalyzerFindingIssueCode {
+  YAML_SYNTAX_ERROR
+  INVALID_ELEMENT
+  INVALID_BUCKET
+  BUCKET_NOTIFICATION_OVERLAP
+  INVALID_RESOURCE
+  INVALID_RESOURCE_STATUS
+  INVALID_VALUE
+  MISSING_ELEMENT
+  MISMATCH_DATA_TYPE
+  MISSING_VERSION
+  INVALID_ENUM
+  HTTP_REQUEST_ERROR
+  UNSUPPORTED_LOG_SOURCE
+  OPENSEARCH_INDEX_OVERLAP
+}
+
+type BatchImportAppPipelinesAnalyzerFinding {
+  findingDetails: String
+  findingType: BatchImportAppPipelinesAnalyzerFindingType
+  issueCode: BatchImportAppPipelinesAnalyzerFindingIssueCode
+  location: BatchImportAppPipelinesAnalyzerFindingLocation
+}
+
+type Resolver {
+  operationName: String
+  variables: AWSJSON
+}
+
+type BatchImportAppPipelinesAnalyzerResponse {
+  findings: [BatchImportAppPipelinesAnalyzerFinding]
+  resolvers: [Resolver]
 }
 
 type AppLogIngestion {
@@ -1242,10 +1307,6 @@ type InstanceIngestionDetail {
 
 type ListAppLogIngestionResponse {
   appLogIngestions: [AppLogIngestion]
-  total: Int
-}
-type ListInstanceIngestionDetailsResponse {
-  instanceIngestionDetail: [InstanceIngestionDetail]
   total: Int
 }
 
@@ -1515,7 +1576,9 @@ enum PipelineType {
 }
 
 enum AlarmMetricName {
+  DEAD_LETTER_INVOCATIONS
   OLDEST_MESSAGE_AGE_ALARM
+  PROCESSOR_ERROR_RATE_ALARM
   PROCESSOR_ERROR_INVOCATION_ALARM
   PROCESSOR_ERROR_RECORD_ALARM
   PROCESSOR_DURATION_ALARM
@@ -1622,6 +1685,10 @@ enum MetricName {
   SQSNumberOfMessagesDeleted
   SQSApproximateNumberOfMessagesVisible
   SQSApproximateAgeOfOldestMessage
+  EvtMatchedEvents
+  EvtInvocations
+  EvtTriggeredRules
+  EvtFailedInvocations
   ProcessorFnError
   ProcessorFnConcurrentExecutions
   ProcessorFnDuration

@@ -17,23 +17,16 @@ import React, { useState, useEffect } from "react";
 
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import Tiles from "components/Tiles";
 import Alert from "components/Alert";
 import {
   CreateLogMethod,
   ENABLE_RDS_LOGS_LINK,
-  RDSTypes,
-  RDS_LOG_GROUP_SUFFIX_AUDIT,
-  RDS_LOG_GROUP_SUFFIX_ERROR,
-  RDS_LOG_GROUP_SUFFIX_GENERAL,
-  RDS_LOG_GROUP_SUFFIX_SLOWQUERY,
-  RDS_TASK_GROUP_PREFIX,
   RDS_TYPE_LIST,
 } from "assets/js/const";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
-import { LoggingBucket, Resource, ResourceType } from "API";
+import { LoggingBucket, Resource, ResourceType, SubAccountLink } from "API";
 import { getResourceLoggingBucket, listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
 import { RDSTaskProps } from "../CreateRDS";
@@ -41,17 +34,15 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
 import Select from "components/Select";
 import { AlertType } from "components/Alert/alert";
-import ExtLink from "components/ExtLink";
-import { AmplifyConfigType, AnalyticEngineTypes } from "types";
-import { useSelector } from "react-redux";
-import { InfoBarTypes } from "reducer/appReducer";
-import { buildRDSLink, defaultStr } from "assets/js/utils";
+import { AnalyticEngineTypes, RDSIngestOption } from "types";
+import { defaultStr } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-import { RootState } from "reducer/reducers";
+import LogSourceEnable from "../../common/LogSourceEnable";
 
 interface SpecifySettingsProps {
   engineType: AnalyticEngineTypes;
+  ingestLogType: string;
   rdsTask: RDSTaskProps;
   changeTaskType: (type: string) => void;
   changeRDSObj: (rds: OptionType | null) => void;
@@ -62,15 +53,11 @@ interface SpecifySettingsProps {
 
   manualChangeDBIdentifier: (bucket: string) => void;
   manualChangeDBType: (type: string) => void;
-  changeErrorARN: (arn: string) => void;
-  changeQeuryARN: (arn: string) => void;
-  changeGeneralARN: (arn: string) => void;
-  changeAuditARN: (arn: string) => void;
   autoRDSEmptyError: boolean;
   manualRDSEmptyError: boolean;
   setISChanging: (changing: boolean) => void;
   changeRDSBucket: (bucket: string, prefix: string) => void;
-  changeCrossAccount: (id: string) => void;
+  changeCrossAccount: (id: string, accountInfo: SubAccountLink | null) => void;
 }
 
 const NORMAL_LOGGING_TYPE = ["[MySQL]", "[Aurora MySQL]"];
@@ -85,18 +72,11 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 ) => {
   const {
     engineType,
+    ingestLogType,
     rdsTask,
     changeRDSObj,
-    errorLogEnabled,
-    queryLogEnabled,
-    generalLogEnabled,
-    auditLogEnabled,
     manualChangeDBIdentifier,
     manualChangeDBType,
-    changeErrorARN,
-    changeQeuryARN,
-    changeGeneralARN,
-    changeAuditARN,
     // changeS3Bucket,
     changeTaskType,
     autoRDSEmptyError,
@@ -107,9 +87,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeCrossAccount,
   } = props;
 
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: RootState) => state.app.amplifyConfig
-  );
   const { t } = useTranslation();
 
   const [loadingRDSList, setLoadingRDSList] = useState(false);
@@ -125,13 +102,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     return result;
   };
 
-  const isRDSTypeInSupportArray = (str: string, arr: string[]) => {
-    for (const substring of arr) {
-      if (str.includes(substring)) {
-        return true;
-      }
-    }
-    return false;
+  const isRDSTypeInSupportArray = (str: string) => {
+    const postgreTypes = ["[PostgreSQL]", "[Aurora PostgreSQL]"];
+    const mySQLTypes = ["[MySQL]", "[Aurora MySQL]"];
+
+    const typesToCheck =
+      ingestLogType === RDSIngestOption.PostgreSQL ? postgreTypes : mySQLTypes;
+
+    return typesToCheck.some((type) => str.includes(type));
   };
 
   const getRDSList = async (accountId: string) => {
@@ -147,33 +125,15 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
       const tmpOptionList: SelectItem[] = [];
 
       dataList.forEach((element) => {
-        if (element.name) {
-          if (
-            engineType === AnalyticEngineTypes.LIGHT_ENGINE &&
-            isRDSTypeInSupportArray(element.name, LIGHT_ENGINE_LOGGING_TYPE)
-          ) {
-            tmpOptionList.push({
-              name: `${removeCharacters(
-                element.name,
-                LIGHT_ENGINE_LOGGING_TYPE
-              )}`,
-              value: element.id,
-              description: defaultStr(element.description),
-            });
-          }
-          if (
-            engineType !== AnalyticEngineTypes.LIGHT_ENGINE &&
-            isRDSTypeInSupportArray(element.name, NORMAL_LOGGING_TYPE)
-          ) {
-            tmpOptionList.push({
-              name: `${removeCharacters(
-                element.name,
-                LIGHT_ENGINE_LOGGING_TYPE
-              )}`,
-              value: element.id,
-              description: defaultStr(element.description),
-            });
-          }
+        if (element.name && isRDSTypeInSupportArray(element.name)) {
+          tmpOptionList.push({
+            name: `${removeCharacters(
+              element.name,
+              LIGHT_ENGINE_LOGGING_TYPE
+            )}`,
+            value: element.id,
+            description: defaultStr(element.description),
+          });
         }
       });
       setRDSOptionList(tmpOptionList);
@@ -188,12 +148,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.RDS,
       resourceName: rdsId,
-      accountId:
-        engineType === AnalyticEngineTypes.LIGHT_ENGINE
-          ? rdsTask.logSourceAccountId
-          : "",
+      accountId: rdsTask.logSourceAccountId,
     });
-    console.info("getBucketPrefix:", resData.data);
     const loggingBucket: LoggingBucket =
       resData?.data?.getResourceLoggingBucket;
     changeRDSBucket(
@@ -211,7 +167,9 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   useEffect(() => {
     if (rdsTask.params.rdsObj?.value) {
-      setShowLogTypes(true);
+      if (ingestLogType === RDSIngestOption.MySQL) {
+        setShowLogTypes(true);
+      }
       // get rds bucket info
       getRDSBucketPrefix(rdsTask.params.rdsObj.value);
     } else {
@@ -219,59 +177,21 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   }, [rdsTask.params.rdsObj]);
 
-  const changeLogTypeAndLocation = (
-    conjection: string,
-    dbIdentifier: string
-  ) => {
-    changeErrorARN(
-      `${RDS_TASK_GROUP_PREFIX}/${conjection}/${dbIdentifier}${RDS_LOG_GROUP_SUFFIX_ERROR}`
-    );
-    changeQeuryARN(
-      `${RDS_TASK_GROUP_PREFIX}/${conjection}/${dbIdentifier}${RDS_LOG_GROUP_SUFFIX_SLOWQUERY}`
-    );
-    changeGeneralARN(
-      `${RDS_TASK_GROUP_PREFIX}/${conjection}/${dbIdentifier}${RDS_LOG_GROUP_SUFFIX_GENERAL}`
-    );
-    changeAuditARN(
-      `${RDS_TASK_GROUP_PREFIX}/${conjection}/${dbIdentifier}${RDS_LOG_GROUP_SUFFIX_AUDIT}`
-    );
-  };
-
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:rds.creation")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:rds.method")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={rdsTask.params.taskType}
-                  onChange={(event) => {
-                    changeTaskType(event.target.value);
-                    changeRDSObj(null);
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:rds.auto"),
-                      description: t("servicelog:rds.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:rds.manual"),
-                      description: t("servicelog:rds.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel title={t("servicelog:create.service.rds")}>
+          <LogSourceEnable
+            value={rdsTask.params.taskType}
+            onChange={(value) => {
+              changeTaskType(value);
+              changeRDSObj(null);
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <Alert content={t("servicelog:rds.alert")} />
               {showLogTypes && (
@@ -294,8 +214,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
               <CrossAccountSelect
                 disabled={loadingRDSList}
                 accountId={rdsTask.logSourceAccountId}
-                changeAccount={(id) => {
-                  changeCrossAccount(id);
+                changeAccount={(id, accountInfo) => {
+                  changeCrossAccount(id, accountInfo);
                   changeRDSObj(null);
                 }}
                 loadingAccount={(loading) => {
@@ -306,17 +226,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 <div>
                   <FormItem
                     optionTitle={t("servicelog:rds.dbID")}
-                    optionDesc={
-                      <div>
-                        {t("servicelog:rds.selectDB")}
-                        <ExtLink
-                          to={buildRDSLink(amplifyConfig.aws_project_region)}
-                        >
-                          {t("servicelog:rds.curAccount")}
-                        </ExtLink>
-                        .
-                      </div>
-                    }
+                    optionDesc={t("servicelog:rds.selectDB")}
                     errorText={
                       autoRDSEmptyError ? t("servicelog:rds.dbError") : ""
                     }
@@ -337,69 +247,30 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-
-                  {showLogTypes &&
-                    engineType !== AnalyticEngineTypes.LIGHT_ENGINE && (
-                      <FormItem
-                        optionTitle={t("servicelog:rds.logType")}
-                        optionDesc={t("servicelog:rds.logTypeDesc")}
-                      >
-                        <div className="flex">
-                          <div className="flex-1">
-                            <label>
-                              <input
-                                checked={rdsTask.params.errorLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  errorLogEnabled(event.target.checked);
-                                }}
-                              />
-                              {t("servicelog:rds.errorLog")}
-                            </label>
-                          </div>
-                          <div className="flex-1">
-                            <label>
-                              <input
-                                checked={rdsTask.params.queryLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  queryLogEnabled(event.target.checked);
-                                }}
-                              />
-                              {t("servicelog:rds.slowLog")}
-                            </label>
-                          </div>
-                          <div className="flex-1">
-                            <label>
-                              <input
-                                checked={rdsTask.params.generalLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  generalLogEnabled(event.target.checked);
-                                }}
-                              />
-                              {t("servicelog:rds.generalLog")}
-                            </label>
-                          </div>
-                          <div className="flex-1">
-                            <label>
-                              <input
-                                checked={rdsTask.params.auditLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  auditLogEnabled(event.target.checked);
-                                }}
-                              />
-                              {t("servicelog:rds.auditLog")}
-                            </label>
-                          </div>
-                        </div>
-                      </FormItem>
-                    )}
                 </div>
               )}
               {rdsTask.params.taskType === CreateLogMethod.Manual && (
                 <div>
+                  {engineType !== AnalyticEngineTypes.LIGHT_ENGINE &&
+                    ingestLogType === RDSIngestOption.MySQL && (
+                      <FormItem
+                        optionTitle={t("servicelog:rds.dbType")}
+                        optionDesc={t("servicelog:rds.selectTheDBType")}
+                      >
+                        <Select
+                          placeholder={t("servicelog:rds.selectDBType")}
+                          className="m-w-75p"
+                          // loading={loadingDomain}
+                          optionList={RDS_TYPE_LIST}
+                          value={rdsTask.params.manualDBType}
+                          onChange={(event) => {
+                            console.info("manualDBType:event:", event);
+                            manualChangeDBType(event.target.value);
+                          }}
+                        />
+                      </FormItem>
+                    )}
+
                   <FormItem
                     optionTitle={t("servicelog:rds.inputDBID")}
                     optionDesc={t("servicelog:rds.inputDBIDDesc")}
@@ -415,163 +286,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       value={rdsTask.params.manualDBIdentifier}
                       onChange={(event) => {
                         manualChangeDBIdentifier(event.target.value);
-                        let conjection = "";
-                        if (rdsTask.params.manualDBType === RDSTypes.Aurora) {
-                          conjection = "cluster";
-                        }
-                        if (rdsTask.params.manualDBType === RDSTypes.MySQL) {
-                          conjection = "instance";
-                        }
-                        changeLogTypeAndLocation(
-                          conjection,
-                          event.target.value
-                        );
                       }}
                       onBlur={(event) => {
                         getRDSBucketPrefix(event.target.value);
                       }}
                     />
                   </FormItem>
-
-                  {engineType !== AnalyticEngineTypes.LIGHT_ENGINE && (
-                    <FormItem
-                      optionTitle={t("servicelog:rds.dbType")}
-                      optionDesc={t("servicelog:rds.selectTheDBType")}
-                    >
-                      <Select
-                        placeholder={t("servicelog:rds.selectDBType")}
-                        className="m-w-75p"
-                        // loading={loadingDomain}
-                        optionList={RDS_TYPE_LIST}
-                        value={rdsTask.params.manualDBType}
-                        onChange={(event) => {
-                          console.info("manualDBType:event:", event);
-                          manualChangeDBType(event.target.value);
-                          let conjection = "";
-                          if (event.target.value === RDSTypes.Aurora) {
-                            conjection = "cluster";
-                          }
-                          if (event.target.value === RDSTypes.MySQL) {
-                            conjection = "instance";
-                          }
-                          changeLogTypeAndLocation(
-                            conjection,
-                            rdsTask.params.manualDBIdentifier
-                          );
-                        }}
-                      />
-                    </FormItem>
-                  )}
-
-                  {engineType !== AnalyticEngineTypes.LIGHT_ENGINE && (
-                    <FormItem
-                      optionTitle={t("servicelog:rds.logLocation")}
-                      optionDesc={t("servicelog:rds.logLocationDesc")}
-                    >
-                      <div>
-                        <div className="mb-15">
-                          <div>
-                            <label>
-                              <input
-                                checked={rdsTask.params.errorLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  errorLogEnabled(event.target.checked);
-                                }}
-                              />
-                              {t("servicelog:rds.errorLog")}
-                            </label>
-                          </div>
-                          <div>
-                            <TextInput
-                              className="m-w-75p"
-                              placeholder="/aws/rds/xxxxxx/error"
-                              value={rdsTask.params.errorLogARN}
-                              onChange={(event) => {
-                                console.info("event:", event);
-                                changeErrorARN(event.target.value);
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="mb-15">
-                          <div>
-                            <label>
-                              <input
-                                checked={rdsTask.params.queryLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  queryLogEnabled(event.target.checked);
-                                }}
-                              />{" "}
-                              {t("servicelog:rds.slowLog")}
-                            </label>
-                          </div>
-                          <div>
-                            <TextInput
-                              className="m-w-75p"
-                              placeholder="/aws/rds/xxxxxx/slowquery"
-                              value={rdsTask.params.queryLogARN}
-                              onChange={(event) => {
-                                console.info("event:", event);
-                                changeQeuryARN(event.target.value);
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="mb-15">
-                          <div>
-                            <label>
-                              <input
-                                checked={rdsTask.params.generalLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  generalLogEnabled(event.target.checked);
-                                }}
-                              />{" "}
-                              {t("servicelog:rds.generalLog")}
-                            </label>
-                          </div>
-                          <div>
-                            <TextInput
-                              className="m-w-75p"
-                              placeholder="/aws/rds/xxxxxx/general"
-                              value={rdsTask.params.generalLogARN}
-                              onChange={(event) => {
-                                console.info("event:", event);
-                                changeGeneralARN(event.target.value);
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="mb-15">
-                          <div>
-                            <label>
-                              <input
-                                checked={rdsTask.params.auditLogEnable}
-                                type="checkbox"
-                                onChange={(event) => {
-                                  auditLogEnabled(event.target.checked);
-                                }}
-                              />{" "}
-                              {t("servicelog:rds.auditLog")}
-                            </label>
-                          </div>
-                          <div>
-                            <TextInput
-                              className="m-w-75p"
-                              placeholder="/aws/rds/xxxxxx/audit"
-                              value={rdsTask.params.auditLogARN}
-                              onChange={(event) => {
-                                console.info("event:", event);
-                                changeAuditARN(event.target.value);
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </FormItem>
-                  )}
                 </div>
               )}
             </div>

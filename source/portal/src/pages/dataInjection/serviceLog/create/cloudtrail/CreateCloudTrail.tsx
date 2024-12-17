@@ -30,6 +30,7 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 
@@ -51,7 +52,6 @@ import {
 } from "reducer/createLightEngine";
 import { useLightEngine } from "assets/js/hooks/useLightEngine";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -91,7 +91,6 @@ const BASE_EXCLUDE_PARAMS = [
   "taskType",
   "manualBucketS3Path",
   "curTrailObj",
-  "enableRolloverByCapacity",
   "warmTransitionType",
   "tmpFlowList",
   "s3SourceType",
@@ -194,6 +193,7 @@ const CreateCloudTrail: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
+  const logIngestType = searchParams.get("ingestLogType") ?? DestinationType.S3;
 
   const totalStep =
     searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 2 : 3;
@@ -203,13 +203,15 @@ const CreateCloudTrail: React.FC = () => {
   );
 
   const [cloudTrailPipelineTask, setCloudTrailPipelineTask] =
-    useState<CloudTrailTaskProps>(DEFAULT_TRAIL_TASK_VALUE);
+    useState<CloudTrailTaskProps>({
+      ...DEFAULT_TRAIL_TASK_VALUE,
+      destinationType: logIngestType,
+    });
 
   const [curStep, setCurStep] = useState(0);
   const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [trailEmptyError, setTrailEmptyError] = useState(false);
-  const [sourceTypeEmptyError, setSourceTypeEmptyError] = useState(false);
 
   const [trailISChanging, setTrailISChanging] = useState(false);
 
@@ -220,7 +222,7 @@ const CreateCloudTrail: React.FC = () => {
   const [manualCwlArnEmptyError, setManualCwlArnEmptyError] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
@@ -315,10 +317,6 @@ const CreateCloudTrail: React.FC = () => {
       return false;
     }
 
-    if (!cloudTrailPipelineTask.destinationType) {
-      setSourceTypeEmptyError(true);
-      return false;
-    }
     if (
       cloudTrailPipelineTask.params.taskType === CreateLogMethod.Manual &&
       cloudTrailPipelineTask.destinationType === DestinationType.S3 &&
@@ -426,6 +424,9 @@ const CreateCloudTrail: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -480,40 +481,35 @@ const CreateCloudTrail: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-cloudtrail">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               setISChanging={(status) => {
                 setTrailISChanging(status);
               }}
-              standardOnly={isLightEngine}
-              setCloudTrailPipelineTask={setCloudTrailPipelineTask}
+              changeTaskType={(taskType) => {
+                setTrailEmptyError(false);
+                setCloudTrailPipelineTask({
+                  ...DEFAULT_TRAIL_TASK_VALUE,
+                  destinationType: logIngestType,
+                  params: {
+                    ...DEFAULT_TRAIL_TASK_VALUE.params,
+                    taskType: taskType,
+                  },
+                });
+              }}
               trailEmptyError={trailEmptyError}
               setTrailEmptyError={setTrailEmptyError}
-              sourceTypeEmptyError={sourceTypeEmptyError}
               shardNumError={shardNumError}
               maxShardNumError={maxShardNumError}
               manualS3EmptyError={manualS3EmptyError}
@@ -528,7 +524,6 @@ const CreateCloudTrail: React.FC = () => {
               }}
               changeCloudTrailObj={(trail) => {
                 setTrailEmptyError(false);
-                setSourceTypeEmptyError(false);
                 appDispatch(
                   indexPrefixChanged(trail?.name?.toLowerCase() ?? "")
                 );
@@ -536,7 +531,6 @@ const CreateCloudTrail: React.FC = () => {
                   return {
                     ...prev,
                     source: defaultStr(trail?.name),
-                    destinationType: "",
                     params: {
                       ...prev.params,
                       curTrailObj: trail,
@@ -595,20 +589,6 @@ const CreateCloudTrail: React.FC = () => {
                       ...prev.params,
                       logBucketPrefix: logPath,
                     },
-                  };
-                });
-              }}
-              changeSourceType={(type) => {
-                setSourceTypeEmptyError(false);
-                // Update processor type to lambda when change buffer type
-                dispatch({
-                  type: SelectProcessorActionTypes.CHANGE_PROCESSOR_TYPE,
-                  processorType: LogProcessorType.LAMBDA,
-                });
-                setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
-                  return {
-                    ...prev,
-                    destinationType: type,
                   };
                 });
               }}
@@ -727,6 +707,7 @@ const CreateCloudTrail: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="cloudtrail-cancel-button"
               disabled={loadingCreate}
               btnType="text"
               onClick={() => {
@@ -737,6 +718,7 @@ const CreateCloudTrail: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="cloudtrail-previous-button"
                 disabled={loadingCreate}
                 onClick={() => {
                   setCurStep((curStep) => {
@@ -750,6 +732,7 @@ const CreateCloudTrail: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
+                data-testid="cloudtrail-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -781,6 +764,7 @@ const CreateCloudTrail: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="cloudtrail-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

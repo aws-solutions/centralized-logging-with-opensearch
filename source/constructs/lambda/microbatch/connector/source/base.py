@@ -19,10 +19,14 @@ class LogParser:
 
     def __init__(self, log_format: LogFormat):
         self.log_format = log_format
-        
+
     def parse(self, string: str) -> Iterator[dict]:
-        for matched in re.finditer(self.log_format.PATTERN, string, self.log_format.FLAGS):
-            yield self.log_format._transform(data=dict(zip(self.log_format.NAME, matched.groups())))
+        for matched in re.finditer(
+            self.log_format.PATTERN, string, self.log_format.FLAGS
+        ):
+            yield self.log_format._transform(
+                data=dict(zip(self.log_format.NAME, matched.groups()))
+            )
 
 
 class AbstractSource:
@@ -34,15 +38,15 @@ class AbstractSource:
             context (dict): _description_
         """
         pass
-    
+
     def process(self) -> Iterator[str]:
         """_summary_
 
         Yields:
             Iterator[str]: _description_
         """
-        yield ''
-    
+        yield ""
+
     @property
     def context(self) -> dict:
         """_summary_
@@ -51,4 +55,3 @@ class AbstractSource:
             dict: _description_
         """
         return {}
-

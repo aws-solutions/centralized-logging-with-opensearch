@@ -13,14 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SignOut from "components/SignOut";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { AppSyncAuthType } from "types";
+import { AmplifyConfigType, AppSyncAuthType } from "types";
 import { AMPLIFY_CONFIG_JSON } from "assets/js/const";
 import { RootState } from "reducer/reducers";
 import { SignedInAppProps } from "router/SignedInApp";
+import { User } from "oidc-client-ts";
 
 const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   const { t } = useTranslation();
@@ -35,6 +36,36 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
     }
     window.location.reload();
   };
+  const [fullLogoutUrl, setFullLogoutUrl] = useState("");
+
+  useEffect(() => {
+    const configJSONObj: AmplifyConfigType = localStorage.getItem(
+      AMPLIFY_CONFIG_JSON
+    )
+      ? JSON.parse(localStorage.getItem(AMPLIFY_CONFIG_JSON) ?? "")
+      : {};
+
+    const redirectUrl = configJSONObj.aws_oidc_customer_domain
+      ? configJSONObj.aws_oidc_customer_domain
+      : "https://" + configJSONObj.aws_cloudfront_url;
+    if (configJSONObj.oidc_logout_url) {
+      const queryParams = new URLSearchParams({
+        client_id: configJSONObj.aws_oidc_client_id,
+        id_token_hint:
+          User.fromStorageString(
+            localStorage.getItem(
+              `oidc.user:${configJSONObj.aws_oidc_provider}:${configJSONObj.aws_oidc_client_id}`
+            ) ?? ""
+          )?.id_token ?? "",
+        logout_uri: redirectUrl,
+        redirect_uri: redirectUrl,
+        post_logout_redirect_uri: redirectUrl,
+      });
+      const logoutUrl = new URL(configJSONObj.oidc_logout_url);
+      logoutUrl.search = queryParams.toString();
+      setFullLogoutUrl(logoutUrl.toString());
+    }
+  }, []);
 
   return (
     <header id="cloSignedHeader" className="lh-header">
@@ -49,6 +80,10 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
               data-testid="signout"
               className="cp sign-out"
               onClick={() => {
+                if (fullLogoutUrl) {
+                  oidcSignOUt?.();
+                  window.location.href = fullLogoutUrl;
+                }
                 oidcSignOUt();
               }}
             >

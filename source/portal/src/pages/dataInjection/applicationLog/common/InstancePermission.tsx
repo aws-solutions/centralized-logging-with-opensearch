@@ -22,7 +22,7 @@ import Permission from "../detail/Permission";
 const InstancePermission: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <HeaderPanel title={t("applog:instancePermission.title")}>
+    <HeaderPanel title={t("resource:group.detail.permissions")}>
       <div>
         <Alert content={t("applog:instancePermission.alertContent")} />
         <div className="mt-10">

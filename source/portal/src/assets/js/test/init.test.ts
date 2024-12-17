@@ -30,7 +30,6 @@ describe("buildInitPipelineData", () => {
       confirmNetworkChecked: false,
 
       rolloverSizeNotSupport: false,
-      enableRolloverByCapacity: true,
       warmTransitionType: WarmTransitionType.IMMEDIATELY,
 
       aosParams: {
@@ -41,9 +40,9 @@ describe("buildInitPipelineData", () => {
         opensearchArn: "",
         opensearchEndpoint: "",
         replicaNumbers: "1",
-        shardNumbers: "1",
+        shardNumbers: "",
 
-        rolloverSize: "30",
+        rolloverSize: "30gb",
         indexSuffix: IndexSuffix.yyyy_MM_dd,
         codec: Codec.best_compression,
         refreshInterval: "1s",

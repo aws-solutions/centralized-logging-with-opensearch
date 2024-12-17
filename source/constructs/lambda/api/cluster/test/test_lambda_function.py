@@ -113,6 +113,8 @@ def ddb_client(ec2_client):
                         "engine": "OpenSearch",
                         "importedDt": "2022-07-14T12:54:17Z",
                         "proxyStatus": "DISABLED",
+                        "importMethod": "AUTOMATIC",
+                        "resources": [],
                         "region": "us-west-2",
                         "tags": [],
                         "version": "1.2",
@@ -134,6 +136,8 @@ def ddb_client(ec2_client):
                         "importedDt": "2022-05-14T10:34:27Z",
                         "proxyStatus": "DISABLED",
                         "region": "us-west-2",
+                        "importMethod": "AUTOMATIC",
+                        "resources": [],
                         "tags": [],
                         "version": "1.2",
                         "status": "INACTIVE",
@@ -224,7 +228,8 @@ def test_get_domain_vpc(sts_client, ddb_client, sfn_client, es_client):
         with patch("boto3.client.describe_elasticsearch_domain"):
             res = lambda_function.lambda_handler(
                 make_graphql_lambda_event(
-                    "getDomainVpc", {"region": "us-west-2", "domainName": "solution-aos"}
+                    "getDomainVpc",
+                    {"region": "us-west-2", "domainName": "solution-aos"},
                 ),
                 None,
             )
@@ -244,6 +249,7 @@ def test_get_domain_details(sts_client, ddb_client, sfn_client, es_client):
                 None,
             )
             assert res["id"] == "40485c141648f8d0acbbec6eda19a4a7"
+
 
 # Due to the complexity of the mock environment, we will not perform unit tests for the removedomain function.
 # def test_remove_domain(sts_client, sfn_client, ddb_client):

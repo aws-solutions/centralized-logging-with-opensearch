@@ -15,14 +15,24 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 
-def stream_to_parquet(path: Path, tables: Iterator[pa.Table], compression: str = 'ZSTD', use_deprecated_int96_timestamps: bool = True) -> None:
+def stream_to_parquet(
+    path: Path,
+    tables: Iterator[pa.Table],
+    compression: str = "ZSTD",
+    use_deprecated_int96_timestamps: bool = True,
+) -> None:
     try:
         first = next(tables)
     except StopIteration:
         return
     schema = first.schema
 
-    with pq.ParquetWriter(path, schema, compression=compression, use_deprecated_int96_timestamps=use_deprecated_int96_timestamps) as writer:
+    with pq.ParquetWriter(
+        path,
+        schema,
+        compression=compression,
+        use_deprecated_int96_timestamps=use_deprecated_int96_timestamps,
+    ) as writer:
         writer.write_table(first)
         for table in tables:
             table = table.cast(schema)
@@ -38,7 +48,9 @@ def stream_from_parquet(path: Path) -> Iterator[pa.Table]:
 T = TypeVar("T")
 
 
-def merge(items: Iterator[T], max_size: int, sizer: Callable[[T], int] = sys.getsizeof) -> Iterator[list[T]]:
+def merge(
+    items: Iterator[T], max_size: int, sizer: Callable[[T], int] = sys.getsizeof
+) -> Iterator[list[T]]:
     """Coalesce items into chunks. Tries to maximize chunk size and not exceed max_size.
 
     If an item is larger than max_size, we will always exceed max_size, so make a
@@ -71,7 +83,9 @@ def stream_from_dir(directory: Path) -> Iterator[pa.Table]:
             yield from stream_from_parquet(path)
 
 
-def merge_parquets(in_directory: Path, output_path, max_size: int = 2 ** 20, compression: str = 'ZSTD') -> None:
+def merge_parquets(
+    in_directory: Path, output_path, max_size: int = 2**20, compression: str = "ZSTD"
+) -> None:
     tables = stream_from_dir(in_directory)
     # Instead of merge using number of rows as your metric, you could
     # use pa.Table.nbytes or something.

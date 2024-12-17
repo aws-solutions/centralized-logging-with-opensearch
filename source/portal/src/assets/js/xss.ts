@@ -156,31 +156,37 @@ export const encodeParams = (statement: any, params: any) => {
 
 // Decode for AppSync query methods
 export const decodeResData = (statement: any, resData: any) => {
-  const recursiveDecodeParams = (recResData: any, queryName: string) => {
-    for (const [key, value] of Object.entries(recResData)) {
+  if (!resData) {
+    return null;
+  }
+
+  // Function to extract the query name from the statement
+  const getQueryName = (statement: string): string | null => {
+    const match = /query\s(\w+)\s*\(/.exec(statement);
+    return match ? match[1] : null;
+  };
+
+  // Recursive function to decode parameters in the response data
+  const recursiveDecodeParams = (data: any, queryName: string) => {
+    for (const [key, value] of Object.entries(data)) {
       if (
         typeof value === "string" &&
         NEED_DECODE_PARAM_KEYS.includes(`${queryName}:${key}`)
       ) {
-        recResData[key] = decodeURIComponent(value.replaceAll("+", " "));
+        data[key] = decodeURIComponent(value.replaceAll("+", " "));
       } else if (value && typeof value === "object") {
         recursiveDecodeParams(value, queryName);
       }
     }
   };
 
-  if (statement) {
-    // get query name for special handler
-    const r = /query\s(\w+)\s*\(/g;
-    const res: any = r.exec(statement);
-    if (res) {
-      const queryName = res[1];
-      if (queryName === "SPECIAL_QUERY_NAME") {
-        // For Special Query Handeler
-      } else {
-        recursiveDecodeParams(resData, queryName);
-      }
-    }
+  // Extract query name from the statement
+  const queryName = statement ? getQueryName(statement) : null;
+
+  // If query name exists and is not the special query name, decode the response data
+  if (queryName && queryName !== "SPECIAL_QUERY_NAME") {
+    recursiveDecodeParams(resData, queryName);
   }
+
   return resData;
 };

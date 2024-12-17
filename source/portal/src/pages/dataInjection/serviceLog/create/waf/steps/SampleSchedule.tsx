@@ -37,6 +37,7 @@ const SampleSchedule: React.FC<SampleScheduleProps> = (
         errorText={errorText}
       >
         <TextInput
+          data-testid="test-sample-rate-schedule"
           type="number"
           className="m-w-75p"
           placeholder=""

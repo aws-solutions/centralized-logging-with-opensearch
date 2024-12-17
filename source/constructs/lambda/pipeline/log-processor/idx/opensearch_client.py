@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from requests_aws4auth import AWS4Auth
 from commonlib.exception import APIException, ErrorCode
+from commonlib import AWSConnection
 
 logger = get_logger(__name__)
 
@@ -60,17 +61,11 @@ class OpenSearchUtil:
         self._log_type = log_type.lower()
         self._index_prefix = index_prefix.lower()
         self._default_header = {"Content-type": "application/json"}
-        self._index_alias = f"{self._index_prefix}-{self._log_type}"
+        self._index_alias = self._index_prefix
 
     @property
     def index_alias(self):
         return self._index_alias
-
-    def index_name_has_log_type_suffix(self, has: bool):
-        if has:
-            self._index_alias = f"{self._index_prefix}-{self._log_type}"
-        else:
-            self._index_alias = self._index_prefix
 
     def create_ism_policy(
         self, warm_age, cold_age, retain_age, rollover_age, rollover_size
@@ -120,7 +115,7 @@ class OpenSearchUtil:
             response = requests.put(
                 url, auth=self._awsauth, json=policy_doc, timeout=30
             )
-            logger.error("--> update ism policy response code %d", response.status_code)
+            logger.info("--> update ism policy response code %d", response.status_code)
             return response
         logger.error(
             "the last response code is %d, the last response content is %s",
@@ -176,6 +171,8 @@ class OpenSearchUtil:
             do = requests.post
         elif action == "HEAD":
             do = requests.head
+        elif action == "GET":
+            do = requests.get
         else:
             do = requests.put
 
@@ -251,6 +248,62 @@ class OpenSearchUtil:
 
         return response
 
+    def put_index_pattern(self) -> requests.Response:
+        """Create or Update index pattern into OpenSearch
+
+        Returns:
+            requests.Response: request response object
+        """
+
+        headers = {"osd-xsrf": "true", "securitytenant": DEFAULT_TENANT}
+        path = f"_dashboards/api/saved_objects/index-pattern/{self._index_alias}"
+        payload = {
+            "attributes": {
+                "title": f"{self._index_alias}-*",
+                "timeFieldName": "@timestamp",
+            }
+        }
+
+        action = "POST"
+        response = self._request(
+            path, "get_index_pattern", action="GET", headers=headers, timeout=90
+        )
+        if response.status_code == 200:
+            payload["version"] = response.json()["version"]
+            action = "PUT"
+
+        fields = self._request(
+            f"_dashboards/api/index_patterns/_fields_for_wildcard",
+            "fields_for_wildcard",
+            action="GET",
+            headers=headers,
+            timeout=90,
+            params=[
+                ("pattern", f"{self._index_alias}-*"),
+                ("meta_fields", "_source"),
+                ("meta_fields", "_id"),
+                ("meta_fields", "_type"),
+                ("meta_fields", "_index"),
+                ("meta_fields", "_score"),
+            ],
+        ).json()
+
+        for field in fields["fields"]:
+            field["count"] = 0
+            field["scripted"] = False
+
+        payload["attributes"]["fields"] = json.dumps(fields["fields"])
+
+        response = self._request(
+            path,
+            "put_index_pattern",
+            action=action,
+            headers=headers,
+            timeout=90,
+            json=payload,
+        )
+        return response
+
     def default_index_template(
         self,
         number_of_shards=5,
@@ -285,7 +338,7 @@ class OpenSearchUtil:
         index = {
             "mapping.total_fields.limit": f"{total_fields_limit}",
             "mapping.ignore_malformed": f"{ignore_malformed}",
-            "number_of_shards": f"{ number_of_shards}",
+            "number_of_shards": f"{number_of_shards}",
             "number_of_replicas": f"{number_of_replicas}",
             "codec": f"{codec}",
             "refresh_interval": f"{refresh_interval}",
@@ -348,12 +401,7 @@ class OpenSearchUtil:
                 status_code = resp["ResponseMetadata"]["HTTPStatusCode"]
                 logger.info("Response status: %d", status_code)
                 if status_code not in (200, 201):
-                    logger.error(
-                        "Add backend role %s to domain %s, response status: %d",
-                        role_arn,
-                        domain_name,
-                        status_code,
-                    )
+                    logger.error("Response status: %d", status_code)
                     raise APIException(
                         ErrorCode.UNKNOWN_ERROR,
                         "Failed to add backend role {role_arn} to domain {domain_name}",
@@ -403,6 +451,11 @@ class OpenSearchUtil:
         data = {"aliases": {f"{self._index_alias}": {"is_write_index": True}}}
 
         return self._request(path, "create_index", json=data)
+
+    def request_index_rollover(self) -> requests.Response:
+
+        path = quote(f"{self._index_alias}/_rollover")
+        return self._request(path, "request_index_rollover", action="POST", timeout=30)
 
 
 class ISM:

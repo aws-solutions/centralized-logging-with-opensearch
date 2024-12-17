@@ -37,6 +37,8 @@ class Context:
     def __init__(self, action, args):
         if action == "START":
             self._state = StartState(self, args)
+        elif action == "UPDATE":
+            self._state = UpdateState(self, args)
         elif action == "STOP":
             self._state = StopState(self, args)
         else:
@@ -114,10 +116,10 @@ class StartState(State):
             stack_name = self._args["stackName"]
             pattern = self._args["pattern"]
             params = self._args["parameters"]
+            tag = []
             if "tag" in self._args:
                 tag = self._args["tag"]
-            else:
-                tag = []
+
             # start cfn deployment
             stack_id = start_cfn(
                 self._context.get_client(), stack_name, pattern, params, tag
@@ -127,13 +129,44 @@ class StartState(State):
                 "deployAccountId": self._context.get_deploy_info()["deployAccountId"],
                 "deployRegion": self._context.get_deploy_info()["deployRegion"],
             }
-
             # Move to query after start
             self._context.transit(QueryState(self._context, args))
         except Exception as e:
             status = "CREATE_FAILED"
             error = str(e)
         return {
+            "stackStatus": status,
+            "error": error,
+        }
+
+
+class UpdateState(State):
+    _action = "UPDATE"
+
+    def run(self):
+        status = "UPDATE_IN_PROGRESS"
+        error = ""
+        try:
+            stack_name = self._args["stackName"]
+            pattern = self._args["pattern"]
+            params = self._args["parameters"]
+            
+            # update cfn deployment
+            stack_id = update_cfn(self._context.get_client(), stack_name, pattern, params)
+            args = {
+                "stackId": stack_name,
+                "deployAccountId": self._context.get_deploy_info()["deployAccountId"],
+                "deployRegion": self._context.get_deploy_info()["deployRegion"],
+            }
+
+            # Move to query after start
+            self._context.transit(QueryState(self._context, args))
+        except Exception as e:
+            print(f"e is {e}")
+            status = "UPDATE_FAILED"
+            error = str(e)
+        return {
+            "stackId": stack_id,
             "stackStatus": status,
             "error": error,
         }
@@ -167,14 +200,15 @@ class QueryState(State):
         error = ""
         outputs = []
         try:
-            status, outputs = get_cfn_status(
+            stack_id, stack_status, outputs = get_cfn_status(
                 self._context.get_client(), self._args["stackId"]
             )
         except Exception as e:
-            status = "QUERY_FAILED"
+            stack_status = "QUERY_FAILED"
             error = str(e)
         return {
-            "stackStatus": status,
+            "stackId": stack_id,
+            "stackStatus": stack_status,
             "error": error,
             "outputs": outputs,
         }
@@ -195,12 +229,10 @@ def lambda_handler(event, _):
     try:
         action = event["action"]
         args = event["args"] if "args" in event else {}
-
         ctx = Context(action, args)
         result = ctx.run()
         output = ctx.get_state()
         output["result"] = result
-
     except Exception as e:
         logger.error(e)
         logger.error("Invalid Request received: " + json.dumps(event, indent=2))
@@ -208,22 +240,36 @@ def lambda_handler(event, _):
     return output
 
 
-def start_cfn(cfn_client: boto3.client, stack_name, pattern, params, tag=[]):
-    logger.info("Start CloudFormation deployment")
+def update_cfn(cfn_client: boto3.client, stack_name, pattern, params):
+    logger.info("Update CloudFormation deployment")
 
     template_url = get_template_url(pattern)
+    response = cfn_client.update_stack(
+        StackName=stack_name,
+        TemplateURL=template_url,
+        Parameters=params,
+        DisableRollback=False,
+        Capabilities=[
+            "CAPABILITY_IAM",
+            "CAPABILITY_NAMED_IAM",
+        ],
+    )
+    stack_id = response["StackId"]
+    return stack_id
 
+
+def start_cfn(cfn_client: boto3.client, stack_name, pattern, params, tag=[]):
+    logger.info("Start CloudFormation deployment")
+    template_url = get_template_url(pattern)
     propagation_tag = [
         {"Key": stack_name, "Value": stack_name},
         {"Key": "CLOSolutionCostAnalysis", "Value": "CLOSolutionCostAnalysis"},
     ]
-
     if len(tag) != 0:
         for element in tag:
             propagation_tag.append(
                 {"Key": element.get("key"), "Value": element.get("value")}
             )
-
     response = cfn_client.create_stack(
         StackName=stack_name,
         TemplateURL=template_url,
@@ -236,7 +282,6 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params, tag=[]):
         EnableTerminationProtection=False,
         Tags=propagation_tag,
     )
-
     stack_id = response["StackId"]
     return stack_id
 
@@ -255,9 +300,10 @@ def get_cfn_status(cfn_client: boto3.client, stack_id):
     )
 
     stack = response["Stacks"][0]
+    stack_id = stack["StackId"]
     stack_status = stack["StackStatus"]
     outputs = stack["Outputs"] if "Outputs" in stack else []
-    return stack_status, outputs
+    return stack_id, stack_status, outputs
 
 
 def get_template_url(pattern):

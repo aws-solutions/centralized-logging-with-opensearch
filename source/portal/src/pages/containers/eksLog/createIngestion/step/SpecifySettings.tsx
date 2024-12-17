@@ -99,7 +99,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
 
   return (
     <div>
-      <PagePanel title={t("ekslog:ingest.step.specifyPipeline")}></PagePanel>
+      <PagePanel title={t("step.pipelineSettings")}></PagePanel>
 
       {eksIngestionInfo.createMethod === CreationMethod.Exists && (
         <>
@@ -147,13 +147,13 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                       >
                         {
                           pipelineIdMap?.[eksIngestionInfo.existsPipeline.value]
-                            ?.aosParams.indexPrefix
+                            ?.aosParams?.indexPrefix
                         }
                       </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel
-                        label={`${t("ekslog:ingest.detail.bufferLayer")}(${
+                        label={`${t("ekslog:ingest.detail.bufferLayer")} (${
                           pipelineIdMap?.[eksIngestionInfo.existsPipeline.value]
                             ?.bufferType
                         })`}

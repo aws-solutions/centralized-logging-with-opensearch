@@ -19,6 +19,9 @@ import DomainDetail from "../DomainDetail";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
+import { appSyncRequestQuery } from "assets/js/request";
+import { domainMockData } from "test/domain.mock";
+import { screen, act, waitFor, fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -35,11 +38,111 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
-beforeEach(() => {
-  jest.spyOn(console, "error").mockImplementation(jest.fn());
-});
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
 
 describe("DomainDetail", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "error").mockImplementation(jest.fn());
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getDomainDetails: domainMockData,
+      },
+    });
+  });
+
+  it("renders without errors", () => {
+    renderWithProviders(
+      <MemoryRouter>
+        <DomainDetail />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+  });
+
+  it("renders with detail data", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <DomainDetail />
+        </MemoryRouter>
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("loading")).not.toBeInTheDocument();
+    });
+
+    // click refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
+  });
+
+  it("render proxy disabled status", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getDomainDetails: { ...domainMockData, proxyStatus: "DISABLED" },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <DomainDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("render alarm disable status", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getDomainDetails: { ...domainMockData, alarmStatus: "DISABLED" },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <DomainDetail />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("click detail page tab", async () => {
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <DomainDetail />
+        </MemoryRouter>
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("loading")).not.toBeInTheDocument();
+    });
+
+    // click refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("accessProxy-tab"));
+    });
+  });
+});
+
+describe("DomainDetail Failed", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "error").mockImplementation(jest.fn());
+    (appSyncRequestQuery as any).mockResolvedValue(() =>
+      Promise.reject(new Error("Failed to fetch"))
+    );
+  });
+
   it("renders without errors", () => {
     renderWithProviders(
       <MemoryRouter>

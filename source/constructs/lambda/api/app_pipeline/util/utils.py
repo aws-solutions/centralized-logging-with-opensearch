@@ -146,7 +146,7 @@ def make_index_template(  # NOSONAR
     refresh_interval: str = "1s",
 ) -> dict:
     mappings = {}
-    if log_config.logType == LogTypeEnum.NGINX:
+    if log_config.logType == LogTypeEnum.NGINX and not log_config.regexFieldSpecs:
         mappings = {"properties": NGINX_MAPPING_PROPS}
     elif log_config.logType == LogTypeEnum.APACHE:
         mappings = {"properties": APACHE_MAPPING_PROPS}
@@ -180,7 +180,7 @@ def make_index_template(  # NOSONAR
             # To make sure OpenSearch can handle datetime format currently. We will ensure
             # FluentBit marshal time key into iso8601 standard format before sending into OpenSearch.
             properties[key] = val
-        properties = build_iis_field_format(properties, log_config.iisLogParser)
+        properties = build_iis_field_format(properties, log_config.iisLogParser)  # type: ignore
 
         mappings = {"properties": properties}
 

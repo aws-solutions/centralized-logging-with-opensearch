@@ -21,28 +21,25 @@ import {
   defaultStr,
   formatLocalTime,
 } from "assets/js/utils";
-import CopyText from "components/CopyText";
 import ExtLink from "components/ExtLink";
-import HeaderPanel from "components/HeaderPanel";
 import Modal from "components/Modal";
 import Button from "components/Button";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import ValueWithLabel from "components/ValueWithLabel";
 import { getLogSource } from "graphql/queries";
 import AccountName from "pages/comps/account/AccountName";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { InfoBarTypes } from "reducer/appReducer";
 import { AmplifyConfigType } from "types";
 import DaemonsetGuide from "./detail/DaemonsetGuide";
 import EksIngestions from "./detail/Ingestions";
 import { RootState } from "reducer/reducers";
-import Tags from "pages/dataInjection/common/Tags";
 import CommonLayout from "pages/layout/CommonLayout";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
+import { InfoBarTypes } from "reducer/appReducer";
 
 const EksLogDetail: React.FC = () => {
   const { id, type } = useParams();
@@ -107,10 +104,12 @@ const EksLogDetail: React.FC = () => {
   return (
     <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
       <div>
-        <HeaderPanel title={t("ekslog:detail.config")}>
-          <div className="flex value-label-span">
-            <div className="flex-1">
-              <ValueWithLabel label={t("ekslog:detail.clusterName")}>
+        <HeaderWithValueLabel
+          numberOfColumns={4}
+          dataList={[
+            {
+              label: t("ekslog:detail.name"),
+              data: (
                 <div>
                   {curEksLogSource?.accountId ? (
                     <ExtLink
@@ -125,54 +124,50 @@ const EksLogDetail: React.FC = () => {
                     curEksLogSource?.eks?.eksClusterName
                   )}
                 </div>
-              </ValueWithLabel>
-              <ValueWithLabel label={t("ekslog:detail.deploymentPattern")}>
-                <div>{curEksLogSource?.eks?.deploymentKind}</div>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              {curEksLogSource?.accountId && (
-                <ValueWithLabel label={t("resource:crossAccount.account")}>
-                  <AccountName
-                    accountId={curEksLogSource?.accountId}
-                    region={amplifyConfig.aws_project_region}
-                  />
-                </ValueWithLabel>
-              )}
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel
-                label={t("ekslog:detail.iamRole")}
-                infoType={InfoBarTypes.EKS_IAM_ROLE}
-              >
-                <CopyText
-                  text={defaultStr(curEksLogSource?.eks?.logAgentRoleArn)}
-                >
-                  <ExtLink
-                    to={buildRoleLink(
-                      curEksLogSource?.eks?.logAgentRoleArn
-                        ? curEksLogSource.eks?.logAgentRoleArn.split("/")[1]
-                        : "",
-                      amplifyConfig.aws_project_region
-                    )}
-                  >
-                    {curEksLogSource?.eks?.logAgentRoleArn}
-                  </ExtLink>
-                </CopyText>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("ekslog:detail.created")}>
+              ),
+            },
+            {
+              label: t("ekslog:detail.deploymentPattern"),
+              data: <div>{curEksLogSource?.eks?.deploymentKind}</div>,
+            },
+            {
+              label: t("resource:crossAccount.account"),
+              data: (
+                <AccountName
+                  accountId={defaultStr(curEksLogSource?.accountId)}
+                  region={amplifyConfig.aws_project_region}
+                />
+              ),
+            },
+            {
+              label: t("ekslog:detail.created"),
+              data: (
                 <div>
                   {formatLocalTime(defaultStr(curEksLogSource?.createdAt))}
                 </div>
-              </ValueWithLabel>
-            </div>
-          </div>
-        </HeaderPanel>
+              ),
+            },
+            {
+              label: t("ekslog:detail.iamRole"),
+              infoType: InfoBarTypes.EKS_IAM_ROLE,
+              data: (
+                <ExtLink
+                  to={buildRoleLink(
+                    curEksLogSource?.eks?.logAgentRoleArn
+                      ? curEksLogSource.eks?.logAgentRoleArn.split("/")[1]
+                      : "",
+                    amplifyConfig.aws_project_region
+                  )}
+                >
+                  {curEksLogSource?.eks?.logAgentRoleArn}
+                </ExtLink>
+              ),
+            },
+          ]}
+        />
       </div>
       <>
-        {curEksLogSource && (
+        {curEksLogSource && showDaemonsetGuide ? (
           <div>
             <AntTabs
               value={activeTab}
@@ -181,16 +176,14 @@ const EksLogDetail: React.FC = () => {
               }}
             >
               <AntTab
-                label={t("ekslog:detail.tab.ingestions")}
+                label={t("ekslog:detail.tab.applications")}
                 value="logSource"
               />
-              {showDaemonsetGuide && (
-                <AntTab
-                  label={t("ekslog:detail.tab.daemonsetGuide")}
-                  value="guide"
-                />
-              )}
-              <AntTab label={t("ekslog:detail.tab.tags")} value="tags" />
+
+              <AntTab
+                label={t("ekslog:detail.tab.daemonsetGuide")}
+                value="guide"
+              />
             </AntTabs>
             <TabPanel value={activeTab} index="logSource">
               <EksIngestions eksLogSourceInfo={curEksLogSource} />
@@ -198,10 +191,13 @@ const EksLogDetail: React.FC = () => {
             <TabPanel value={activeTab} index={"guide"}>
               <DaemonsetGuide eksLogSourceInfo={curEksLogSource} />
             </TabPanel>
-            <TabPanel value={activeTab} index={"tags"}>
-              <Tags tags={curEksLogSource?.tags} />
-            </TabPanel>
           </div>
+        ) : (
+          <>
+            {curEksLogSource && (
+              <EksIngestions eksLogSourceInfo={curEksLogSource} />
+            )}
+          </>
         )}
 
         {curEksLogSource?.eks?.deploymentKind === EKSDeployKind.DaemonSet && (

@@ -4,7 +4,7 @@ import os
 import sys
 from commonlib.logging import get_logger
 from commonlib import AWSConnection
-from event.event_parser import KDS, MSK, WAFSampled, SQS
+from event.event_parser import KDS, MSK, EventBridge, SQS
 from idx.idx_svc import AosIdxService
 
 from aws_lambda_powertools import Metrics
@@ -38,16 +38,16 @@ metrics = Metrics(namespace=f"Solution/{STACK_PREFIX}")
 
 
 @metrics.log_metrics
-def lambda_handler(event, _):
+def lambda_handler(event, _):  # NOSONAR
     try:
         idx_svc.init_idx_env()
         disable_event_bride_rule(event)
         if write_idx_data == str(True):
             func_name = "parse_" + source.lower() + "_event"
             getattr(sys.modules[__name__], func_name)(event)
+            idx_svc.put_index_pattern()
 
     except Exception as e:
-        logger.error(e, exc_info=True)
         if not (plugins or log_type in ("ELB", "CloudFront")) and "Records" in event:
             for event_record in event["Records"]:
                 change_sqs_message_visibility(event_record)
@@ -73,7 +73,7 @@ def handle_sqs_retries(record):
     else:
         raise Exception(
             f"Error processing SQS message: {record}, Lambda function has been called {approximate_receive_count} times, the message will be re-consumed and then retried!"
-        )
+        )  # NOSONAR
 
 
 def change_sqs_message_visibility(event_record):
@@ -106,10 +106,9 @@ def parse_msk_event(event):
 
 def parse_event_bridge_event(event):
     # parse event which is from EventBridge
-    if log_type in ("WAFSampled"):
-        waf_sampled: WAFSampled = WAFSampled()
-        waf_sampled.set_metrics(metrics)
-        waf_sampled.process_event(event)
+    evt = EventBridge(source)
+    evt.set_metrics(metrics)
+    evt.process_event(event)
 
 
 def parse_sqs_event(event):

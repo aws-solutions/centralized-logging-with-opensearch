@@ -32,7 +32,6 @@ import LogPathInput from "pages/dataInjection/applicationLog/common/LogPathInput
 import PagePanel from "components/PagePanel";
 import UnmodifiableLogConfigSelector from "pages/dataInjection/applicationLog/common/UnmodifiableLogConfigSelector";
 import { Validator } from "pages/comps/Validator";
-import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import { useTags } from "assets/js/hooks/useTags";
 import { defaultStr, hasSamePrefix } from "assets/js/utils";
 import CommonLayout from "pages/layout/CommonLayout";
@@ -182,7 +181,7 @@ const EksLogIngest: React.FC = () => {
 
   const stepComps = [
     {
-      name: t("ekslog:ingest.step.specifyPipeline"),
+      name: t("step.pipelineSettings"),
       disabled: false,
       element: (
         <SpecifySettings
@@ -201,10 +200,28 @@ const EksLogIngest: React.FC = () => {
       validators: [],
     },
     {
-      name: t("applog:logSourceDesc.eks.step2.naviTitle"),
+      name: t("step.logConfig"),
       element: (
-        <PagePanel title={t("applog:logSourceDesc.eks.step2.title")} desc="">
-          <HeaderPanel title={t("resource:config.common.logPath")}>
+        <PagePanel
+          title={t("step.logConfig")}
+          desc={t("applog:logSourceDesc.eks.step2.titleDesc")}
+        >
+          <HeaderPanel title={t("step.logConfig")}>
+            <UnmodifiableLogConfigSelector
+              hideRefreshButton
+              hideViewDetailButton
+              title={t("applog:logSourceDesc.eks.step2.logConfigName")}
+              desc=""
+              configId={defaultStr(eksIngestionInfo.existsPipeline.logConfigId)}
+              configVersion={
+                eksIngestionInfo.existsPipeline.logConfigVersionNumber ?? 0
+              }
+            />
+          </HeaderPanel>
+          <HeaderPanel
+            title={t("resource:config.common.logPath")}
+            desc={t("resource:config.common.logPathTitleDesc")}
+          >
             <LogPathInput
               value={eksIngestionInfo.logPath}
               setValue={(value) => {
@@ -219,30 +236,9 @@ const EksLogIngest: React.FC = () => {
               validator={logPathValidator}
             />
           </HeaderPanel>
-          <HeaderPanel title={t("resource:config.common.logPath")}>
-            <UnmodifiableLogConfigSelector
-              hideRefreshButton
-              hideViewDetailButton
-              title={t("applog:logSourceDesc.eks.step2.logConfigName")}
-              desc=""
-              configId={defaultStr(eksIngestionInfo.existsPipeline.logConfigId)}
-              configVersion={
-                eksIngestionInfo.existsPipeline.logConfigVersionNumber ?? 0
-              }
-            />
-          </HeaderPanel>
         </PagePanel>
       ),
       validators: [logPathValidator],
-    },
-    {
-      name: t("applog:logSourceDesc.eks.step5.naviTitle"),
-      element: (
-        <PagePanel title={t("applog:logSourceDesc.eks.step5.title")}>
-          <CreateTags />
-        </PagePanel>
-      ),
-      validators: [],
     },
   ].filter((each) => !each.disabled);
 
@@ -256,6 +252,7 @@ const EksLogIngest: React.FC = () => {
           {stepComps[currentStep].element}
           <div className="button-action text-right">
             <Button
+              data-testid="eks-log-ingest-cancel"
               btnType="text"
               onClick={() => {
                 navigate(`/containers/eks-log/detail/${id}`);
@@ -265,6 +262,7 @@ const EksLogIngest: React.FC = () => {
             </Button>
             {currentStep > 0 && (
               <Button
+                data-testid="eks-log-ingest-previous"
                 onClick={() => {
                   setCurrentStep(Math.max(currentStep - 1, 0));
                 }}
@@ -275,6 +273,7 @@ const EksLogIngest: React.FC = () => {
 
             {currentStep < stepComps.length - 1 && (
               <Button
+                data-testid="eks-log-ingest-next"
                 btnType="primary"
                 onClick={() => {
                   if (currentStep === 0) {
@@ -305,6 +304,7 @@ const EksLogIngest: React.FC = () => {
             )}
             {currentStep === stepComps.length - 1 && (
               <Button
+                data-testid="eks-log-ingest-create"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

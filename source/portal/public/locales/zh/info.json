@@ -2,60 +2,59 @@
   "learnMore": "了解更多",
   "accessProxy": {
     "name": "访问代理",
-    "tip1": "Access Proxy创建一个基于Nginx的代理（在",
+    "tip1": "访问代理创建一个基于 Nginx 的代理（在",
     "alb": "Application Load Balancer",
-    "tip2": "上)它允许您通过互联网访问 OpenSearch 仪表板。",
+    "tip2": "后面），允许您通过互联网访问 OpenSearch 仪表板。",
     "prerequisites": "先决条件",
-    "pre1": "1.域名",
-    "pre2": "2.域名关联的 SSL 证书在",
-    "acm": "Amazon Certificate Manager (ACM)",
-    "pre3": "3.EC2 公钥",
+    "pre1": "1. 域名",
+    "pre2": "2. 与域名关联的 SSL 证书在",
+    "acm": "Amazon 证书管理器（ACM）",
+    "pre3": "3. 一个 EC2 秘钥",
     "createProxy": "创建访问代理"
-  },
-  "monitoring": {
-    "intro": "此标签页提供本日志管道下每条日志摄取链路的监控（支持Linux实例），方便您监控端到端的日志摄取。",
-    "monitoringCost": "监控模块价格",
-    "flbAgents": "Fluent Bit日志收集代理",
-    "syslog": "Syslog 日志监控"
   },
   "alarm": {
     "name": "告警",
     "tip1": "Amazon OpenSearch Service 提供了一组",
-    "tip2": "推荐的CloudWatch告警",
-    "tip3": ",日志通可以帮助客户自动创建告警，并通过SNS（或 SMS）将通知发送到您的电子邮件。",
+    "tip2": "推荐的 CloudWatch 告警",
+    "tip3": "，集中式日志记录与 OpenSearch 可以帮助客户自动创建这些告警，并通过 SNS 将通知发送到您的电子邮件（或短信）。",
     "createAlarm": "创建 OpenSearch 告警"
+  },
+  "monitoring": {
+    "intro": "此选项卡提供日志摄取管道中每个组件的关键指标，使您能够轻松监控端到端的日志摄取状态（支持 Linux 实例）。请注意，启用监控将产生额外费用，请参考以下链接进行费用估算。",
+    "flbAgents": "Fluent Bit 代理",
+    "syslog": "Syslog 日志监控"
   },
   "apacheLogFormat": {
     "name": "Apache 日志格式",
-    "tip1": "Apache HTTP Server 在日志文件中捕获有关错误和请求的详细信息。您可以在 Apache HTTP Server 配置文件中找到日志格式配置，例如",
+    "tip1": "Apache HTTP Server 在日志文件中捕获关于错误和请求的详细信息。您可以在 Apache HTTP Server 配置文件中找到日志格式配置，例如",
     "tip2": "文件。日志格式指令以",
     "sample": "示例配置",
     "apacheLog": "Apache HTTP Server 日志文件"
   },
   "apacheLogParsing": {
     "name": "示例日志解析",
-    "tip1": "请在 Apache 日志文件中提供您的 Apache 日志，例如",
-    "sampleLog": "日志样例",
-    "configLogApache": "在 Apache 中配置日志记录"
+    "tip1": "请提供您的 Apache 日志，例如在 Apache 日志文件中",
+    "sampleLog": "示例日志",
+    "configLogApache": "在 Apache 中配置日志"
   },
   "creationMethod": {
     "name": "创建方式",
-    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 OpenSearch 域。",
+    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层相关的网络配置。该解决方案将自动在此层中放置 Lambda（或其他计算资源）。日志处理层必须能够访问 OpenSearch 域。",
     "auto": "自动",
-    "tip21": "日志通将检测是否需要创建一个",
+    "tip21": "该解决方案将检测是否需要创建",
     "tip22": "VPC 对等连接",
-    "tip23": ".如果需要，日志通会自动创建 VPC 对等连接，更新路由表，更新 OpenSearch 域的安全组。",
+    "tip23": "。如果需要，解决方案将自动创建 VPC 对等连接，更新路由表，并更新 OpenSearch 域的安全组。",
     "manual": "手动",
-    "tip3": "手动指定日志处理层网络信息。您可能需要创建 VPC 对等连接，更新 OpenSearch 域的路由表和安全组。",
+    "tip3": "手动指定日志处理层的网络信息。您可能需要创建 VPC 对等连接，更新路由表和 OpenSearch 域的安全组。",
     "importDomain": "导入 OpenSearch 域"
   },
   "ingestionCreationMethod": {
-    "name": "日志启用",
-    "tip1": "日志通可以自动检测日志位置，也可以手动指定日志位置。",
+    "name": "日志源启用",
+    "tip1": "解决方案可以自动检测日志位置，或者您可以手动指定日志位置。",
     "auto": "自动",
-    "tip2": "日志通将自动检测所选AWS服务的日志位置。 如果需要，它将启用服务日志并保存到集中的日志存储桶中。",
+    "tip2": "解决方案将自动检测所选 AWS 服务的日志位置。如有必要，它将启用服务日志并保存到集中日志桶。",
     "manual": "手动",
-    "tip3": "手动输入AWS服务源及其日志位置。日志通将从您指定的位置读取日志。"
+    "tip3": "手动输入 AWS 服务源及其日志位置。解决方案将从您指定的位置读取日志。"
   },
   "instanceGroupCreationMethod": {
     "name": "实例组创建",
@@ -64,156 +63,168 @@
   },
   "logConfigPath": {
     "name": "日志路径",
-    "tip1": "指定日志文件位置。如果您有多个位置，请写下所有位置并使用','进行拆分。 例如",
+    "tip1": "指定日志文件的位置。如果您有多个位置，请写出所有位置并使用 '，' 分隔。例如：",
     "eks": {
-      "title": " 配置针对于 EKS 的日志路径，对于 Sidecar 和 DamonSet 分别参考以下说明进行配置：",
-      "dtip1": "以 Nginx 为例，选用 Amazon Linux2 作为节点的镜像时，如果用户在同一个 EKS 集群下部署同一个应用，并使用 Namespace 来区分不同的环境，建议日志路径使用以下方式",
-      "dtip2Title": "日志路径的格式是：",
-      "dtip2": "其中 <namespace> 对应用于区分不同环境的 Namespace， <application_name> 为部署应用名称，<container_name> 为部署容器名称。应用和容器名称是 Yaml 文件中定义的，这一点与 EC2 上部署 nginx 不同，EC2 下往往日志名为 access.log,日志名在 nginx.conf 里定义。在日志通中创建配置文件时，请注意路径位置。",
-      "stip1": "即在Pod中附加专用日志收集的容器，使用 emptyDir 共享日志目录让 Fluent Bit 的容器读取到数据。Fluent Bit 容器与应用容器共享存储、网络等资源。在日志通中定义的卷名为 app-log。例如：日志路径",
-      "stip2": ",对应部署的 emptyDir 共享卷名为 app-log，参考下图："
+      "title": "对于 EKS 日志，对于 Sidecar 和 DaemonSet，请参考以下配置说明：",
+      "dtip1": "以 Nginx 为例，当 Amazon Linux2 被选择为节点的镜像时，如果用户在同一 EKS 集群下部署相同的应用程序并使用命名空间区分不同环境，建议使用以下日志路径",
+      "dtip2Title": "日志路径的格式为：",
+      "dtip2": "<namespace> 是区分不同环境的对应命名空间，<application_name> 是部署的应用程序名称，<container_name> 是部署的容器名称。这些名称在 Yaml 文件中定义。这与在 EC2 上部署 Nginx 不同，后者通常在 EC2 上使用日志名称。对于 access.log，日志名称在 nginx.conf 中定义。在解决方案中创建配置文件时，请注意路径位置。",
+      "stip1": "也就是说，向 Pod 附加一个专用的日志收集容器，并使用 emptyDir 共享日志目录，以允许 Fluent Bit 容器读取数据。Fluent Bit 容器与应用容器共享存储、网络等资源。解决方案中定义的卷名为 app-log。例如：日志路径",
+      "stip2": "，对应的已部署 emptyDir 共享卷名为 app-log，参考下图："
     }
   },
   "logLifecycle": {
     "name": "日志生命周期",
-    "tip1": "日志通将插入一个",
-    "ism": "索引状态管理(ISM)",
-    "tip2": "到 OpenSearch 域。 生命周期会定期在 OpenSearch 中移动您的索引以节省成本。",
+    "tip1": "该解决方案将向 OpenSearch 域中插入一个",
+    "ism": "索引状态管理（ISM）",
+    "tip2": "。生命周期将定期移动 OpenSearch 中的索引以节省成本。",
     "ismLink": "索引状态管理"
   },
   "logProcessing": {
     "name": "日志处理",
-    "tip1": "日志通将配置 Lambda（或其他计算资源）以使用这些网络配置处理日志。您可以在导入 OpenSearch 域时指定日志处理网络层。",
+    "tip1": "该解决方案将使用这些网络配置来配置 Lambda（或其他计算资源）以处理日志。您可以在导入 OpenSearch 域时指定日志处理网络层。",
     "note": "提示",
     "tip2": "日志处理层可以访问 OpenSearch 域。",
     "importDomain": "导入 OpenSearch 域"
   },
   "logProcessingNetwork": {
     "name": "日志处理网络",
-    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 OpenSearch 域。",
+    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层相关的网络配置。该解决方案将自动在此层中放置 Lambda（或其他计算资源）。日志处理层必须能够访问 OpenSearch 域。",
     "s3Access": "Amazon S3 服务访问",
-    "tip21": "默认情况下，日志通会将错误日志输出到 Amazon S3。请保证日志处理层对 S3 有网络访问权限。您可以通过将日志处理层放在公共子网中来做到这一点，使用",
-    "tip22": "适用于 Amazon S3 的 AWS PrivateLink",
+    "tip21": "默认情况下，解决方案将错误日志输出到 Amazon S3。请确保日志处理层能够访问 Amazon S3 网络。您可以通过将日志处理层放置在公共子网中，使用",
+    "tip22": "Amazon S3 的 AWS PrivateLink",
     "tip23": "或通过",
-    "tip24": "NAT 网关",
-    "cwLogs": "CloudWatch 日志访问权限",
-    "tip31": "多种AWS服务并将服务日志输出到",
-    "tip32": "CloudWatch 日志",
-    "tip33": ". 如果您使用日志通摄取服务日志。请保证日志处理层可以通过网络访问 CloudWatch 日志。",
+    "tip24": " NAT 网关",
+    "cwLogs": "CloudWatch Logs 访问",
+    "tip31": "许多 AWS 服务将服务日志输出到",
+    "tip32": "CloudWatch Logs",
+    "tip33": "。如果您使用解决方案来摄取服务日志，请确保日志处理层能够访问 CloudWatch Logs 网络。",
     "kdsAccess": "Kinesis Data Streams 访问",
-    "tip4": "应用程序日志发送到日志通中的 Kinesis Data Streams。请保证日志处理层对 Kinesis Data Streams 具有网络访问权限。"
+    "tip4": "在解决方案中应用日志被发送到 Kinesis Data Streams。请确保日志处理层能够访问 Kinesis Data Streams 网络。"
   },
   "nginxLogFormat": {
     "name": "Nginx 日志格式",
-    "tip1": "Nginx 在日志文件中捕获有关错误和请求的详细信息。可以在 Nginx 配置文件中找到日志格式配置，如",
+    "tip1": "Nginx 在日志文件中捕获关于错误和请求的详细信息。您可以在 Nginx 配置文件中找到日志格式配置，例如",
     "tip2": "格式指令以",
     "sample": "示例配置",
-    "configNginx": "在 Nginx 中配置日志记录",
-    "alert1": "注意： Nginx 类型日志配置不支持 JSON 格式的 Nginx 配置，如果您的 Nginx 配置为 JSON 格式，请选择日志类型为 JSON。"
+    "configNginx": "在 Nginx 中配置日志",
+    "alert1": "注意：Nginx 类型日志配置不支持 JSON 格式的 Nginx 配置。如果您的 Nginx 配置是 JSON 格式，请选择日志类型为 JSON。"
   },
   "nginxLogParsing": {
     "name": "示例日志解析",
-    "tip1": "请在 Nginx 日志文件中提供您的 Nginx 日志，例如",
-    "sample": "日志样例",
-    "configNginx": "在 Nginx 中配置日志记录"
+    "tip1": "请提供您的 Nginx 日志，例如在 Nginx 日志文件中",
+    "sample": "示例日志",
+    "configNginx": "在 Nginx 中配置日志"
   },
   "regExLogFormat": {
     "name": "正则表达式日志格式",
-    "tip1": "日志通使用自定义 Ruby 正则表达式来解析日志。它支持单行日志格式和多输入格式。将正则表达式写入",
+    "tip1": "解决方案使用自定义的 Ruby 正则表达式解析日志。它支持单行日志格式和多行输入格式。在",
     "rubular": "Rubular",
-    "tip2": "验证并在此处输入。",
+    "tip2": "中验证后将值输入此处。",
     "link1": "正则表达式",
-    "link2": "Rubular：基于 Rudy 的正则表达式编辑器",
+    "link2": "Rubular：基于 Ruby 的正则表达式编辑器",
     "link3": "Fluent Bit 中的正则表达式"
   },
   "sampleDashboard": {
-    "name": "示例数据仪表板",
-    "tip1": "如果",
-    "tip2": "被选中。日志通将在 OpenSearch 域中插入一个预配置的仪表板，仪表板名称将与您的索引名称一致。"
+    "name": "示例仪表板",
+    "tip1": "如果选择",
+    "tip2": "，解决方案将在 OpenSearch 域中插入一个预配置的仪表板。仪表板名称将与您的索引名称一致。"
   },
   "lightEngineSampleDashboard": {
-    "name": "示例数据仪表板",
-    "tip1": "如果",
-    "tip2": "被选中。日志通将在 Grafana 服务器中插入一个预配置的仪表板，仪表板名称将与您的表名称一致。"
+    "name": "示例仪表板",
+    "tip1": "如果选择",
+    "tip2": "，解决方案将在 Grafana 服务器中插入一个预配置的仪表板。仪表板名称将与您的表名一致。"
   },
   "lightEngineTableName": {
-    "name": "日志表名称",
-    "tip": "表名称建议使用小写字母、数字、不支持下划线 (_) 除外的其他特殊字符，长度必须少于或等于 255 个字符。超过此限制会生成错误。详细规范请<0>参考文档</0>"
+    "name": "日志表 (AWS Glue)",
+    "tip": "推荐使用小写字母、数字和其他特殊字符（下划线除外）来命名表名称。长度必须小于或等于 255 个字符。超出此限制将生成错误。有关详细规格，请参阅<0>文档</0>"
   },
   "lightEngineLogProcess": {
     "name": "日志处理器",
-    "tip1": "设置触发日志处理器任务执行的频率，例如 rate(5 minutes) 表示每5分钟执行一次。",
-    "tip2": "日志处理器（用 Amazon Step Functions 实现）的主要目的是高效处理存储在 Amazon S3 上的原始日志文件，并批量处理它们，将其转换为 Apache Parquet 格式，并根据时间和区域等因素自动对数据进行分区 。"
+    "tip1": "设置触发日志处理器任务执行的频率，例如 rate(5 minutes) 表示每 5 分钟执行一次。",
+    "tip2": "日志处理器（实现为 Amazon Step Functions）的主要目的是高效处理存储在 Amazon S3 上的原始日志文件，批量处理它们，将其转换为 Apache Parquet 格式，并根据时间和区域等因素自动分区数据。"
   },
   "lightEngineLogMerge": {
     "name": "日志合并器",
-    "tip1": "设置触发日志合并任务的执行时间表，可以每天执行一次，例如 cron(0 1 * * ? *) 表示每天凌晨 1 点 (UTC) 执行。",
-    "tip2": "日志合并器（用 Amazon Step Functions 实现）的主要目的是合并 Apache Parquet 小文件和数据分区，以减少文件数量、降低 S3 API 操作成本、降低S3存储费用，并在查询数据量增加时提高性能。"
+    "tip1": "设置触发日志合并任务的执行计划，可以每天执行一次，例如 cron(0 1 * * ? *) 表示每天（UTC 时间）凌晨 1 点执行。",
+    "tip2": "日志合并器（实现为 Amazon Step Functions）的主要目的是合并 Parquet 小文件和数据分区，从而减少文件数量，降低 S3 API 操作成本，降低 S3 存储费用，并随着查询数据量的增长提高性能。"
   },
   "lightEngineLogArchive": {
     "name": "日志归档器",
-    "tip1": "设置执行计划以触发日志归档任务，可以每天执行一次，例如 cron(0 2 * * ? *) 表示每天在凌晨2点（UTC时间）执行。",
-    "tip2": "日志归档器（用Amazon Step Functions实现）的主要目的是将过期数据从集中式存储转移到归档中，直到生命周期规则删除文件，并更新 Glue 数据目录并删除过期的表分区。"
+    "tip1": "设置触发日志归档任务的执行计划，可以每天执行一次，例如 cron(0 2 * * ? *) 表示每天（UTC 时间）凌晨 2 点执行。",
+    "tip2": "日志归档器（实现为 Amazon Step Functions）的主要目的是将过期数据从集中存储转移到归档存储，直到生命周期规则删除这些文件，并更新 Glue 数据目录并删除过期表分区。"
   },
   "s3FileType": {
-    "name": "文件格式",
-    "tips": "您可以为存储在 Amazon S3 中的日志选择特定的文件类型。其中 Gzip 仅支持单个文件的压缩。"
+    "name": "文件类型",
+    "tips": "您可以为存储在 Amazon S3 中的日志选择特定的文件类型。Gzip 只支持单个文件的压缩。"
   },
   "eksPattern": {
-    "name": "采集方式",
-    "tip1": " 确保所有（或部分）节点运行 Pod 的副本。 随着节点被添加到集群中，Pod 也被添加到它们中。",
-    "tip2": " 是一个单独的容器，与 Kubernetes pod 中的应用程序容器一起运行。"
+    "name": "部署选项",
+    "tip1": "确保所有（或部分）节点运行 Pod 的副本。当节点添加到集群中时，Pods 将添加到它们中。",
+    "tip2": "是一个单独的容器，在 Kubernetes pod 中与应用容器一起运行。"
   },
   "eksIamRole": {
     "name": "IAM 角色 ARN",
-    "tip1": "在导入 EKS 集群的时候，我们会自动创建EKS IAM 角色，以用于 EKS 传输流。"
+    "tip1": "导入 EKS 集群时，我们会自动创建一个 EKS IAM 角色以供 EKS 交付流使用。"
   },
   "configTimeFormat": {
     "name": "时间格式",
     "strftime": "strftime 函数",
     "generateFormat": "生成时间格式",
-    "tip1": "日志通支持 ",
-    "tip2": " 提供的所有时间格式。即能被 strftime 函数 格式化的日志时间字符串都能被日志通解析并使用。"
+    "tip1": "解决方案支持",
+    "tip2": "提供的所有时间格式。也就是说，可以通过 strftime 函数格式化的日志时间字符串可以被解决方案解析和使用。"
   },
   "configFilter": {
     "name": "过滤器",
-    "sample": "过滤器样例: ",
+    "sample": "过滤器示例：",
     "tips1": "以 Apache Json 格式日志为例，日志内容如下：",
     "tips2": "日志过滤条件：",
-    "tips2_1": "仅保留 method 为 POST、GET、POST、DELETE 的请求 ",
-    "tips2_2": "过滤掉 request 以 /user/ 开始，以及 path为 /login 和 /logout 的请求",
-    "tips2_3": "仅保留 level 为 error 和 warn 的日志",
-    "tips3": "使用的过滤条件如下：",
+    "tips2_1": "仅保留方法为 POST，GET，POST，DELETE 的请求",
+    "tips2_2": "过滤掉以 /user/ 开头的请求以及路径为 /login 和 /logout 的请求",
+    "tips2_3": "仅保留日志级别为 error 和 warn 的日志",
+    "tips3": "使用的过滤器如下：",
     "tips4": "过滤后的日志如下：",
     "filterLink": "按模式选择或排除记录"
   },
   "proxyInstance": {
-    "name": "代理实例类型/个数",
-    "tips": "此推荐表基于页面刷新时间和平均查询延迟，请根据您自己的实际用例创建代理和测试。",
+    "name": "代理实例类型/数量",
+    "tips": "此推荐表基于页面刷新时间和平均查询延迟，请根据您的实际用例自由创建代理并进行测试。",
     "conUser": "并发用户数",
     "instanceType": "代理实例类型",
-    "proxyNumber": "代理实例个数"
+    "proxyNumber": "代理实例数量"
   },
   "s3PrefixFilter": {
     "name": "前缀过滤器",
-    "desc": "这里有一些例子供你设置前缀过滤器：",
-    "li1": "如果要摄取的文件都在log/文件夹中，你可以指定前缀为log/。",
-    "li2": "如果你想只摄取以log为文件扩展名的文件，你可以指定前缀为log/*.log。"
+    "desc": "以下是一些设置前缀过滤器的示例：",
+    "li1": "如果要摄取的文件全部在 log/ 文件夹中，可以将前缀指定为 log/",
+    "li2": "如果只想摄取以 log 为文件扩展名的文件，可以将前缀指定为 log/*.log"
   },
   "pipelineAlarm": {
-    "name": "管道告警",
-    "desc": "如果任何关键指标超过阈值，就会触发管道告警，这会将通知发送到 SNS 主题。 这些告警是根据日志管道监控和故障排除的最佳实践创建的，您可以自定义这些告警或在 CloudWatch 中创建新告警",
+    "name": "告警",
+    "desc": "如果任何关键指标超过阈值，管道告警将被触发，并向 SNS 主题发送通知。这些告警是基于日志管道监控和故障排除的最佳实践创建的，您可以自定义这些告警或在 CloudWatch 中创建新的告警",
     "link1": "管道告警",
     "link2": "Amazon CloudWatch 告警"
   },
   "osi": {
-    "name": "Amazon OpenSearch 采集",
-    "desc": "Amazon OpenSearch 采集是一个完全托管的，无服务器的数据收集器，能实时传输日志，度量和追踪数据到 Amazon OpenSearch Service 域和 OpenSearch 无服务器集合。",
+    "name": "Amazon OpenSearch Ingestion",
+    "desc": "Amazon OpenSearch Ingestion 是一个完全托管的无服务器数据收集器，可将实时日志、指标和跟踪数据传送到 Amazon OpenSearch Service 域和 OpenSearch 无服务器集合中。",
     "link1": "了解更多",
     "link2": "费用详情"
   },
   "bufferLayer": {
     "name": "缓冲层",
-    "desc": "缓冲层旨在实现日志源和日志目标之间的稳健系统。该层能够解耦源和目标，并接受更多的日志摄取请求，同时还可以在日志分析引擎出现服务器问题或性能问题时对日志进行重试缓冲。"
+    "desc": "缓冲层旨在为日志源和日志目标之间提供一个强大的系统。此层可以解耦源和目标，并接受更多的日志摄取请求，还可以在日志分析引擎出现服务器问题或性能问题时缓冲日志以进行重试。"
+  },
+  "appPipelineImport": {
+    "name": "导入模板",
+    "tip": "以 YAML 文件格式提供您的管道配置。每个管道是一个或多个日志源、日志配置、缓冲、OpenSearch 域、日志处理器和其他可选设置的组合。有关详细规格，请参阅<0>文档</0>"
+  },
+  "numberOfShards": {
+    "name": "分片数量",
+    "tip1": "在 OpenSearch 服务中，默认情况下每个索引被分为五个主分片和一个副本（总共 10 个分片）。由于您无法轻松更改现有索引的主分片数量，因此在索引第一个文档之前，您应该决定分片数量。",
+    "tip2": "选择分片数量的总体目标是将索引均匀分布在集群中的所有数据节点上。然而，这些分片不应过大或过多。一个通用的指导原则是，对于搜索延迟是关键性能目标的工作负载，尝试将分片大小保持在 10–30 GiB 之间，对于写入繁重的工作负载（如日志分析），尝试保持在 30–50 GiB 之间。",
+    "tip3": "例如，假设您有 66 GiB 的数据。您不希望这个数字随着时间增加，并且您希望将分片保持在大约 30 GiB。您的分片数量应大约为 66 * 1.1 / 30 = 3。您可以将此计算公式推广如下：",
+    "calc": "（源数据 + 增长空间）*（1 + 索引开销）/ 期望的分片大小 = 大约的主分片数量",
+    "link1": "调整 Amazon OpenSearch Service 域的大小"
   }
 }

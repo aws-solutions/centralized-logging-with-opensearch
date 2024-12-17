@@ -32,7 +32,7 @@ import {
 
 export const MONITOR_ALARM_INIT_DATA = {
   status: PipelineMonitorStatus.ENABLED,
-  pipelineAlarmStatus: PipelineAlarmStatus.DISABLED,
+  pipelineAlarmStatus: PipelineAlarmStatus.ENABLED,
   snsTopicName: "",
   snsTopicArn: "",
   emails: "",
@@ -48,7 +48,6 @@ export const buildInitPipelineData = (
     confirmNetworkChecked: false,
 
     rolloverSizeNotSupport: false,
-    enableRolloverByCapacity: true,
     warmTransitionType: WarmTransitionType.IMMEDIATELY,
 
     aosParams: {
@@ -59,9 +58,9 @@ export const buildInitPipelineData = (
       opensearchArn: "",
       opensearchEndpoint: "",
       replicaNumbers: "1",
-      shardNumbers: "1",
+      shardNumbers: "",
 
-      rolloverSize: "30",
+      rolloverSize: "30gb",
       indexSuffix: IndexSuffix.yyyy_MM_dd,
       codec: Codec.best_compression,
       refreshInterval: "1s",

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import React from "react";
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import "pages/resources/common/InstanceTable";
@@ -208,10 +208,5 @@ describe("DetailASG", () => {
         }
       );
     });
-    await act(async () => {
-      const tabA = await screen.findByTestId("a");
-      await fireEvent.click(tabA);
-    });
-    expect(screen.getByTestId("asg-group-container")).toBeInTheDocument();
   });
 });

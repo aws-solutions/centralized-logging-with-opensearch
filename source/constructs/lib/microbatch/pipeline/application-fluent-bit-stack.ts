@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { Stack, StackProps } from "aws-cdk-lib";
-import { InitLogPipelineCfnParameters } from "./init-pipeline-parameters";
-import { InitLogPipelineResourcesStack } from "./init-pipeline-resource";
+import { Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { InitLogPipelineCfnParameters } from './init-pipeline-parameters';
+import { InitLogPipelineResourcesStack } from './init-pipeline-resource';
 
 const { VERSION } = process.env;
 
@@ -40,18 +40,18 @@ export class MicroBatchApplicationFluentBitPipelineStack extends Stack {
     const solutionDesc = props.solutionDesc;
     this.templateOptions.description = `(${solutionId}-afa) - ${solutionDesc} - Application Logs ingestion from Fluent-Bit for Light Engine - Version ${VERSION}`;
 
-    const sourceType = "fluent-bit";
+    const sourceType = 'fluent-bit';
 
     const parameters = new InitLogPipelineCfnParameters(
       this,
-      "PipelineParameter",
+      'PipelineParameter',
       {
         sourceType: sourceType,
         templateOptions: this.templateOptions,
       }
     );
 
-    new InitLogPipelineResourcesStack(this, "PipelineResource", { // NOSONAR
+    /* NOSONAR */ new InitLogPipelineResourcesStack(this, 'PipelineResource', {
       ...props,
       ...parameters,
     });

@@ -1,0 +1,13 @@
+{
+  "action": "UPDATE",
+  "args": {
+      "stackName": "test_stack",
+      "pattern": "AlarmForOpenSearch",
+      "parameters": [
+          {
+              "ParameterKey": "hello",
+              "ParameterValue": "world"
+          }
+      ]
+  }
+}

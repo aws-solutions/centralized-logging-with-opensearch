@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ConfigServer } from "./steps/ConfigServer";
 import Button from "components/Button";
-import { appSyncRequestMutation } from "assets/js/request";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { updateGrafana } from "graphql/mutations";
 import {
   grafana,
@@ -30,24 +30,47 @@ import {
 } from "reducer/grafana";
 import { useDispatch } from "react-redux";
 import { useGrafana } from "assets/js/hooks/useGrafana";
-import { DomainStatusCheckType } from "API";
+import { DomainStatusCheckType, Grafana } from "API";
 import CommonLayout from "pages/layout/CommonLayout";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
+import { getGrafana } from "graphql/queries";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 
 export const UpdateGrafana: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const dispatch = useDispatch<any>();
   const grafanaState = useGrafana();
+  const [loadingGrafana, setLoadingGrafana] = useState(false);
+  const [currentGrafana, setCurrentGrafana] = useState<Grafana>();
 
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
+  const getGrafanaById = async () => {
+    setLoadingGrafana(true);
+    try {
+      const res = await appSyncRequestQuery(getGrafana, { id });
+      setCurrentGrafana(res.data.getGrafana);
+      dispatch(
+        grafana.actions.nameChanged(
+          decodeURIComponent(defaultStr(res.data?.getGrafana?.name))
+        )
+      );
+      dispatch(
+        grafana.actions.urlChanged(
+          decodeURIComponent(defaultStr(res.data?.getGrafana?.url))
+        )
+      );
+    } catch (error) {
+      console.info(error);
+    } finally {
+      setLoadingGrafana(false);
+    }
+  };
 
   useEffect(() => {
-    const url = queryParams.get("url");
-    const name = queryParams.get("name");
-    dispatch(grafana.actions.nameChanged(decodeURIComponent(name ?? "")));
-    dispatch(grafana.actions.urlChanged(decodeURIComponent(url?.trim() ?? "")));
-  }, [location.search]);
+    if (id) {
+      getGrafanaById();
+    }
+  }, [id]);
 
   const navigate = useNavigate();
   const breadCrumbList = [
@@ -91,15 +114,25 @@ export const UpdateGrafana: React.FC = () => {
     }
   };
 
-  const nextButtonText =
-    grafanaState.status === DomainStatusCheckType.PASSED
-      ? t("button.save")
-      : t("button.validate");
-
   return (
-    <CommonLayout breadCrumbList={breadCrumbList}>
+    <CommonLayout loadingData={loadingGrafana} breadCrumbList={breadCrumbList}>
       <div className="create-wrapper">
         <div className="create-content m-w-1024">
+          <HeaderWithValueLabel
+            headerTitle={t("lightengine:grafana.create.generalConfig")}
+            numberOfColumns={2}
+            dataList={[
+              {
+                label: t("lightengine:grafana.create.name"),
+                data: currentGrafana?.name,
+              },
+              {
+                label: t("lightengine:grafana.create.created"),
+                data: formatLocalTime(defaultStr(currentGrafana?.createdAt)),
+              },
+            ]}
+          />
+
           <ConfigServer {...grafanaState} isNameReadOnly={true} />
           <div className="button-action text-right">
             <Button
@@ -134,7 +167,7 @@ export const UpdateGrafana: React.FC = () => {
                 }
               }}
             >
-              {nextButtonText}
+              {t("button.save")}
             </Button>
           </div>
         </div>

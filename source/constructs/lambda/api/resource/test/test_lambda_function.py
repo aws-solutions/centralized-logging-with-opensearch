@@ -781,3 +781,40 @@ class TestConfig:
             enabled_config["prefix"]
             == f"{prefix}/AWSLogs/123456789012/Config/{os.environ.get('AWS_REGION')}"
         )
+
+
+class TestWAFSampled:
+    mock_waf = mock_wafv2()
+    mock_s3 = mock_s3()
+    mock_sts = mock_sts()
+
+    def setup_method(self):
+        self.mock_waf.start()
+        self.mock_s3.start()
+        self.mock_sts.start()
+        region = os.environ.get("AWS_REGION")
+        conn = boto3.client("wafv2", region_name=region)
+        resp = conn.create_web_acl(
+            Scope="CLOUDFRONT",
+            Name="TEST",
+            DefaultAction={"Allow": {}},
+            VisibilityConfig={
+                "SampledRequestsEnabled": False,
+                "CloudWatchMetricsEnabled": False,
+                "MetricName": "test",
+            },
+        )
+
+        from lambda_function import WAFSampled
+
+        self._waf = WAFSampled()
+        self._arn = resp["Summary"]["ARN"]
+
+    def teardown_method(self):
+        self.mock_waf.stop()
+        self.mock_s3.stop()
+        self.mock_sts.stop()
+
+    def test_get_resource_log_config(self, s3_client):
+        result = self._waf.get_resource_log_config(self._arn)
+        assert len(result) == 1

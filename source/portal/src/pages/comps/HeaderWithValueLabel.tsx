@@ -19,10 +19,12 @@ import ValueWithLabel from "components/ValueWithLabel";
 import React, { ReactElement } from "react";
 import { identity } from "lodash";
 import { InfoBarTypes } from "reducer/appReducer";
+import { defaultStr } from "assets/js/utils";
 
 export type LabelValueDataItem = {
   label?: string | null;
-  data: ReactElement | string | number | null;
+  data?: ReactElement | string | number | null;
+  infoType?: InfoBarTypes;
 };
 
 interface HeaderWithValueLabelProps {
@@ -32,6 +34,7 @@ interface HeaderWithValueLabelProps {
   fixedDataList?: LabelValueDataItem[][];
   additionalData?: LabelValueDataItem;
   infoType?: InfoBarTypes;
+  action?: ReactElement;
 }
 
 const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
@@ -44,6 +47,7 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
     fixedDataList,
     additionalData,
     infoType,
+    action,
   } = props;
   const gridStyle = {
     display: "grid",
@@ -51,7 +55,11 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
   };
 
   return (
-    <HeaderPanel title={headerTitle ?? ""} infoType={infoType}>
+    <HeaderPanel
+      title={defaultStr(headerTitle)}
+      infoType={infoType}
+      action={action}
+    >
       <div style={gridStyle}>
         {fixedDataList ? (
           <>
@@ -65,7 +73,11 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
                 })}
               >
                 {element.map((item, idx) => (
-                  <ValueWithLabel key={identity(idx)} label={item?.label ?? ""}>
+                  <ValueWithLabel
+                    infoType={item.infoType}
+                    key={identity(idx)}
+                    label={defaultStr(item?.label)}
+                  >
                     <>{item?.data}</>
                   </ValueWithLabel>
                 ))}
@@ -83,7 +95,10 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
                   "no-padding-left": index % numberOfColumns === 0,
                 })}
               >
-                <ValueWithLabel label={element?.label ?? ""}>
+                <ValueWithLabel
+                  infoType={element?.infoType}
+                  label={defaultStr(element?.label)}
+                >
                   <>{element?.data}</>
                 </ValueWithLabel>
               </div>
@@ -93,7 +108,10 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
       </div>
       {additionalData ? (
         <div className="flex-1 no-padding-left">
-          <ValueWithLabel label={additionalData?.label ?? ""}>
+          <ValueWithLabel
+            infoType={additionalData.infoType}
+            label={defaultStr(additionalData?.label)}
+          >
             <>{additionalData?.data} </>
           </ValueWithLabel>
         </div>

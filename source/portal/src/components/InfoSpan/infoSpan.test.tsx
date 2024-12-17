@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import InfoSpan from "./infoSpan";
 import { InfoBarTypes } from "reducer/appReducer";
@@ -61,5 +61,6 @@ describe("InfoSpan", () => {
       </Provider>
     );
     expect(screen.getByText("info")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("info"));
   });
 });

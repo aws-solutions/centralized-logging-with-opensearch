@@ -95,8 +95,7 @@ class CloudFrontWithRT(LogType):
         """
         Convert a tab-separated-values string to a list of dictionaries.
         """
-        # logger.info(f"line is {line}")
-        # logger.info(f"fieldnames is {fieldnames}")
+
         return list(
             csv.DictReader(io.StringIO(line), fieldnames=fieldnames, delimiter="\t")
         )
@@ -985,10 +984,19 @@ class JSONWithFLB(LogType):
             yield line_dict
 
 
+class WAFSampledWithS3(JSONWithFLB):
+    pass
+
+
 class JSONWithS3(JSONWithFLB):
     """This class is for s3 source json format input"""
 
     _format = "json"
+
+    def __init__(self):
+        self._time_key = ""
+        self._time_format = ""
+        self._time_offset = ""
 
     def set_time(self, time_key: str, time_format: str, time_offset: str):
         self._time_key = time_key
@@ -1105,6 +1113,7 @@ class IISWithS3(Regex):
     """An implementation of LogType for IIS Logs"""
 
     _format = "iis"
+
 
 class SingleLineTextWithS3(Regex):
     """An implementation of LogType for SingleLineText Logs"""

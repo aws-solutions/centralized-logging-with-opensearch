@@ -27,6 +27,7 @@ export enum StatusType {
   Unknown = "Unknown",
   Active = "Active",
   Created = "Created",
+  Paused = "Paused",
   Updated = "Updated",
   InSufficient_Data = "InSufficient_Data",
   Creating = "Creating",
@@ -45,6 +46,7 @@ export enum StatusType {
   Offline = "Offline",
   Installing = "Installing",
   Distributing = "Distributing",
+  Updating = "Updating",
 }
 
 interface StatusProps {
@@ -61,9 +63,11 @@ const iconMap: any = {
   succeeded: <CheckCircleOutlineIcon fontSize="small" />,
   creating: <AccessTimeIcon fontSize="small" />,
   installing: <AccessTimeIcon fontSize="small" />,
+  updating: <AccessTimeIcon fontSize="small" />,
   running: <AccessTimeIcon fontSize="small" />,
   distributing: <AccessTimeIcon fontSize="small" />,
   insufficient_data: <RemoveCircleOutlineIcon fontSize="small" />,
+  paused: <RemoveCircleOutlineIcon fontSize="small" />,
   inactive: <RemoveCircleOutlineIcon fontSize="small" />,
   deleted: <RemoveCircleOutlineIcon fontSize="small" />,
   reversed: <RemoveCircleOutlineIcon fontSize="small" />,
@@ -83,16 +87,16 @@ const iconMap: any = {
 const Status: React.FC<StatusProps> = (props: StatusProps) => {
   const { isLink, status } = props;
   const { t } = useTranslation();
-  if (status.toLocaleLowerCase() === "loading") {
+  if (status?.toLocaleLowerCase() === "loading") {
     return <LoadingText />;
   }
   return (
     <div
       className={classNames({ "flex gsui-status": true, "is-link": isLink })}
     >
-      <span className={"status-text " + status.toLocaleLowerCase()}>
-        <i>{iconMap[status.toLocaleLowerCase()]}</i>
-        {t("status." + status.toLocaleLowerCase())}
+      <span className={"status-text " + status?.toLocaleLowerCase()}>
+        <i>{iconMap[status?.toLocaleLowerCase()]}</i>
+        {t("status." + status?.toLocaleLowerCase())}
       </span>
     </div>
   );

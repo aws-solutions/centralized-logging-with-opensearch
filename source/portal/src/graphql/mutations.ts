@@ -93,11 +93,6 @@ export const createLightEngineServicePipeline = /* GraphQL */ `
     )
   }
 `;
-export const updateServicePipeline = /* GraphQL */ `
-  mutation UpdateServicePipeline($id: ID!, $monitor: MonitorInput) {
-    updateServicePipeline(id: $id, monitor: $monitor)
-  }
-`;
 export const deleteServicePipeline = /* GraphQL */ `
   mutation DeleteServicePipeline($id: ID!) {
     deleteServicePipeline(id: $id)
@@ -188,6 +183,7 @@ export const createLogConfig = /* GraphQL */ `
     $timeKeyRegex: String
     $userLogFormat: String
     $userSampleLog: String
+    $description: String
   ) {
     createLogConfig(
       name: $name
@@ -204,6 +200,7 @@ export const createLogConfig = /* GraphQL */ `
       timeKeyRegex: $timeKeyRegex
       userLogFormat: $userLogFormat
       userSampleLog: $userSampleLog
+      description: $description
     )
   }
 `;
@@ -230,6 +227,7 @@ export const updateLogConfig = /* GraphQL */ `
     $timeKeyRegex: String
     $userLogFormat: String
     $userSampleLog: String
+    $description: String
   ) {
     updateLogConfig(
       id: $id
@@ -248,6 +246,7 @@ export const updateLogConfig = /* GraphQL */ `
       timeKeyRegex: $timeKeyRegex
       userLogFormat: $userLogFormat
       userSampleLog: $userSampleLog
+      description: $description
     )
   }
 `;
@@ -280,6 +279,11 @@ export const createAppPipeline = /* GraphQL */ `
     )
   }
 `;
+export const resumePipeline = /* GraphQL */ `
+  mutation ResumePipeline($id: ID!) {
+    resumePipeline(id: $id)
+  }
+`;
 export const createLightEngineAppPipeline = /* GraphQL */ `
   mutation CreateLightEngineAppPipeline(
     $params: LightEngineParameterInput!
@@ -304,8 +308,18 @@ export const createLightEngineAppPipeline = /* GraphQL */ `
   }
 `;
 export const updateAppPipeline = /* GraphQL */ `
-  mutation UpdateAppPipeline($id: ID!, $monitor: MonitorInput) {
-    updateAppPipeline(id: $id, monitor: $monitor)
+  mutation UpdateAppPipeline(
+    $id: ID!
+    $logConfigId: ID!
+    $logConfigVersionNumber: Int!
+    $logProcessorConcurrency: String!
+  ) {
+    updateAppPipeline(
+      id: $id
+      logConfigId: $logConfigId
+      logConfigVersionNumber: $logConfigVersionNumber
+      logProcessorConcurrency: $logProcessorConcurrency
+    )
   }
 `;
 export const deleteAppPipeline = /* GraphQL */ `
@@ -333,6 +347,11 @@ export const createAppLogIngestion = /* GraphQL */ `
 export const deleteAppLogIngestion = /* GraphQL */ `
   mutation DeleteAppLogIngestion($ids: [ID!]!) {
     deleteAppLogIngestion(ids: $ids)
+  }
+`;
+export const refreshAppLogIngestion = /* GraphQL */ `
+  mutation RefreshAppLogIngestion($appPipelineId: ID!) {
+    refreshAppLogIngestion(appPipelineId: $appPipelineId)
   }
 `;
 export const requestInstallLogAgent = /* GraphQL */ `

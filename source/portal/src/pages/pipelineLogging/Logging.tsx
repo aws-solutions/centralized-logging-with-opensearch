@@ -14,19 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { AmplifyConfigType } from "types";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import HeaderPanel from "components/HeaderPanel";
-import ExpandableSection from "components/ExpandableSection";
-import ExtLink from "components/ExtLink";
-import FormItem from "components/FormItem";
-import { buildS3Link, isOSIPipeline, ternary } from "assets/js/utils";
 import { AppPipeline, BufferType, PipelineStatus, PipelineType } from "API";
 import LoggingTable from "./logging/LoggingTable";
 import LoggingHeader from "./logging/LoggingHeader";
 import { ServiceLogDetailProps } from "pages/dataInjection/serviceLog/ServiceLogDetail";
-import { RootState } from "reducer/reducers";
 import Alert from "components/Alert";
 
 export interface LoggingProps {
@@ -37,79 +30,31 @@ export interface LoggingProps {
 const Logging: React.FC<LoggingProps> = (props: LoggingProps) => {
   const { t } = useTranslation();
   const { pipelineInfo, servicePipeline, type } = props;
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: RootState) => state.app.amplifyConfig
-  );
   return (
     <div>
       <HeaderPanel
-        title={t("common:logging.logs")}
+        title={t("common:logging.resources")}
         desc={t("common:logging.desc")}
       >
         <div>
           {pipelineInfo?.status === PipelineStatus.ACTIVE ||
-          servicePipeline?.status === PipelineStatus.ACTIVE ? (
+          pipelineInfo?.status === PipelineStatus.PAUSED ||
+          servicePipeline?.status === PipelineStatus.ACTIVE ||
+          servicePipeline?.status === PipelineStatus.PAUSED ? (
             <>
               {pipelineInfo?.bufferType !== BufferType.None && (
-                <ExpandableSection
-                  headerText={ternary(
-                    isOSIPipeline(pipelineInfo ?? servicePipeline),
-                    t("common:logging.processorOSILog"),
-                    t("common:logging.processorLamdaLog")
-                  )}
-                >
-                  <div>
-                    <LoggingHeader
-                      pipelineInfo={pipelineInfo}
-                      servicePipeline={servicePipeline}
-                      type={type}
-                      processorLambdaName={
-                        type === PipelineType.APP
-                          ? pipelineInfo?.processorLogGroupName
-                          : servicePipeline?.processorLambda
-                      }
-                    />
-                    <LoggingTable
-                      pipelineInfo={pipelineInfo}
-                      servicePipeline={servicePipeline}
-                      type={type}
-                      lambdaFunName={
-                        type === PipelineType.APP
-                          ? pipelineInfo?.processorLogGroupName
-                          : servicePipeline?.processorLambda
-                      }
-                    />
-                    <div className="mt-20">
-                      <div>{t("common:logging.detailedErrorLogs")}</div>
-                      <FormItem optionDesc={t("common:logging.errorLogDesc")}>
-                        <>
-                          {type === PipelineType.APP && (
-                            <ExtLink
-                              to={buildS3Link(
-                                amplifyConfig.aws_project_region,
-                                pipelineInfo?.monitor
-                                  ?.backupBucketName as string,
-                                pipelineInfo?.monitor?.errorLogPrefix as string
-                              )}
-                            >
-                              {`s3://${pipelineInfo?.monitor?.backupBucketName}/${pipelineInfo?.monitor?.errorLogPrefix}`}
-                            </ExtLink>
-                          )}
-                          {type === PipelineType.SERVICE && (
-                            <ExtLink
-                              to={buildS3Link(
-                                amplifyConfig.aws_project_region,
-                                servicePipeline?.failedS3Bucket || ""
-                              )}
-                            >
-                              {`s3://${servicePipeline?.failedS3Bucket}`}
-                            </ExtLink>
-                          )}
-                        </>
-                      </FormItem>
-                    </div>
-                  </div>
-                </ExpandableSection>
+                <>
+                  <LoggingHeader
+                    pipelineInfo={pipelineInfo}
+                    servicePipeline={servicePipeline}
+                    type={type}
+                    processorLambdaName={
+                      type === PipelineType.APP
+                        ? pipelineInfo?.processorLogGroupName
+                        : servicePipeline?.processorLambda
+                    }
+                  />
+                </>
               )}
 
               {pipelineInfo?.bufferType === BufferType.None && (
@@ -121,6 +66,16 @@ const Logging: React.FC<LoggingProps> = (props: LoggingProps) => {
           )}
         </div>
       </HeaderPanel>
+      <LoggingTable
+        pipelineInfo={pipelineInfo}
+        servicePipeline={servicePipeline}
+        type={type}
+        lambdaFunName={
+          type === PipelineType.APP
+            ? pipelineInfo?.processorLogGroupName
+            : servicePipeline?.processorLambda
+        }
+      />
     </div>
   );
 };

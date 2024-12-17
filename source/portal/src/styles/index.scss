@@ -391,6 +391,15 @@
   }
 }
 
+.radio-group {
+  .MuiFormControlLabel-root {
+    align-items: flex-start;
+    .MuiRadio-root {
+      padding: 3px 9px;
+    }
+  }
+}
+
 .radio-title {
   padding-bottom: 2px;
 }
@@ -484,6 +493,7 @@
 }
 
 .img-border {
+  padding: 10px;
   border: 1px solid #ccc;
 }
 
@@ -550,6 +560,12 @@
     input {
       margin-right: 5px;
     }
+  }
+  .description {
+    color: #666;
+    padding-left: 20px;
+    margin-top: -8px;
+    font-size: 12px;
   }
 }
 
@@ -744,7 +760,6 @@
 .instance-group-select {
   background-color: #fff;
   font-size: 16px;
-  padding: 20px 20px 0;
   .group-select-item {
     padding: 5px 0;
   }
@@ -1096,7 +1111,7 @@
     &-text {
       display: flex;
       gap: 5px;
-      align-items: center;
+      align-items: flex-start;
     }
     &-button {
       display: flex;

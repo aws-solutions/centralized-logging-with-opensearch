@@ -38,7 +38,6 @@ const CreateAlarms: React.FC<CreateAlarmsProps> = (
   const dispatch = useDispatch<Dispatch<CreateAlarmActions>>();
 
   const updateMonitorFields = (fields: Partial<MonitorInput>) => {
-    console.info("updateMonitorFields:fields:", fields);
     dispatch({
       type: CreateAlarmActionTypes.ON_ALARM_CHANGE,
       alarm: { ...monitor, ...fields },
@@ -61,8 +60,6 @@ const CreateAlarms: React.FC<CreateAlarmsProps> = (
           updateMonitorFields({ emails: emails });
         }}
         changePipelineMonitor={(newMonitor) => {
-          console.info("monitor:", monitor);
-          console.info("newMonitor:", newMonitor);
           dispatch({
             type: CreateAlarmActionTypes.ON_ALARM_CHANGE,
             alarm: { ...monitor, ...newMonitor },

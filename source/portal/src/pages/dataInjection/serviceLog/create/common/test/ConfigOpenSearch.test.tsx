@@ -59,6 +59,6 @@ describe("ConfigOpenSearch", () => {
         },
       }
     );
-    expect(getByText("servicelog:cluster.specifyDomain")).toBeInTheDocument();
+    expect(getByText("step.analyticsEngine")).toBeInTheDocument();
   });
 });

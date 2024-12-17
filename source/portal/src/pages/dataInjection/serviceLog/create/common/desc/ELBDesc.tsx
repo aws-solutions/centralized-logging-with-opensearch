@@ -13,49 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo } from "react";
-import ELBArch from "assets/images/desc/elbArch.webp";
-import elbLightEngineArch from "assets/images/desc/elbLightEngineArch.webp";
-import ExtLink from "components/ExtLink";
-import { ELB_ACCESS_LOG_LINK } from "assets/js/const";
+import { FormControlLabel } from "@material-ui/core";
+import FormItem from "components/FormItem";
+import Radio from "components/Radio";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "types";
 
-export interface ELBDescProps {
-  engineType: AnalyticEngineTypes;
-}
-
-const ELBDesc = ({ engineType }: ELBDescProps) => {
+const ELBDesc: React.FC = () => {
   const { t } = useTranslation();
-  const isLightEngine = useMemo(
-    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
-    [engineType]
-  );
   return (
     <div>
       <div className="ingest-desc-title">
         {t("servicelog:create.service.elb")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:elb.desc.ingest")}
-        <ExtLink to={ELB_ACCESS_LOG_LINK}>
-          {t("servicelog:elb.desc.elbLog")}
-        </ExtLink>{" "}
-        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:elb.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">
-        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("servicelog:elb.desc.ingest")}</div>
       <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={isLightEngine ? elbLightEngineArch : ELBArch}
-        />
+        <FormItem
+          optionTitle={t("servicelog:create.ingestLogType")}
+          optionDesc={t("servicelog:create.ingestLogTypeDesc")}
+        >
+          <FormControlLabel
+            checked
+            control={<Radio />}
+            label={t(`servicelog:create.ingestTypeALB`)}
+          />
+        </FormItem>
       </div>
     </div>
   );

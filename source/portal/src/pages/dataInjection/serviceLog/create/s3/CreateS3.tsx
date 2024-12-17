@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
@@ -27,6 +27,7 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { useDispatch, useSelector } from "react-redux";
@@ -42,7 +43,6 @@ import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
 import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { Dispatch } from "redux";
 import {
   CreateAlarmActionTypes,
@@ -50,6 +50,7 @@ import {
 } from "reducer/createAlarm";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -66,6 +67,7 @@ import {
 } from "reducer/createOpenSearch";
 import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import CommonLayout from "pages/layout/CommonLayout";
+import { ActionType } from "reducer/appReducer";
 
 const EXCLUDE_PARAMS = [
   "logBucketObj",
@@ -146,7 +148,7 @@ const CreateS3: React.FC = () => {
   const [needEnableAccessLog, setNeedEnableAccessLog] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const openSearch = useOpenSearch();
 
@@ -261,29 +263,29 @@ const CreateS3: React.FC = () => {
     return true;
   };
 
+  useEffect(() => {
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
+  }, []);
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="create-wrapper" data-testid="test-create-s3">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: t("servicelog:create.step.specifyDomain"),
-              },
-              {
-                name: t("processor.logProcessorSettings"),
-              },
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               s3Task={s3PipelineTask}
@@ -411,6 +413,7 @@ const CreateS3: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="s3-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -420,6 +423,7 @@ const CreateS3: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="s3-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -432,6 +436,7 @@ const CreateS3: React.FC = () => {
 
             {curStep < 3 && (
               <Button
+                data-testid="s3-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -463,6 +468,7 @@ const CreateS3: React.FC = () => {
             )}
             {curStep === 3 && (
               <Button
+                data-testid="s3-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={async () => {

@@ -1,18 +1,39 @@
 {
-  "name": "Application Log",
-  "title": "Application Log Pipelines",
+  "name": "Application log",
+  "title": "Application log pipelines",
   "list": {
     "os": "OpenSearch",
     "lightEngine": "Light Engine",
-    "engineType": "Engine Type",
-    "indexTable": "Index / Table Name",
+    "engineType": "Engine type",
+    "indexTable": "Index / Table name",
     "indexName": "Index name",
-    "streamName": "Stream Name",
-    "bufferLayer": "Buffer Layer",
-    "created": "Created time",
-    "logPath": "Log Path",
+    "streamName": "Stream name",
+    "bufferLayer": "Buffer",
+    "created": "Created",
+    "logPath": "Log path",
     "status": "Status",
-    "logConfig": "Log Config"
+    "logConfig": "Log Config",
+    "export": "Export configurations",
+    "exporting": "Exporting Application log pipelines",
+    "exported": "Application log pipelines exported"
+  },
+  "edit": {
+    "name": "Edit",
+    "logConfig": "Log Config",
+    "logConfigDesc": "Choose the Log Config version from the below list.",
+    "notSupported": "Not supported",
+    "editNotSupported": "This pipeline does not support editing"
+  },
+  "import": {
+    "import": "Import",
+    "specifyTemplate": "Specify template",
+    "importTemplate": "Import template",
+    "templateFile": "Template file",
+    "templateFileDesc": "Selecting a YAML template file to import application log pipelines.",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "Suggestions": "Suggestions",
+    "templateErrorMessage": "The provided template have errors. Please address the identified errors and resubmit the template."
   },
   "delete": "Delete Application Log",
   "deletePipeline": {
@@ -20,98 +41,94 @@
   },
   "deleteTips": "Are you sure you want to delete the application log ",
   "detail": {
-    "config": "General configuration",
-    "osIndex": "OpenSearch Index",
-    "logTable": "Log Table",
-    "indexSuffix": "Index Suffix",
-    "rolloverSize": "Rollover Size",
-    "compressionType": "Compression Type",
+    "syslogSettings": "Syslog settings",
+    "indexSuffix": "Index suffix",
+    "rolloverSize": "Rollover size",
+    "compressionType": "Compression type",
     "openShards": "Open shards",
     "shardNumber": "Shard number",
-    "aos": "OpenSearch",
     "domain": "Domain",
-    "sampleDashboard": "Sample Dashboard",
+    "sampleDashboard": "Sample dashboard",
     "fanout": "Consumers with enhanced fan-out",
     "shards": "Shards (Kinesis Data Streams)",
     "autoScaling": "(Auto Scaling)",
-    "enabledAutoScaling": "Enable auto scaling",
-    "maxShardNum": "Maximum Shard number",
-    "created": "Created",
+    "enabledAutoScaling": "Enable Auto Scaling",
+    "maxShardNum": "Maximum shard number",
     "bucket": "Bucket",
     "kds": "Kinesis Data Streams",
-    "noneBuffer": "None buffer layer",
+    "noneBuffer": "None buffer",
     "analyticsEngine": "Analytics Engine",
-    "grafanaDashboard": "Grafana Dashboard",
-    "grafanaDashboardDetail": "Grafana Dashboard - Detail",
-    "indexSettings": "Index Settings",
-    "tableSettings": "Table Settings",
-    "metricTableSettings": "Table Settings - Metric",
+    "grafanaDashboard": "Grafana dashboard",
+    "grafanaDashboardDetail": "Grafana dashboard - Detail",
+    "indexSettings": "Index settings",
+    "tableSettings": "Table settings",
+    "metricTableSettings": "Table settings - Metric",
     "cfnStack": "CloudFormation Stack",
-    "tip1": "If you create an log source from an instance group, make sure you have attached these ",
+    "tip1": "If you create an log source from an Instance Group, make sure you have attached these ",
     "tip2": "permissions",
     "tip3": " to the instances. This is NOT required if you create log source from Syslog or EKS cluster.",
-    "noLogging": "This log pipeline has no buffer layer, logs are sent directly to OpenSearch domain from source, no log processor lambda was created, hence no logs to dispiay",
+    "noLogging": "This log pipeline has no buffer, logs are sent directly to OpenSearch domain from source, no log processor lambda was created, hence no logs to display",
+    "noBuffer": "No buffer",
+    "noBufferDesc": "There is no buffer layer configured for this log analytics pipeline.",
     "tab": {
-      "ingestion": "Log Source",
-      "sources": "Log Source",
       "logSources": "Log sources",
       "permission": "Permission",
       "logConfig": "Log Config",
-      "bufferLayer": "Buffer Layer",
+      "bufferLayer": "Buffer",
       "lifecycle": "Lifecycle settings",
       "analyticsEngine": "Analytics Engine",
       "sourceDetail": "Source detail",
       "tags": "Tags",
-      "monitoring": "Monitoring",
-      "alarm": "Pipeline Alarm",
+      "monitoring": "Metrics",
+      "alarm": "Alarms",
       "logging": "Logs"
     },
     "ingestion": {
-      "ingestionOverview": "Log Source Overview",
+      "generalConfig": "General configuration",
       "prefixFilter": "Prefix filter",
       "compression": "Compression",
-      "source": "Source",
-      "sourceType": "Source type",
+      "source": "Resource",
+      "sourceType": "Type",
       "status": "Status",
-      "ingestionMode": "Log Source Mode",
+      "ingestionMode": "Log source mode",
       "logConfig": "Log Config",
       "instanceGroup": "Instance Group",
       "created": "Created",
-      "delete": "Delete Log Source",
+      "delete": "Delete log source",
       "deleteTips": "Are you sure you want to delete the log source(s)? ",
       "upgradeGuide": "Upgrade Guide",
       "eksTips1": "If you need to create additional EKS log source(s) in this pipeline, go to ",
       "eksTips2": "ESK Cluster",
       "eksTips3": " create log source and select current pipeline.",
       "oneMoreStep": "One more step to complete the log source setup...",
-      "groupTips": " We detect you had created an log source with an instance group based on EC2 auto scaling group, please wait for the log source's status become \"Created\", then go to the detail page of instance group(s), and follow the Auto Scaling Group Guide to update the User Data in the associated Launch Configuration.",
+      "groupTips": " We detect you had created an log source with an Instance Group based on EC2 Auto Scaling group, please wait for the log source's status become \"Created\", then go to the detail page of Instance Group(s), and follow the Auto Scaling group guide to update the User Data in the associated Launch Configuration.",
       "oneMoreStepEKS": "Deploy Fluent Bit in your EKS cluster",
       "eksDeamonSetTips_0": "One more step…",
       "eksDeamonSetTips_1": "In order to activate the log pipeline, please follow the procedures in ",
       "eksDeamonSetTips_2": " to deploy Fluent Bit in your EKS cluster.",
-      "eksDeamonSetLink": "DeamonSet Guide",
+      "eksDeamonSetLink": "DeamonSet guide",
       "permissionInfo": "For source of Instance Group, please make sure the instances in the Instance Group has correct permission attached. You can view the the required permission in the the source detail page by clicking the source ID."
     },
     "logConfig": {
       "name": "Log Config"
     },
     "permission": {
-      "name": "Instance Permission",
+      "name": "Instance permission",
       "notYet": "Please waiting for pipeline creation.",
       "alert": "Add permission to the instances",
-      "alertDesc": "Solution use Systems Manager to configure and update Log Agent, S3 to store configurations and Kinesis to collect data. Please grant the following permissions to your EC2 Instance Profile or Autoscaling group. Learn more about ",
+      "alertDesc": "Solution use Systems Manager to configure and update Log Agent, S3 to store configurations and Kinesis to collect data. Please grant the following permissions to your EC2 Instance Profile or Auto Scaling group. Learn more about ",
       "grant": "Grant permissions to EC2 instances"
     },
     "lifecycle": {
       "name": "Lifecycle",
-      "warmLog": "Warm log transition(days)",
-      "coldLog": "Cold log transition(days)",
-      "logRetention": "Log retention(days)"
+      "warmLog": "Warm log transition (days)",
+      "coldLog": "Cold log transition (days)",
+      "logRetention": "Log retention (days)"
     },
     "logProcessor": {
-      "logProcessorTitle": "Processor",
-      "mergerTitle": "Merger",
-      "archiverTitle": "Archiver",
+      "logProcessorTitle": "Log processor",
+      "mergerTitle": "Log merger",
+      "archiverTitle": "Log archiver",
       "metricMergerTitle": "Merger - Metric",
       "metricArchiverTitle": "Archiver - Metric",
       "stepFunction": "Step Function",
@@ -123,11 +140,6 @@
   },
   "create": {
     "name": "Create",
-    "step": {
-      "ingestSetting": "Specify ingest setting",
-      "specifyOS": "Specify OpenSearch domain settings",
-      "createTags": "Alarms and Tags"
-    },
     "ingestSetting": {
       "index": "Index",
       "indexName": "Index name",
@@ -145,40 +157,39 @@
       "bufferS3Desc": "Minute-level ingestion with additional cost. Use this option if you can accept minute-level latency for your log ingestion and your log throughput is higher than your OpenSearch domain ingestion capacity.",
       "bufferS3LightEngineDesc": "The bucket stores log data in its original format to ensure data integrity and traceability.",
       "bufferNoneNetworkTitle": "Network connectivity",
-      "bufferNoneNetworkDesc": "When no buffer is selected, the log source will send logs to OpenSearch directly, you need to ensure the log sources (i.e., Instance group, EKS cluster, syslog agents) can connect to selected OpenSearch domain.",
-      "bufferNoneConfirm": "I acknowledge the requirement of network connectivity.",
+      "bufferNoneNetworkDesc": "When no buffer is selected, the log source will send logs directly to OpenSearch. Ensure that the log sources (e.g., instance group, EKS cluster, syslog agents) can connect to the selected OpenSearch domain.",
+      "bufferNoneConfirm": " I acknowledge the requirement of network connectivity.",
       "bufferNoneNotCheckError": "Please confirm and check acknowledge the requirement of network connectivity.",
-      "s3Bucket": "Amazon S3 Bucket",
-      "s3BucketDesc": "Select a bucket to store the log data. By default. The solution will add prefix of 'AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/' (in UTC) to log data. You can customize the prefix in additional settings.",
-      "s3BucketPrefix": "Amazon S3 Bucket Prefix",
-      "selectS3Bucket": "Please select Amazon S3 Bucket",
-      "s3PrefixInvalid": "Amazon S3 Bucket Prefix should not be '/' and must be end with '/'.",
+      "s3Bucket": "Amazon S3 bucket",
+      "s3BucketDesc": "Select a bucket to store the log data.",
+      "s3BucketPrefix": "Amazon S3 bucket prefix",
+      "selectS3Bucket": "Please select Amazon S3 bucket",
+      "s3PrefixInvalid": "Amazon S3 bucket prefix should not be '/' and must be end with '/'.",
       "s3BucketPrefixLightEngineDesc": "Select a bucket to store the log data. By default. The solution will add prefix of 'LightEngine/AppLogs/<table-name>' to log data.",
-      "s3BucketPrefixDesc1": "By default, Solution appends the prefix '",
-      "s3BucketPrefixDesc2": "' (in UTC) to the data it delivers to Amazon S3. You can override this default by specifying a custom prefix that includes expressions that are evaluated at runtime. If the files to be ingested are all in the log/ folder, you can specify the prefix as log/",
-      "bufferSize": "Buffer size",
-      "bufferSizeDesc": "Specify the buffer size in your log source before sending to Amazon S3. The higher buffer size may be lower in cost with higher latency. The lower buffer size will be faster in delivery with higher cost. Minimum: 1 MiB, maximum: 50 MiB.",
+      "s3BucketPrefixDesc": "Override the default S3 prefix of the log location. By default, the solution will add prefix of 'AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/' (in UTC) to log data.",
+      "bufferSize": "Buffer size (MiB)",
+      "bufferSizeDesc": "Specify the buffer size in your log source before sending to Amazon S3. Minimum: 1 MiB, maximum: 50 MiB.",
       "bufferSizeError": "The size of the buffer must be between 1MiB and 50MiB",
-      "bufferInt": "Buffer interval",
-      "bufferIntDesc": "The higher interval allows more time to collect data and the size of data may be bigger. The lower interval sends the data more frequently and may be more advantageous when looking at shorter cycles of data activity.",
+      "bufferInt": "Buffer interval (Seconds)",
+      "bufferIntDesc": "Specify the interval to deliver data to S3 bucket. Minimum: 5, maximum: 300.",
       "bufferIntError": "The Buffer interval must be between 1 second and 86400 seconds",
       "compressType": "Compression for data records",
       "compressTypeDesc": "Solution can compress records before delivering them to your S3 bucket",
       "compressChoose": "Choose a compress type",
-      "compressionMethod": "Compression method",
+      "compressionMethod": "Compression",
       "shardNum": "Shard number",
-      "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second. (* Kinesis shard adjustment limit per 24 hours)",
+      "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.",
       "shardNumError": "Shard Number must be greater than or equal to 1",
-      "enableAutoS": "Enable auto scaling?",
-      "enableAutoSDesc": "Enable auto scaling of the Kinesis Data Streams shards?",
-      "maxShardNum": "Maximum Shard number",
-      "maxShardNumDesc": "Specify maximum number of shards.",
-      "maxShardNumError": "Max Shard Number must be greater than Shard number",
+      "enableAutoS": "Auto Scaling",
+      "enableAutoSDesc": "Choose Yes if you want the system automatically scale the shard numbers. The maximum number of scaling within 24 hours is 8.",
+      "maxShardNum": "Maximum shard number",
+      "maxShardNumDesc": "Specify the maximum number of Shards of the Kinesis Data Streams. ",
+      "maxShardNumError": "Max shard number must be greater than Shard number",
       "overlapIndexError": "It looks like there is an active or deleted pipeline configured was overlap with the index you entered.  Please choose 'Edit' to update. ({{message}})",
-      "overlapWithPrefix": "The index prefix overlaps with the index prefix you created earlier.",
-      "duplicatedIndexError": "It looks like there is an active or deleted pipeline configured with the index you entered. To proceed with creating this new pipeline and sending logs to the same index, please select 'Continue Create'. If you would like to use a different index prefix instead, please choose 'Edit' to update.",
-      "s3StorageClass": "S3 storage class for prefix",
-      "s3StorageClassDesc": "Select a storage class for the prefix that buffer your log data. "
+      "overlapWithPrefix": "The index name overlaps with the index name you created earlier.",
+      "duplicatedIndexError": "It looks like there is an active or deleted pipeline configured with the index you entered. To proceed with creating this new pipeline and sending logs to the same index, please select 'Continue Create'. If you would like to use a different index name instead, please choose 'Edit' to update.",
+      "s3StorageClass": "S3 storage class",
+      "s3StorageClassDesc": "Choose a S3 storage class to buffer your log data. "
     },
     "specifyOS": {
       "aosDomain": "OpenSearch domain",
@@ -203,7 +214,7 @@
       "logRetentionDesc": "Delete aged logs from OpenSearch domain.",
       "logRetentionError": "Log retention invalid.",
       "logRetentionMustLargeThanCodeAndWarm": "Log retention must larger than cold log transition and warm log transition.",
-      "indexSuffix": "Index Prefix",
+      "indexSuffix": "Index name",
       "indexSuffixDesc": "The default index is <index name>-YYYY-MM-DD. You can choose a different suffix to adjust the index rollover time window. For example, if you select “YYYY-MM-DD-HH” suffix, OpenSearch will rollover the index by hour."
     },
     "domainStatusCheckFailedError": "The connectivity check for the selected domain has failed. Please check its network or choose another domain."
@@ -214,13 +225,13 @@
     "selectOnlineInstance": "Please select log agent online instance or waiting all log agent installed successfully.",
     "type": "Type",
     "source": "Source",
-    "syslogConfig": "Syslog Configuration Guide",
+    "syslogConfig": "Syslog configuration guide",
     "syslogConfig5424": "RFC5424",
     "syslogConfig3164": "RFC3164",
     "step": {
-      "createInstanceGroup": "Create instance group",
-      "chooseInstanceGroup": "Choose instance groups",
-      "applyConfig": "Apply log config",
+      "createInstanceGroup": "Create Instance Group",
+      "chooseInstanceGroup": "Choose Instance Groups",
+      "applyConfig": "Apply Log Config",
       "createTags": "Create tags"
     },
     "createInstanceGroup": {
@@ -232,18 +243,17 @@
       "existsDesc": "Choose existing log groups on the next page."
     },
     "chooseInstanceGroup": {
-      "choose": "Choose instance groups",
+      "choose": "Choose Instance Groups",
       "instanceGroupRequiredError": "Please select Instance Group.",
-      "chooseDesc": "Select multiple instance groups and apply the same Log Config.",
+      "chooseDesc": "Select multiple Instance Groups and apply the same Log Config.",
       "list": {
         "groups": "Groups",
         "name": "Name",
         "platform": "Platform",
-        "created": "Created time"
+        "created": "Created"
       }
     },
     "applyConfig": {
-      "name": "Apply log config",
       "nameDesc": "Create a new Log Config or select exists.",
       "logConfig": "Log Config",
       "method": "Creation Method",
@@ -267,11 +277,11 @@
         "specifyConfig": "Specify log config"
       },
       "specifySource": {
-        "fromS3": "Ingest from Amazon S3 Bucket",
-        "s3": "Amazon S3 Bucket",
+        "fromS3": "Ingest from Amazon S3 bucket",
+        "s3": "Amazon S3 bucket",
         "s3Desc": "Select an Amazon S3 bucket where your application log lives",
-        "selectS3": "Please select a Amazon S3 Bucket",
-        "chooseS3": "Select a Amazon S3 Bucket",
+        "selectS3": "Please select a Amazon S3 bucket",
+        "chooseS3": "Select a Amazon S3 bucket",
         "logPrefix": "Log Prefix",
         "logPrefixDesc": "Specify the prefix of the logs",
         "fileType": "File Type",
@@ -282,7 +292,7 @@
         "vpcId": "VPC",
         "vpcIdDesc": "Select the VPC will start EC2 instances for log ingestion.",
         "chooseVpc": "Please choose a VPC",
-        "subnetIds": "Public Subnets",
+        "subnetIds": "Public subnets",
         "subnetIdsDesc": "Select the public subnets will start EC2 instances for log ingestion.",
         "chooseSubnet": "Please choose public subnets"
       },
@@ -290,7 +300,7 @@
         "alert": "The 'Log Path' in the Log Config will be ignored as the Amazon S3 file path will be used when parsing your logs.",
         "logConfig": "Log Config",
         "selectConfig": "Please select a Log Config",
-        "configDesc": "Choose an existing log config for ",
+        "configDesc": "Choose an existing Log Config for ",
         "configDesc2": " file type specified as source. To create a new config, go to ",
         "config": "Configuration"
       }
@@ -298,29 +308,29 @@
     "eks": {
       "ingestFromEKS": "Ingest from EKS",
       "specifySource": {
-        "eksTitle": "EKS Cluster",
+        "eksTitle": "EKS cluster",
         "eksDesc1": "Select an imported EKS cluster. You must ",
-        "eksDesc2": "Import an EKS Cluster",
+        "eksDesc2": "Import an EKS cluster",
         "eksDesc3": " before you select from the list.",
-        "chooseEKS": "Select an EKS Cluster",
-        "selectEKS": "Please select an EKS Cluster"
+        "chooseEKS": "Select an EKS cluster",
+        "selectEKS": "Please select an EKS cluster"
       }
     },
     "syslog": {
       "ingestFromSysLog": "Ingest from syslog",
-      "settings": "Syslog Source Setting",
+      "settings": "Syslog server settings",
       "protocol": "Protocol",
       "protocolDesc": "Select the protocol of your syslog source",
       "protocolRequire": "Please select protocol",
       "chooseProtocol": "Choose a protocol type",
-      "port": "Port",
-      "portDesc": "Specifies the port to receive the log server",
+      "port": "Port number",
+      "portDesc": "Specify the port to receive the syslog.",
       "portConflict": "Port conflicts with existing log source(s)",
       "portOutofRange": "The port number must be between 500 and 20000",
       "changePort": "Change port number",
       "guide": {
         "title": "Please refer to the following steps to ingest system logs",
-        "alert": "Make sure that the Syslog sender is connected to the NLB network. The following is an example configuration of rsyslog for your reference.",
+        "alert": "Make sure that the Syslog sender is connected to the NLB network. The following is an example configuration of Rsyslog for your reference.",
         "step1Title": "1. Open the Rsyslog configuration file.",
         "step2Desc1": "Usually the Rsyslog configuration file path is",
         "step2Title": "2. Add the following information to the end of the Rsyslog configuration file",
@@ -341,37 +351,35 @@
   },
   "logSourceDesc": {
     "ec2": {
+      "create": "Create a pipeline",
       "title": "Instance Group",
-      "instanceGroup": "Instance group",
+      "instanceGroup": "Instance Group",
+      "instanceGroups": "Instance Groups",
       "desc": " is a concept that represents a collection of one or multiple Amazon EC2 instances. The solution supports automatically collecting logs from the EC2 instances within an Instance Group. With this feature, you can:",
-      "li1": "Select Amazon EC2 instance(s) or an Auto Scaling Group to create Instance Group.",
+      "li1": "Select Amazon EC2 instance(s) or an Auto Scaling group to create Instance Group.",
       "li2": "One-click to install log agent (Fluent Bit) on all instances in an Instance Group.",
       "li3": "Use built-in or custom Log Config to parse logs before ingesting into OpenSearch.",
-      "arch": {
-        "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
-        "descLightEngine": "The architecture diagram to ingest log data into Light Engine."
-      },
       "step1": {
-        "naviTitle": "Instance group",
         "permissions": "Permissions",
-        "permissionMethod": "Permission grant method",
-        "permissionsDesc": "The instance groups needs permissions to access System Manager, S3, and Kinesis Data Stream services for log collection agent configuration and log transmission. Please select a method to add permissions to the instances. Learn more about ",
+        "permissionsTitleDesc": "Grant permissions to Instance Group to ingest logs.",
+        "permissionMethod": "Grant method",
+        "permissionsDesc": "Choose how to grant permission to the Instance Group. The Instance Groups needs permissions to access System Manager, S3, and Kinesis Data Stream services for log collection agent configuration and log ingestion. Learn more about ",
         "permissionsDesc2": "Grant permission to EC2 instances",
-        "permissionAuto": "Solution automatically adds the required permission to the selected instances’ Instance Profile",
-        "permissionManual": "I will manually add the below required permissions after pipeline creation",
-        "permissionExpand": "Expand to view required permissions",
+        "auto": "Automatic",
+        "permissionAuto": "Automatically add the permissions to Instance Profile associated with the instances.",
+        "manual": "Manual",
+        "permissionManual": "I will manually add the below required permissions after pipeline creation.",
+        "permissionExpand": "Required permissions",
         "userDataExpand": "Expand to view the user data scripts",
-        "title": "Choose instance groups",
-        "titleDesc": "Instance group is a collection of multiple instances that will be applied with same Log Config."
+        "title": "Choose an Instance Group",
+        "titleDesc": "Instance Group is a collection of multiple instances that will be applied with same Log Config."
       },
       "step2": {
         "logPathDesc": "Enter the location of the log files. All files under the specified folder will be included."
       },
       "step3": {
-        "naviTitle": "Buffer layer settings",
-        "panelTitle": "Specify buffer layer settings",
-        "title": "Buffer layer",
+        "panelTitle": "Buffer",
+        "title": "Buffer settings",
         "desc": "Select a layer to buffer your logs before ingestion"
       }
     },
@@ -381,34 +389,24 @@
       "li1": "Automatically generate ready-to-use YAML file to easily install of log agent (Fluent Bit) on EKS.",
       "li2": "Use built-in or custom Log Config to parse logs before ingesting into OpenSearch.",
       "li3": "Ingest logs from EKS in different AWS accounts.",
-      "arch": {
-        "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
-        "descLightEngine": "The architecture diagram to ingest log data into Light Engine."
-      },
       "step1": {
-        "naviTitle": "Choose EKS cluster",
-        "title": "Choose EKS cluster",
-        "titleDesc": "Select an EKS cluster to collect logs from.",
+        "title": "Choose an Amazon EKS cluster",
         "settings": "Account Settings",
         "account": "Account",
-        "accountDesc": "Select the AWS account at which the log is stored. To create a member account, go to ",
-        "cluster": "EKS cluster"
+        "accountDesc": "Select the AWS account at which the log is stored. To import a member account, go to ",
+        "cluster": "Amazon EKS cluster"
       },
       "step2": {
-        "naviTitle": "Log config",
-        "title": "Apply log config",
         "titleDesc": "Create a new Log Config or select exists.",
         "panelName": "Log Config",
         "logConfig": "Log Config",
-        "logConfigDesc": "Choose a log config to parse your logs.",
-        "chooseALogConfig": "Choose a log config",
+        "logConfigDesc": "Choose a Log Config to parse your logs.",
+        "chooseALogConfig": "Choose a Log Config",
         "createNew": "Create new",
         "selectConfig": "Please select a Log Config",
-        "logConfigName": "Log Config Name"
+        "logConfigName": "Log Config name"
       },
       "step3_1": {
-        "naviTitle": "Log processor",
         "title": "Select log processor",
         "desc": "Processor type",
         "lambda": "Lambda",
@@ -417,36 +415,27 @@
         "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
       },
       "step3": {
-        "naviTitle": "Buffer layer settings",
-        "title": "Buffer layer",
+        "title": "Buffer",
         "desc": "Select a layer to buffer your logs before ingestion"
       },
       "step4": {
-        "naviTitle": "OpenSearch domain settings",
         "title": "Specify OpenSearch domain settings",
         "lightEngineTitle": "Specify Light Engine configuration"
       },
       "step5": {
-        "naviTitle": "Pipeline alarms and tags",
         "title": "Pipeline alarms and tags"
       },
       "deleteAlarm1": "Please open the pipeline and delete all log sources first.",
       "roleCheckFailed": "The role used to send logs to Buffering layer takes too long to be active. Please try again."
     },
     "syslog": {
-      "title": "Syslog Endpoint",
+      "title": "Syslog endpoint",
       "desc": "Syslog is a standard network-based logging protocol that works on a wide variety of different types of devices and applications, such as Linux servers, firewalls, and network devices. This solution supports collecting logs from system agents (e.g., rsyslog, syslog-ng) directly. With this feature, you can:",
       "li1": "Automatically deploy a highly-available network endpoint to collect syslog sent over network.",
       "li2": "Use built-in Log Configs to parse standard syslog formats. (e.g., RFC3164, RFC5424)",
       "li3": "Ingest syslog via UDP and TCP protocols.",
-      "arch": {
-        "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
-        "descLightEngine": "Architecture diagram for ingesting log data into Light Engine."
-      },
       "step1": {
-        "naviTitle": "Ingestion endpoint",
-        "title": "Ingestion endpoint",
+        "title": "Specify Syslog settings",
         "titleDesc": "Specify the settings for the endpoint to receive syslog.",
         "panelName": "Endpoint Settings",
         "desc": "Select the S3 bucket where your logs are stored.",
@@ -461,8 +450,6 @@
         "oneTimeLoadDesc": "The ingestion job will run at creation and only will run once to load all files in the specified location."
       },
       "step2": {
-        "naviTitle": "Log config",
-        "title": "Apply log config",
         "titleDesc": "Create a new Log Config or select exists.",
         "panelName": "Log Config",
         "logConfig": "Log Config",
@@ -471,7 +458,6 @@
         "createNew": "Create new"
       },
       "step3_1": {
-        "naviTitle": "Log processor",
         "title": "Select log processor",
         "desc": "Processor type",
         "lambda": "Lambda",
@@ -480,43 +466,35 @@
         "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
       },
       "step3": {
-        "naviTitle": "Buffer layer settings",
-        "title": "Buffer layer",
+        "title": "Buffer",
         "desc": "Select a layer to buffer your logs before ingestion"
       },
       "step4": {
-        "naviTitle": "OpenSearch domain settings",
         "title": "Specify OpenSearch domain settings"
       },
       "step5": {
-        "naviTitle": "Pipeline alarms and tags",
         "title": "Pipeline alarms and tags"
       }
     },
     "s3": {
+      "config": "S3 configuration",
       "title": "Amazon S3",
       "desc": "This solution supports ingesting logs that stored in a Amazon S3 bucket. You can use this feature to ingest logs of AWS services that support delivering logs to S3, ingest logs from on-premises, or ingest logs from third-party cloud providers that could be transferred to a S3 bucket. With this features, you can:",
       "li1": "Ingest logs in a specified S3 location continuously or perform one-time ingestion.",
       "li2": "Filter logs based on S3 prefix.",
       "li3": "Parse logs with custom Log Config.",
-      "arch": {
-        "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
-        "descLightEngine": "Architecture diagram for ingesting log data into Light Engine."
-      },
       "step1": {
-        "naviTitle": "Source settings",
-        "title": "Specify source settings",
+        "title": "Choose a S3 Bucket",
         "alertCompressionType": "Note you can not change compression type when adding a new source into an existing pipeline, please make sure the new log source is in the same compression format.",
         "titleDesc": "Specify the settings for the log sources.",
-        "panelName": "Ingest from S3 bucket",
+        "panelName": "Amazon S3 Bucket settings",
         "desc": "Select the S3 bucket where your logs are stored. Note that only the S3 buckets in the same region can be selected.",
         "alert": "Currently only support ingesting logs from solution-deployed region.",
         "title2": "Prefix filter - optional",
-        "desc2": "Filter log files by prefix to accurately locate the files to be ingested. The solution supports both full file path matching and Wildcard matching. If this parameter is not set, the entire S3 bucket will be traversed.",
+        "desc2": "Filter log files by prefix to accurately locate the files to be ingested. The solution supports both full file path matching and Wildcard matching. If this parameter is not set, the entire S3 bucket will be traversed. Note that S3 prefix does NOT start with “/“.",
         "title3": "Ingestion mode",
         "desc3": "Specify the interval for the ingestion job to execute.",
-        "title4": "Compression format",
+        "title4": "Compression",
         "desc4": "Specify how the log files are compressed in S3",
         "athenaFormat": "Refer to the Athena supported compression format, click <0>This guide</0> to learn more.",
         "onGoing": "On-going",
@@ -525,8 +503,6 @@
         "oneTimeLoadDesc": "The ingestion job will run at creation and only will run once to load all files in the specified location."
       },
       "step2": {
-        "naviTitle": "Log config",
-        "title": "Apply log config",
         "titleDesc": "Create a new Log Config or select exists.",
         "panelName": "Log Config",
         "logConfig": "Log Config",
@@ -538,7 +514,6 @@
         "alertLightEngine": "Light Engine - S3 as source not support multi-line log format"
       },
       "step3": {
-        "naviTitle": "Log processor",
         "title": "Select log processor",
         "desc": "Processor type",
         "lambda": "Lambda",
@@ -547,17 +522,16 @@
         "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
       },
       "step4": {
-        "naviTitle": "OpenSearch domain settings",
         "title": "Specify OpenSearch domain settings"
       },
       "step5": {
-        "naviTitle": "Pipeline alarms and tags",
         "title": "Pipeline alarms and tags"
       }
     }
   },
   "selectLogSource": {
-    "name": "Select log source",
+    "create": "Create a pipeline",
+    "name": "Select a log source",
     "logSources": "Log sources"
   },
   "installAgent": {
@@ -568,7 +542,7 @@
     "invocationOutputLast": " to troubleshoot and fix."
   },
   "instancePermission": {
-    "title": "Instance Permission",
+    "title": "Instance permission",
     "alertContent": "Please make sure your instance have the following permissions."
   }
 }

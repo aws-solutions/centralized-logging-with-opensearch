@@ -50,7 +50,7 @@ def get_metric_data(client: boto3.Session.client, domain_list, account_id):
     # ideally, there won't be more than 100 domains.
     resp = client.get_metric_data(
         MetricDataQueries=queries,
-        StartTime=datetime.now() - timedelta(minutes=5),
+        StartTime=datetime.now() - timedelta(seconds=60),
         EndTime=datetime.now(),
     )
     # print(resp)
@@ -80,7 +80,7 @@ def _build_metric_query(domain_list, account_id):
                                 {"Name": "ClientId", "Value": account_id},
                             ],
                         },
-                        "Period": 300,
+                        "Period": 60,
                         "Stat": m["stat"],
                     },
                 }
@@ -88,7 +88,7 @@ def _build_metric_query(domain_list, account_id):
     return queries
 
 
-def _parse_result(domain_list, metric_result):
+def _parse_result(domain_list, metric_result):  # NOSONAR
     """Helper func to parse query result"""
 
     # metric_data is the result to be returned (a map, the key is the domain name)

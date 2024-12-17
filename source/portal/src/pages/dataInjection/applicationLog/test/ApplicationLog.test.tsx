@@ -18,6 +18,9 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import ApplicationLog from "../ApplicationLog";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { screen, act, fireEvent } from "@testing-library/react";
+import { MockAppLogDetailData } from "test/applog.mock";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,24 +42,84 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("ApplicationLog", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/log-pipeline/application-log"]}>
-        <ApplicationLog />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listAppPipelines: {
+          appPipelines: [{ ...MockAppLogDetailData }],
+          total: 1,
         },
-      }
-    );
-    expect(getByText(/applog:title/i)).toBeInTheDocument();
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        deleteAppPipeline: "OK",
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ApplicationLog />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
+
+    // select pipeline item
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-test"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("app-log-actions"));
+    });
+
+    // click delete button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-button"));
+    });
+
+    // confirm delete button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-delete-button"));
+    });
+
+    // click cancel button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("cancel-delete-button"));
+    });
+
+    // click view detail button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("app-log-actions"));
+    });
+
+    // click create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("create-button"));
+    });
+
+    // click refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
   });
 });

@@ -41,7 +41,6 @@ log_source_dao = LogSourceDao(table_name=log_source_table_name)
 
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     instance_id = event["Records"][0]["dynamodb"]["Keys"]["id"]["S"]
     source_id = event["Records"][0]["dynamodb"]["Keys"]["sourceId"]["S"]

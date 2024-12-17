@@ -27,6 +27,7 @@ import {
   OS_SERVICE_LINK,
   URL_FEEDBACK,
 } from "assets/js/const";
+import NotificationBar from "pages/layout/NotificationBar";
 
 enum CreateType {
   Domain = "Domain",
@@ -61,6 +62,7 @@ const Home: React.FC = () => {
     <div className="lh-main-content">
       <SideMenu />
       <div className="lh-container">
+        <NotificationBar />
         <div className="home-header">
           <div className="home-header-content">
             <div className="home-header-tc">
@@ -126,6 +128,7 @@ const Home: React.FC = () => {
                     <label className="flex">
                       <div>
                         <input
+                          data-testid={`type-item-${element.value}`}
                           checked={createType === element.value}
                           onChange={(event) => {
                             setCreateType(event.target.value);
@@ -147,6 +150,7 @@ const Home: React.FC = () => {
               <div className="mt-10">
                 {createType === CreateType.Domain && (
                   <Button
+                    data-testid="import-domain-button"
                     btnType="primary"
                     onClick={() => {
                       navigate("/clusters/import-opensearch-cluster");
@@ -157,6 +161,7 @@ const Home: React.FC = () => {
                 )}
                 {createType === CreateType.ServicePipeline && (
                   <Button
+                    data-testid="service-pipeline-button"
                     btnType="primary"
                     onClick={() => {
                       navigate("/log-pipeline/service-log/create");
@@ -167,6 +172,7 @@ const Home: React.FC = () => {
                 )}
                 {createType === CreateType.AppPipeline && (
                   <Button
+                    data-testid="app-pipeline-button"
                     btnType="primary"
                     onClick={() => {
                       navigate("/log-pipeline/application-log/create");
@@ -195,31 +201,31 @@ const Home: React.FC = () => {
                   </li>
                   <li>
                     <a
+                      href={buildSolutionDocsLink("aws-service-logs.html")}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t("home:gettingStarted.analyzeAWSLog")}
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href={buildSolutionDocsLink("application-logs.html")}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t("home:gettingStarted.analyzeAppLog")}
+                    </a>
+                  </li>
+                  <li>
+                    <a
                       href={buildSolutionDocsLink(
-                        "amazon-cloudtrail-logs.html"
+                        "cross-account-ingestion.html"
                       )}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {t("home:gettingStarted.analyseLog")}
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={buildSolutionDocsLink("json-format-logs.html")}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {t("home:gettingStarted.workingWithJSON")}
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={buildSolutionDocsLink("multi-line-text.html")}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {t("home:gettingStarted.workingWithSpringBoot")}
+                      {t("home:gettingStarted.crossAccountIngestion")}
                     </a>
                   </li>
                   <li>

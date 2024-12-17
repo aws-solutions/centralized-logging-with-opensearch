@@ -14,37 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React, { useEffect } from "react";
+import React from "react";
 import { IngestionMode } from "API";
 import { useTranslation } from "react-i18next";
 import FormItem from "components/FormItem";
 import { FormControlLabel, RadioGroup } from "@material-ui/core";
 import Radio from "components/Radio";
-import { AnalyticEngineTypes } from "types";
 
 interface IngestionModeSelectorProps {
   value: string;
   setValue: React.Dispatch<React.SetStateAction<string>>;
-  engineType?: AnalyticEngineTypes;
 }
-export function IngestionModeSelector(props: IngestionModeSelectorProps) {
+const IngestionModeSelector: React.FC<IngestionModeSelectorProps> = (
+  props: IngestionModeSelectorProps
+) => {
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (!props.value) {
-      props.setValue(IngestionMode.ON_GOING.toString());
-    }
-  }, []);
-
+  const { value, setValue } = props;
   return (
     <FormItem
       optionTitle={t("applog:logSourceDesc.s3.step1.title3")}
       optionDesc={t("applog:logSourceDesc.s3.step1.desc3")}
     >
       <RadioGroup
-        value={props.value}
+        className="radio-group"
+        value={value}
         onChange={(e) => {
-          props.setValue(e.target.value);
+          setValue(e.target.value);
         }}
       >
         <FormControlLabel
@@ -61,24 +56,23 @@ export function IngestionModeSelector(props: IngestionModeSelectorProps) {
             </div>
           }
         />
-
-        {props.engineType !== AnalyticEngineTypes.LIGHT_ENGINE && (
-          <FormControlLabel
-            value={IngestionMode.ONE_TIME.toString()}
-            control={<Radio />}
-            label={
-              <div>
-                <div className="radio-title">
-                  {t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
-                </div>
-                <div className="radio-desc">
-                  {t("applog:logSourceDesc.s3.step1.oneTimeLoadDesc")}
-                </div>
+        <FormControlLabel
+          value={IngestionMode.ONE_TIME.toString()}
+          control={<Radio />}
+          label={
+            <div>
+              <div className="radio-title">
+                {t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
               </div>
-            }
-          />
-        )}
+              <div className="radio-desc">
+                {t("applog:logSourceDesc.s3.step1.oneTimeLoadDesc")}
+              </div>
+            </div>
+          }
+        />
       </RadioGroup>
     </FormItem>
   );
-}
+};
+
+export default IngestionModeSelector;

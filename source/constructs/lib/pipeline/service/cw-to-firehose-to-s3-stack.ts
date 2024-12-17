@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-
+import * as path from 'path';
+import * as firehose from '@aws-cdk/aws-kinesisfirehose-alpha';
+import { S3Bucket } from '@aws-cdk/aws-kinesisfirehose-destinations-alpha';
 import {
   Aws,
   CfnResource,
@@ -29,13 +30,11 @@ import {
   aws_s3 as s3,
   aws_lambda as lambda,
   CfnOutput,
-} from "aws-cdk-lib";
+} from 'aws-cdk-lib';
 
-import { S3Bucket } from "@aws-cdk/aws-kinesisfirehose-destinations-alpha";
-import * as firehose from "@aws-cdk/aws-kinesisfirehose-alpha";
-import * as path from "path";
-import { NagSuppressions } from "cdk-nag";
-import { SharedPythonLayer } from "../../layer/layer";
+import { NagSuppressions } from 'cdk-nag';
+import { Construct } from 'constructs';
+import { SharedPythonLayer } from '../../layer/layer';
 /**
  * cfn-nag suppression rule interface
  */
@@ -48,7 +47,7 @@ export function addCfnNagSuppressRules(
   resource: CfnResource,
   rules: CfnNagSuppressRule[]
 ) {
-  resource.addMetadata("cfn_nag", {
+  resource.addMetadata('cfn_nag', {
     rules_to_suppress: rules,
   });
 }
@@ -81,18 +80,18 @@ export class CWtoFirehosetoS3Stack extends Construct {
     // Get the logBucket
     const logBucket = s3.Bucket.fromBucketName(
       this,
-      "logBucket",
+      'logBucket',
       props.logBucketName
     );
 
     // Create the Kinesis Firehose
     const destination = new S3Bucket(logBucket, {
       dataOutputPrefix: props.logBucketPrefix,
-      errorOutputPrefix: "error/" + props.logBucketPrefix,
+      errorOutputPrefix: 'error/' + props.logBucketPrefix,
       bufferingInterval: Duration.minutes(1),
       bufferingSize: Size.mebibytes(1),
     });
-    const logFirehose = new firehose.DeliveryStream(this, "Delivery Stream", {
+    const logFirehose = new firehose.DeliveryStream(this, 'Delivery Stream', {
       encryption: firehose.StreamEncryption.AWS_OWNED,
       destinations: [destination],
     });
@@ -100,8 +99,8 @@ export class CWtoFirehosetoS3Stack extends Construct {
       logFirehose,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
         },
       ],
       true
@@ -110,13 +109,13 @@ export class CWtoFirehosetoS3Stack extends Construct {
     this.deliveryStreamName = logFirehose.deliveryStreamName;
 
     // Create the IAM role for CloudWatch Logs destination
-    const cwDestinationRole = new iam.Role(this, "CWDestinationRole", {
-      assumedBy: new iam.ServicePrincipal("logs.amazonaws.com"),
+    const cwDestinationRole = new iam.Role(this, 'CWDestinationRole', {
+      assumedBy: new iam.ServicePrincipal('logs.amazonaws.com'),
     });
 
-    const isCrossAccount = new CfnCondition(this, "IsCrossAccount", {
+    const isCrossAccount = new CfnCondition(this, 'IsCrossAccount', {
       expression: Fn.conditionAnd(
-        Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, "")),
+        Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, '')),
         Fn.conditionNot(
           Fn.conditionEquals(props.logSourceAccountId, Aws.ACCOUNT_ID)
         )
@@ -124,13 +123,13 @@ export class CWtoFirehosetoS3Stack extends Construct {
     });
 
     const assumeBy = {
-      Version: "2012-10-17",
+      Version: '2012-10-17',
       Statement: [
         {
-          Effect: "Allow",
+          Effect: 'Allow',
           Condition: {
             StringLike: {
-              "aws:SourceArn": [
+              'aws:SourceArn': [
                 `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
                 Fn.conditionIf(
                   isCrossAccount.logicalId,
@@ -141,23 +140,23 @@ export class CWtoFirehosetoS3Stack extends Construct {
             },
           },
           Principal: {
-            Service: "logs.amazonaws.com",
+            Service: 'logs.amazonaws.com',
           },
-          Action: "sts:AssumeRole",
+          Action: 'sts:AssumeRole',
         },
       ],
     };
     (cwDestinationRole.node.defaultChild as iam.CfnRole).addOverride(
-      "Properties.AssumeRolePolicyDocument",
+      'Properties.AssumeRolePolicyDocument',
       assumeBy
     );
 
     // Create the IAM Policy for CloudWatch to put record on kinesis
-    const cwDestPolicy = new iam.Policy(this, "CWDestPolicy", {
+    const cwDestPolicy = new iam.Policy(this, 'CWDestPolicy', {
       roles: [cwDestinationRole],
       statements: [
         new iam.PolicyStatement({
-          actions: ["firehose:PutRecord", "firehose:PutRecordBatch"],
+          actions: ['firehose:PutRecord', 'firehose:PutRecordBatch'],
           resources: [`${logFirehose.deliveryStreamArn}`],
         }),
       ],
@@ -166,53 +165,53 @@ export class CWtoFirehosetoS3Stack extends Construct {
     // Create the policy and role for the Lambda to create and delete CloudWatch Log Group Subscription Filter
     const cwSubFilterLambdaPolicy = new iam.Policy(
       this,
-      "cwSubFilterLambdaPolicy",
+      'cwSubFilterLambdaPolicy',
       {
         policyName: `${Aws.STACK_NAME}-cwSubFilterLambdaPolicy`,
         statements: [
           new iam.PolicyStatement({
             actions: [
-              "logs:CreateLogGroup",
-              "logs:CreateLogStream",
-              "logs:PutLogEvents",
-              "logs:PutSubscriptionFilter",
-              "logs:putDestination",
-              "logs:putDestinationPolicy",
-              "logs:DeleteSubscriptionFilter",
-              "logs:DescribeLogGroups",
+              'logs:CreateLogGroup',
+              'logs:CreateLogStream',
+              'logs:PutLogEvents',
+              'logs:PutSubscriptionFilter',
+              'logs:putDestination',
+              'logs:putDestinationPolicy',
+              'logs:DeleteSubscriptionFilter',
+              'logs:DescribeLogGroups',
             ],
             resources: [
               `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
             ],
           }),
           new iam.PolicyStatement({
-            actions: ["iam:PassRole"],
+            actions: ['iam:PassRole'],
             resources: [cwDestinationRole.roleArn],
           }),
         ],
       }
     );
-    const cwSubFilterLambdaRole = new iam.Role(this, "cwSubFilterLambdaRole", {
-      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+    const cwSubFilterLambdaRole = new iam.Role(this, 'cwSubFilterLambdaRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
     cwSubFilterLambdaPolicy.attachToRole(cwSubFilterLambdaRole);
     NagSuppressions.addResourceSuppressions(cwSubFilterLambdaPolicy, [
       {
-        id: "AwsSolutions-IAM5",
-        reason: "The managed policy needs to use any resources.",
+        id: 'AwsSolutions-IAM5',
+        reason: 'The managed policy needs to use any resources.',
         appliesTo: [
-          "Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*",
+          'Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*',
         ],
       },
     ]);
 
     // Lambda to create CloudWatch Log Group Subscription Filter
-    const cwSubFilterFn = new lambda.Function(this, "cwSubFilterFn", {
+    const cwSubFilterFn = new lambda.Function(this, 'cwSubFilterFn', {
       description: `${Aws.STACK_NAME} - Create CloudWatch Log Group Subscription Filter`,
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: "cw_subscription_filter.lambda_handler",
+      handler: 'cw_subscription_filter.lambda_handler',
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../../lambda/pipeline/common/custom-resource/")
+        path.join(__dirname, '../../../lambda/pipeline/common/custom-resource/')
       ),
       memorySize: 256,
       timeout: Duration.seconds(60),
@@ -225,7 +224,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
         ROLE_NAME: cwDestinationRole.roleName,
         ROLE_ARN: cwDestinationRole.roleArn,
         STACK_NAME: Aws.STACK_NAME,
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: props.solutionId,
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
@@ -236,7 +235,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
     // Create the policy and role for the Lambda to create and delete CloudWatch Log Group Subscription Filter with cross-account scenario
     cwSubFilterFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["sts:AssumeRole"],
+        actions: ['sts:AssumeRole'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
@@ -257,22 +256,22 @@ export class CWtoFirehosetoS3Stack extends Construct {
       logFirehose
     );
 
-    const cwSubFilterProvider = new cr.Provider(this, "cwSubFilterProvider", {
+    const cwSubFilterProvider = new cr.Provider(this, 'cwSubFilterProvider', {
       onEventHandler: cwSubFilterFn,
     });
 
     NagSuppressions.addResourceSuppressions(cwSubFilterProvider, [
       {
-        id: "AwsSolutions-L1",
-        reason: "the lambda 3.9 runtime we use is the latest version",
+        id: 'AwsSolutions-L1',
+        reason: 'the lambda 3.9 runtime we use is the latest version',
       },
     ]);
     NagSuppressions.addResourceSuppressions(
       cwSubFilterProvider,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
         },
       ],
       true
@@ -281,10 +280,10 @@ export class CWtoFirehosetoS3Stack extends Construct {
       cwSubFilterLambdaRole,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
           appliesTo: [
-            "Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*",
+            'Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*',
           ],
         },
       ],
@@ -295,7 +294,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
 
     const cwSubFilterlambdaTrigger = new CustomResource(
       this,
-      "cwSubFilterlambdaTrigger",
+      'cwSubFilterlambdaTrigger',
       {
         serviceToken: cwSubFilterProvider.serviceToken,
       }
@@ -303,14 +302,14 @@ export class CWtoFirehosetoS3Stack extends Construct {
 
     cwSubFilterlambdaTrigger.node.addDependency(cwSubFilterProvider);
 
-    new CfnOutput(this, "KinesisDeliveryStreamARN", {
-      description: "kinesis Delivery Stream ARN",
+    new CfnOutput(this, 'KinesisDeliveryStreamARN', {
+      description: 'kinesis Delivery Stream ARN',
       value: logFirehose.deliveryStreamArn,
-    }).overrideLogicalId("KinesisDeliveryStreamARN");
+    }).overrideLogicalId('KinesisDeliveryStreamARN');
 
-    new CfnOutput(this, "CloudWatchLogsDestinationARN ", {
-      description: "CloudWatch Logs Destination ARN",
+    new CfnOutput(this, 'CloudWatchLogsDestinationARN ', {
+      description: 'CloudWatch Logs Destination ARN',
       value: `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:destination:${Aws.STACK_NAME}-${logFirehose.deliveryStreamName}`,
-    }).overrideLogicalId("CloudWatchLogsDestinationARN");
+    }).overrideLogicalId('CloudWatchLogsDestinationARN');
   }
 }

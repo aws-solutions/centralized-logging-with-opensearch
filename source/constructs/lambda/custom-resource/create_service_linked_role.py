@@ -4,6 +4,7 @@
 import boto3
 from commonlib.logging import get_logger
 import time
+import json
 
 iam = boto3.client("iam")
 
@@ -32,6 +33,7 @@ def lambda_handler(event, _):
         logger.info("AWSServiceRoleForAppSync already exists.")
 
     except Exception as e:
+        logger.info("Event received: " + json.dumps(event, indent=2))
         logger.error(e)
         logger.info("Create service linked role AWSServiceRoleForAppSync.")
         resp = iam.create_service_linked_role(AWSServiceName="appsync.amazonaws.com")

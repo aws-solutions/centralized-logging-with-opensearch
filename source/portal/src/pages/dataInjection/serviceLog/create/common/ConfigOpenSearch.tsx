@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useEffect } from "react";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
@@ -38,7 +38,6 @@ import {
 } from "assets/js/const";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
-import Switch from "components/Switch";
 import { identity } from "lodash";
 import SelectOpenSearchDomain from "pages/dataInjection/common/SelectOpenSearchDomain";
 import ExpandableSection from "components/ExpandableSection";
@@ -51,7 +50,6 @@ import {
   indexSuffixChanged,
   shardNumbersChanged,
   replicaNumbersChanged,
-  enableRolloverByCapacityChanged,
   rolloverSizeChanged,
   compressionTypeChanged,
   warmTransitionTypeChanged,
@@ -62,13 +60,17 @@ import {
   openSearchClusterChanged,
   domainCheckStatusChanged,
   appIndexSuffixChanged,
+  indexTaskTypeSuffixChanged,
 } from "reducer/createOpenSearch";
 import { displayI18NMessage } from "assets/js/utils";
 import { LogSourceType } from "API";
+import { logBucketPrefixChanged } from "reducer/configBufferS3";
 
 interface ConfigOpenSearchProps {
   taskType: ServiceLogType | LogSourceType;
   hidePageTitle?: boolean;
+  onChangeIndexPrefix?: (indexPrefix: string) => void;
+  isWAFSampled?: boolean;
 }
 
 const isServiceLogType = (type: string): type is ServiceLogType => {
@@ -79,35 +81,29 @@ const ConfigOpenSearch: React.FC<ConfigOpenSearchProps> = (
   props: ConfigOpenSearchProps
 ) => {
   const { t } = useTranslation();
-  const { taskType, hidePageTitle } = props;
+  const { taskType, hidePageTitle, onChangeIndexPrefix, isWAFSampled } = props;
   const openSearch = useSelector((state: RootState) => state.openSearch);
   const dispatch = useDispatch<AppDispatch>();
 
+  useEffect(() => {
+    if (
+      isServiceLogType(taskType) &&
+      ServiceTypeDescMap[taskType]?.pureSuffix
+    ) {
+      if (isWAFSampled) {
+        dispatch(indexTaskTypeSuffixChanged("-wafsampled"));
+      } else {
+        dispatch(
+          indexTaskTypeSuffixChanged(ServiceTypeDescMap[taskType].pureSuffix)
+        );
+      }
+    }
+  }, [taskType, ServiceTypeDescMap[taskType]?.pureSuffix]);
+
   return (
     <div>
-      <PagePanel
-        title={hidePageTitle ? null : t("servicelog:cluster.specifyDomain")}
-      >
+      <PagePanel title={hidePageTitle ? null : t("step.analyticsEngine")}>
         <div>
-          {taskType === LogSourceType.S3 && (
-            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-              <FormItem
-                optionTitle={t("applog:create.ingestSetting.indexName")}
-                optionDesc={t("applog:create.ingestSetting.indexNameDesc")}
-                errorText={displayI18NMessage(openSearch.indexPrefixError)}
-              >
-                <TextInput
-                  className="m-w-75p"
-                  value={openSearch.indexPrefix}
-                  onChange={(event) => {
-                    dispatch(indexPrefixChanged(event.target.value));
-                  }}
-                  placeholder="log-example"
-                />
-              </FormItem>
-            </HeaderPanel>
-          )}
-
           <HeaderPanel title={t("servicelog:cluster.aosDomain")}>
             <SelectOpenSearchDomain
               changeLoadingDomain={(loading) => {
@@ -122,6 +118,86 @@ const ConfigOpenSearch: React.FC<ConfigOpenSearchProps> = (
                 dispatch(domainCheckStatusChanged(status));
               }}
             />
+
+            <FormItem
+              optionTitle={t("servicelog:cluster.indexPrefix")}
+              optionDesc={t("servicelog:cluster.indexPrefixDesc")}
+              errorText={displayI18NMessage(openSearch.indexPrefixError)}
+            >
+              {isServiceLogType(taskType) ? (
+                <div className="flex align-center m-w-75p">
+                  <div style={{ flex: 1 }}>
+                    <TextInput
+                      className=""
+                      value={openSearch.indexPrefix}
+                      placeholder="log-example"
+                      onChange={(event) => {
+                        dispatch(indexPrefixChanged(event.target.value));
+                      }}
+                    />
+                  </div>
+                  <div>{openSearch.indexTaskTypeSuffix}-</div>
+                  <div style={{ width: 170 }}>
+                    <Select
+                      optionList={ServiceLogClusterIndexSuffixFormatList}
+                      value={openSearch.indexSuffix}
+                      onChange={(event) => {
+                        dispatch(indexSuffixChanged(event.target.value));
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex align-center m-w-75p">
+                  <div style={{ flex: 1 }}>
+                    <TextInput
+                      className=""
+                      value={openSearch.indexPrefix}
+                      placeholder="log-example"
+                      onChange={(event) => {
+                        dispatch(indexPrefixChanged(event.target.value));
+                        onChangeIndexPrefix?.(event.target.value);
+                        if (taskType !== LogSourceType.S3) {
+                          dispatch(
+                            logBucketPrefixChanged(
+                              `AppLogs/${event.target.value}/year=%Y/month=%m/day=%d/`
+                            )
+                          );
+                        }
+                      }}
+                    />
+                  </div>
+                  <div> - </div>
+                  <div style={{ width: 170 }}>
+                    <Select
+                      optionList={AppLogClusterIndexSuffixFormatList}
+                      value={openSearch.appIndexSuffix}
+                      onChange={(event) => {
+                        dispatch(appIndexSuffixChanged(event.target.value));
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </FormItem>
+
+            <FormItem
+              infoType={InfoBarTypes.NUMBER_OF_SHARDS}
+              optionTitle={t("servicelog:cluster.shardNum")}
+              optionDesc={t("servicelog:cluster.shardNumDesc")}
+              errorText={displayI18NMessage(openSearch.shardsError)}
+            >
+              <div className="m-w-75p">
+                <TextInput
+                  type="number"
+                  value={openSearch.shardNumbers}
+                  placeholder={t("servicelog:cluster.inputShardNum")}
+                  onChange={(event) => {
+                    dispatch(shardNumbersChanged(event.target.value));
+                  }}
+                />
+              </div>
+            </FormItem>
 
             <>
               {isServiceLogType(taskType) && (
@@ -162,90 +238,6 @@ const ConfigOpenSearch: React.FC<ConfigOpenSearchProps> = (
                 headerText={t("servicelog:cluster.additionalSetting")}
               >
                 <>
-                  {isServiceLogType(taskType) ? (
-                    <FormItem
-                      optionTitle={t("servicelog:cluster.indexPrefix")}
-                      optionDesc={`${t(
-                        "servicelog:cluster.indexPrefixDesc1"
-                      )} ${ServiceTypeDescMap[taskType].desc}${t(
-                        "servicelog:cluster.indexPrefixDesc2"
-                      )}`}
-                      errorText={displayI18NMessage(
-                        openSearch.indexPrefixError
-                      )}
-                    >
-                      <div className="flex align-center m-w-75p">
-                        <div style={{ flex: 1 }}>
-                          <TextInput
-                            className=""
-                            value={openSearch.indexPrefix}
-                            placeholder={t("servicelog:cluster.inputIndex")}
-                            onChange={(event) => {
-                              dispatch(indexPrefixChanged(event.target.value));
-                            }}
-                          />
-                        </div>
-                        <div>{ServiceTypeDescMap[taskType].pureSuffix}-</div>
-                        <div style={{ width: 170 }}>
-                          <Select
-                            optionList={ServiceLogClusterIndexSuffixFormatList}
-                            value={openSearch.indexSuffix}
-                            onChange={(event) => {
-                              dispatch(indexSuffixChanged(event.target.value));
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </FormItem>
-                  ) : (
-                    <FormItem
-                      optionTitle={t("applog:create.specifyOS.indexSuffix")}
-                      optionDesc={t("applog:create.specifyOS.indexSuffixDesc")}
-                    >
-                      <div className="flex align-center m-w-75p">
-                        <div style={{ flex: 1 }}>
-                          <TextInput
-                            disabled
-                            className=""
-                            value={openSearch.indexPrefix}
-                            onChange={(event) => {
-                              console.info(event);
-                            }}
-                          />
-                        </div>
-                        <div> - </div>
-                        <div style={{ width: 170 }}>
-                          <Select
-                            optionList={AppLogClusterIndexSuffixFormatList}
-                            value={openSearch.appIndexSuffix}
-                            onChange={(event) => {
-                              dispatch(
-                                appIndexSuffixChanged(event.target.value)
-                              );
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </FormItem>
-                  )}
-
-                  <FormItem
-                    optionTitle={t("servicelog:cluster.shardNum")}
-                    optionDesc={t("servicelog:cluster.shardNumDesc")}
-                    errorText={displayI18NMessage(openSearch.shardsError)}
-                  >
-                    <div className="m-w-75p">
-                      <TextInput
-                        type="number"
-                        value={openSearch.shardNumbers}
-                        placeholder={t("servicelog:cluster.inputShardNum")}
-                        onChange={(event) => {
-                          dispatch(shardNumbersChanged(event.target.value));
-                        }}
-                      />
-                    </div>
-                  </FormItem>
-
                   <FormItem
                     optionTitle={t("servicelog:cluster.replicaNum")}
                     optionDesc={t("servicelog:cluster.replicaNumDesc")}
@@ -273,37 +265,25 @@ const ConfigOpenSearch: React.FC<ConfigOpenSearchProps> = (
 
                   {!openSearch.rolloverSizeNotSupport && (
                     <FormItem
-                      optionTitle=""
-                      optionDesc=""
+                      optionTitle={t("servicelog:cluster.rolloverTitle")}
+                      optionDesc={t("servicelog:cluster.rolloverDesc")}
                       errorText={displayI18NMessage(openSearch.capacityError)}
                     >
-                      <>
-                        <Switch
-                          disabled={openSearch.rolloverSizeNotSupport}
-                          reverse
-                          isOn={openSearch.enableRolloverByCapacity}
-                          handleToggle={() => {
-                            dispatch(
-                              enableRolloverByCapacityChanged(
-                                !openSearch.enableRolloverByCapacity
-                              )
-                            );
-                          }}
-                          label={t("servicelog:cluster.enableRolloverByCap")}
-                          desc={t("servicelog:cluster.enableRolloverByCapDesc")}
-                        />
-                        <div className="flex align-center">
-                          <TextInput
-                            type="number"
-                            readonly={!openSearch.enableRolloverByCapacity}
-                            value={openSearch.rolloverSize}
-                            onChange={(event) => {
-                              dispatch(rolloverSizeChanged(event.target.value));
-                            }}
-                          />
-                          <div className="ml-10">GB</div>
-                        </div>
-                      </>
+                      <Select
+                        disabled={openSearch.rolloverSizeNotSupport}
+                        className="m-w-75p"
+                        allowEmpty
+                        value={openSearch.rolloverSize}
+                        optionList={[
+                          { name: "None", value: "" },
+                          { name: "10 GB", value: "10gb" },
+                          { name: "30 GB", value: "30gb" },
+                          { name: "50 GB", value: "50gb" },
+                        ]}
+                        onChange={(event) => {
+                          dispatch(rolloverSizeChanged(event.target.value));
+                        }}
+                      />
                     </FormItem>
                   )}
 

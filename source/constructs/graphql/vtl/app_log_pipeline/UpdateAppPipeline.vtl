@@ -1,0 +1,23 @@
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.id), "Invalid appPipelineId")
+
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.logConfigId), "Invalid logConfigId")   
+
+
+#if($ctx.args.logConfigVersionNumber.length() > 5)
+    $util.error("logConfigVersionNumber cannot exceed 5 characters.")
+#end
+
+#if($ctx.args.logProcessorConcurrency.length() > 4)
+    $util.error("logProcessorConcurrency cannot exceed 5 characters.")
+#end
+
+#if(!$ctx.args.logConfigVersionNumber || !$util.isNumber($ctx.args.logConfigVersionNumber)||$ctx.args.logConfigVersionNumber<1)
+    $util.error("Invalid logConfigVersionNumber")
+#end
+
+
+#if(!$ctx.args.logProcessorConcurrency || !$ctx.args.logProcessorConcurrency.matches("^(0|[1-9][0-9]*)$"))
+    $util.error("Invalid logProcessorConcurrency")
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

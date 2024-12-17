@@ -14,16 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React, { useMemo, useState } from "react";
-import CreateStep from "components/CreateStep";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfigServer } from "./steps/ConfigServer";
 import Button from "components/Button";
 import { useNavigate } from "react-router-dom";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createGrafana } from "graphql/mutations";
-import { CreateTags } from "pages/dataInjection/common/CreateTags";
-import { useTags } from "assets/js/hooks/useTags";
 import {
   grafana,
   validateGrafanaConnection,
@@ -49,7 +46,6 @@ export const ImportGrafana: React.FC = () => {
       name: t("lightengine:grafana.import"),
     },
   ];
-  const [curStep, setCurStep] = useState(0);
   const [loadingCreate, setLoadingCreate] = useState(false);
 
   const isGrafanaValid = useMemo(() => {
@@ -64,25 +60,6 @@ export const ImportGrafana: React.FC = () => {
     grafanaState.grafanaToken,
   ]);
 
-  const createStep = useMemo(
-    () => (
-      <CreateStep
-        list={[
-          {
-            name: t("lightengine:grafana.create.step.serverInfo"),
-          },
-          {
-            name: t("lightengine:grafana.create.step.createTags"),
-          },
-        ]}
-        activeIndex={curStep}
-      />
-    ),
-    [curStep]
-  );
-
-  const tags = useTags();
-
   const confirmImportGrafana = async () => {
     if (!isGrafanaValid) {
       return;
@@ -93,7 +70,6 @@ export const ImportGrafana: React.FC = () => {
         name: grafanaState.grafanaName,
         url: grafanaState.grafanaUrl,
         token: grafanaState.grafanaToken,
-        tags,
       });
       console.info("importRes:", importRes);
       navigate(`/grafana/list`);
@@ -104,84 +80,46 @@ export const ImportGrafana: React.FC = () => {
     }
   };
 
-  let nextButtonText = t("button.next");
-  if (curStep === 0) {
-    nextButtonText =
-      grafanaState.status === DomainStatusCheckType.PASSED
-        ? t("button.next")
-        : t("button.saveAndValidate");
-  }
+  const validateGrafana = () => {
+    if (!isGrafanaValid) {
+      dispatch(grafana.actions.validateGrafana());
+      return;
+    }
+    dispatch(
+      validateGrafanaConnection({
+        url: grafanaState.grafanaUrl,
+        token: grafanaState.grafanaToken,
+      })
+    );
+  };
+
+  useEffect(() => {
+    if (grafanaState.status === DomainStatusCheckType.PASSED) {
+      confirmImportGrafana();
+    }
+  }, [grafanaState.status]);
 
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
-      <div className="create-wrapper">
-        <div className="create-step">{createStep}</div>
-        <div className="create-content m-w-1024">
-          {curStep === 0 && (
-            <ConfigServer {...grafanaState} isNameReadOnly={false} />
-          )}
-
-          {curStep === 1 && <CreateTags />}
-          <div className="button-action text-right">
-            <Button
-              btnType="text"
-              onClick={() => {
-                navigate("/grafana/list");
-              }}
-            >
-              {t("button.cancel")}
-            </Button>
-            {curStep > 0 && (
-              <Button
-                disabled={loadingCreate}
-                onClick={() => {
-                  setCurStep((curStep) => {
-                    return curStep - 1 < 0 ? 0 : curStep - 1;
-                  });
-                }}
-              >
-                {t("button.previous")}
-              </Button>
-            )}
-
-            {curStep < 1 && (
-              <Button
-                loading={grafanaState.loading}
-                disabled={grafanaState.loading}
-                btnType="primary"
-                onClick={() => {
-                  if (curStep === 0 && !isGrafanaValid) {
-                    dispatch(grafana.actions.validateGrafana());
-                    return;
-                  }
-                  if (curStep === 0) {
-                    dispatch(
-                      validateGrafanaConnection({
-                        url: grafanaState.grafanaUrl,
-                        token: grafanaState.grafanaToken,
-                      })
-                    );
-                  }
-                  if (grafanaState.status === DomainStatusCheckType.PASSED) {
-                    setCurStep(curStep + 1);
-                  }
-                }}
-              >
-                {nextButtonText}
-              </Button>
-            )}
-
-            {curStep === 1 && (
-              <Button
-                btnType="primary"
-                onClick={confirmImportGrafana}
-                loading={loadingCreate}
-                disabled={loadingCreate}
-              >
-                {t("button.import")}
-              </Button>
-            )}
-          </div>
+      <div className="create-content m-w-1024">
+        <ConfigServer {...grafanaState} isNameReadOnly={false} />
+        <div className="button-action text-right">
+          <Button
+            btnType="text"
+            onClick={() => {
+              navigate("/grafana/list");
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            btnType="primary"
+            onClick={validateGrafana}
+            loading={loadingCreate || grafanaState.loading}
+            disabled={loadingCreate}
+          >
+            {t("button.validateAndImport")}
+          </Button>
         </div>
       </div>
     </CommonLayout>

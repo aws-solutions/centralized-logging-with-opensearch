@@ -10,10 +10,12 @@ class DynamoDBUtil:
     conn = AWSConnection()
 
     def __init__(self, table: str, max_attempts: int = 10):
-        self.dynamodb = self.conn.get_client("dynamodb", client_type="resource", max_attempts=max_attempts)
+        self.dynamodb = self.conn.get_client(
+            "dynamodb", client_type="resource", max_attempts=max_attempts
+        )
         self._table_name = table
-        self._table = self.dynamodb.Table(table) # type: ignore
-    
+        self._table = self.dynamodb.Table(table)  # type: ignore
+
     def put_item(self, item: dict) -> None:
         self._table.put_item(Item=item)
 
@@ -28,10 +30,14 @@ class DynamoDBUtil:
         resp = self._table.get_item(Key=key)
         item = resp.get("Item")
         if raise_if_not_found and not item:
-            raise KeyError(f'[Item is not found] Key: {key}')
+            raise KeyError(f"[Item is not found] Key: {key}")
         return item
-    
-    def list_items(self, filter: Union[Optional[ConditionBase], str] = None, projection_attribute_names: Optional[List[str]] = None) -> List[dict]:
+
+    def list_items(
+        self,
+        filter: Union[Optional[ConditionBase], str] = None,
+        projection_attribute_names: Optional[List[str]] = None,
+    ) -> List[dict]:
         """List all items in the table with filter expression or projection.
 
         list_items(Attr("status").eq("ERROR"))
@@ -46,14 +52,21 @@ class DynamoDBUtil:
         """
 
         def _items_iter():
-            for page_iterator in self.scan(filter=filter, projection_attribute_names=projection_attribute_names):
+            for page_iterator in self.scan(
+                filter=filter, projection_attribute_names=projection_attribute_names
+            ):
                 for item in page_iterator.get("Items", []):
                     yield item
 
         return list(_items_iter())
 
-    def scan(self, filter: Union[Optional[ConditionBase], str] = None, select: str = 'ALL_ATTRIBUTES', 
-             projection_attribute_names: Optional[List[str]] = None, consistent: bool = False) -> Iterator[dict]:
+    def scan(
+        self,
+        filter: Union[Optional[ConditionBase], str] = None,
+        select: str = "ALL_ATTRIBUTES",
+        projection_attribute_names: Optional[List[str]] = None,
+        consistent: bool = False,
+    ) -> Iterator[dict]:
         """
         List all items in the table with filter expression.
 
@@ -61,28 +74,36 @@ class DynamoDBUtil:
 
         scan_item(Attr("status").eq("ERROR"))
         """
-        
+
         expr_attr_names = {}
-        
+
         kwargs = {}
         if filter is not None:
-            kwargs['FilterExpression'] = filter
+            kwargs["FilterExpression"] = filter
         if projection_attribute_names is not None:
-            kwargs['ProjectionExpression'] = ",".join(f"#{attr_name}" for attr_name in projection_attribute_names)
+            kwargs["ProjectionExpression"] = ",".join(
+                f"#{attr_name}" for attr_name in projection_attribute_names
+            )
             for attr_name in projection_attribute_names:
                 expr_attr_names[f"#{attr_name}"] = attr_name
-            kwargs['ExpressionAttributeNames'] = expr_attr_names
-            
+            kwargs["ExpressionAttributeNames"] = expr_attr_names
 
         paginator = self._table.meta.client.get_paginator("scan")
-        for page_iterator in paginator.paginate(TableName=self._table_name,
-                                       Select=select,
-                                       ConsistentRead=consistent,
-                                       **kwargs):
+        for page_iterator in paginator.paginate(
+            TableName=self._table_name,
+            Select=select,
+            ConsistentRead=consistent,
+            **kwargs,
+        ):
             yield page_iterator
 
-    
-    def query(self, key_condition: Union[Optional[ConditionBase], str], filter: Union[Optional[ConditionBase], str] = None, select: str = 'ALL_ATTRIBUTES', consistent: bool = False) -> Iterator[dict]:
+    def query(
+        self,
+        key_condition: Union[Optional[ConditionBase], str],
+        filter: Union[Optional[ConditionBase], str] = None,
+        select: str = "ALL_ATTRIBUTES",
+        consistent: bool = False,
+    ) -> Iterator[dict]:
         """
         query items in the table with key and filter expression.
 
@@ -90,16 +111,19 @@ class DynamoDBUtil:
 
         query_item(Attr("status").eq("ERROR"))
         """
-        
+
         kwargs = {}
         if filter is not None:
-            kwargs['FilterExpression'] = filter
-        
-        paginator = self.dynamodb.meta.client.get_paginator('query')  # type: ignore
-        for page_iterator in paginator.paginate(TableName=self._table.table_name
-                , KeyConditionExpression=key_condition
-                , Select=select, ConsistentRead=consistent
-                , **kwargs):
+            kwargs["FilterExpression"] = filter
+
+        paginator = self.dynamodb.meta.client.get_paginator("query")  # type: ignore
+        for page_iterator in paginator.paginate(
+            TableName=self._table.table_name,
+            KeyConditionExpression=key_condition,
+            Select=select,
+            ConsistentRead=consistent,
+            **kwargs,
+        ):
             yield page_iterator
 
     def update_item(self, key: dict, item: dict) -> None:
@@ -134,7 +158,6 @@ class DynamoDBUtil:
             ExpressionAttributeNames=expr_attr_names,
             ExpressionAttributeValues=expr_attr_values,
         )
-    
+
     def delete_item(self, key: dict):
         return self._table.delete_item(Key=key)
-    

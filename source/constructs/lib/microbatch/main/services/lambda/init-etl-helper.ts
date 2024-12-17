@@ -14,13 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import * as path from "path";
-import { Aws, Duration, SymlinkFollowMode, aws_iam as iam, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
-import { InitLambdaLayerStack } from "./init-lambda-layer";
-import { InitDynamoDBStack } from "../dynamodb/init-dynamodb-stack";
-import { InitVPCStack } from "../vpc/init-vpc-stack";
-import { InitIAMStack } from "../iam/init-iam-stack";
+import * as path from 'path';
+import {
+  Aws,
+  Duration,
+  SymlinkFollowMode,
+  aws_iam as iam,
+  aws_lambda as lambda,
+  aws_ec2 as ec2,
+} from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { InitLambdaLayerStack } from './init-lambda-layer';
+import { InitLambdaPipelineResourcesBuilderStack } from './init-pipeline-resources-builder-stack';
+import { InitDynamoDBStack } from '../dynamodb/init-dynamodb-stack';
+import { InitIAMStack } from '../iam/init-iam-stack';
+import { InitVPCStack } from '../vpc/init-vpc-stack';
 
 export interface InitLambdaETLHelperProps {
   readonly solutionId: string;
@@ -28,6 +36,7 @@ export interface InitLambdaETLHelperProps {
   readonly microBatchVPCStack: InitVPCStack;
   readonly microBatchLambdaLayerStack: InitLambdaLayerStack;
   readonly microBatchIAMStack: InitIAMStack;
+  readonly pipelineResourcesBuilderStack: InitLambdaPipelineResourcesBuilderStack;
 }
 
 export class InitLambdaETLHelperStack extends Construct {
@@ -42,62 +51,89 @@ export class InitLambdaETLHelperStack extends Construct {
     let microBatchVPCStack = props.microBatchVPCStack;
     let microBatchIAMStack = props.microBatchIAMStack;
     let microBatchLambdaLayerStack = props.microBatchLambdaLayerStack;
+    let pipelineResourcesBuilderStack = props.pipelineResourcesBuilderStack;
 
-    // Create a Role for Lambda:ETLTransform 
-    this.ETLHelperRole = new iam.Role(this, "ETLHelperRole", {
+    // Create a Role for Lambda:ETLTransform
+    this.ETLHelperRole = new iam.Role(this, 'ETLHelperRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
 
     // Override the logical ID
-    const cfnETLHelperRole = this.ETLHelperRole.node.defaultChild as iam.CfnRole;
-    cfnETLHelperRole.overrideLogicalId("ETLHelperRole");
+    const cfnETLHelperRole = this.ETLHelperRole.node
+      .defaultChild as iam.CfnRole;
+    cfnETLHelperRole.overrideLogicalId('ETLHelperRole');
 
-    const ETLHelperRWDDBPolicy = new iam.Policy(this, "ETLHelperRWDDBPolicy", {
+    const ETLHelperRWDDBPolicy = new iam.Policy(this, 'ETLHelperRWDDBPolicy', {
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
-          actions: [
-            "dynamodb:PutItem",
-            "dynamodb:UpdateItem",
-          ],
+          actions: ['dynamodb:PutItem', 'dynamodb:UpdateItem'],
           resources: [microBatchDDBStack.ETLLogTable.tableArn],
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
-          actions: [
-            "dynamodb:GetItem",
-          ],
+          actions: ['dynamodb:GetItem'],
           resources: [microBatchDDBStack.MetaTable.tableArn],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['dynamodb:PutItem', 'dynamodb:UpdateItem'],
+          resources: [microBatchDDBStack.ETLLogTable.tableArn],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lambda:InvokeFunction'],
+          resources: [
+            pipelineResourcesBuilderStack.PipelineResourcesBuilder.functionArn,
+            `${pipelineResourcesBuilderStack.PipelineResourcesBuilder.functionArn}:*`,
+          ],
         }),
       ],
     });
 
     // Override the logical ID
-    const cfnETLHelperRWDDBPolicy = ETLHelperRWDDBPolicy.node.defaultChild as iam.CfnPolicy;
-    cfnETLHelperRWDDBPolicy.overrideLogicalId("ETLHelperRWDDBPolicy");
+    const cfnETLHelperRWDDBPolicy = ETLHelperRWDDBPolicy.node
+      .defaultChild as iam.CfnPolicy;
+    cfnETLHelperRWDDBPolicy.overrideLogicalId('ETLHelperRWDDBPolicy');
 
-    this.ETLHelperRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"));
-    this.ETLHelperRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole"));
-    this.ETLHelperRole.addManagedPolicy(microBatchIAMStack.KMSPublicAccessPolicy);
-    this.ETLHelperRole.addManagedPolicy(microBatchIAMStack.AthenaPublicAccessPolicy);
-    this.ETLHelperRole.addManagedPolicy(microBatchIAMStack.GluePublicAccessPolicy);
-    this.ETLHelperRole.addManagedPolicy(microBatchIAMStack.S3PublicAccessPolicy);
+    this.ETLHelperRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        'service-role/AWSLambdaBasicExecutionRole'
+      )
+    );
+    this.ETLHelperRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        'service-role/AWSLambdaVPCAccessExecutionRole'
+      )
+    );
+    this.ETLHelperRole.addManagedPolicy(
+      microBatchIAMStack.KMSPublicAccessPolicy
+    );
+    this.ETLHelperRole.addManagedPolicy(
+      microBatchIAMStack.AthenaPublicAccessPolicy
+    );
+    this.ETLHelperRole.addManagedPolicy(
+      microBatchIAMStack.GluePublicAccessPolicy
+    );
+    this.ETLHelperRole.addManagedPolicy(
+      microBatchIAMStack.S3PublicAccessPolicy
+    );
     this.ETLHelperRole.attachInlinePolicy(ETLHelperRWDDBPolicy);
 
     // Create a lambda to handle all cluster related APIs.
-    this.ETLHelper = new lambda.Function(this, "ETLHelper", {
+    this.ETLHelper = new lambda.Function(this, 'ETLHelper', {
       code: lambda.AssetCode.fromAsset(
-        path.join(__dirname, "../../../../../lambda/microbatch/etl_helper"),
-        { followSymlinks: SymlinkFollowMode.ALWAYS },
+        path.join(__dirname, '../../../../../lambda/microbatch/etl_helper'),
+        { followSymlinks: SymlinkFollowMode.ALWAYS }
       ),
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: "lambda_function.lambda_handler",
+      handler: 'lambda_function.lambda_handler',
       timeout: Duration.minutes(5),
       memorySize: 128,
       role: this.ETLHelperRole.withoutPolicyUpdates(),
       layers: [microBatchLambdaLayerStack.microBatchLambdaUtilsLayer],
       environment: {
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: solutionId,
         ETL_LOG_TABLE_NAME: microBatchDDBStack.ETLLogTable.tableName,
         META_TABLE_NAME: microBatchDDBStack.MetaTable.tableName,
@@ -110,7 +146,6 @@ export class InitLambdaETLHelperStack extends Construct {
 
     // Override the logical ID
     const cfnETLHelper = this.ETLHelper.node.defaultChild as lambda.CfnFunction;
-    cfnETLHelper.overrideLogicalId("ETLHelper");
-
+    cfnETLHelper.overrideLogicalId('ETLHelper');
   }
 }

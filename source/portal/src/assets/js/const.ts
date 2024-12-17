@@ -36,7 +36,6 @@ import {
   SyslogParser,
 } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
-import { StatusType } from "components/Status/Status";
 export const INVALID = "invalid";
 export const AUTO_REFRESH_INT = 8000;
 
@@ -47,20 +46,11 @@ export const SOLUTION_REPO_NAME = "centralized-logging-with-opensearch";
 export const LINUX_FLB_AGENT_VERSION = "FluentBit 1.9.10";
 export const WINDOWS_FLB_AGENT_VERSION = "FluentBit 3.0.4 (Community)";
 
-export const getFLBVersionByType = (
-  type?: EC2GroupPlatform,
-  status?: StatusType
-) => {
-  if (status === StatusType.Unknown) {
-    return "-";
-  }
+export const getFLBVersionByType = (type?: EC2GroupPlatform) => {
   return type === EC2GroupPlatform.Windows
     ? WINDOWS_FLB_AGENT_VERSION
     : LINUX_FLB_AGENT_VERSION;
 };
-
-export const ASG_SELECTION = "Auto Scaling group";
-export const DEFAULT_INSTANCE_SELECTION = "Manual";
 
 export const SIDE_BAR_OPEN_STORAGE_ID = "__log_hub_side_bar_open_storage_id__";
 export const AMPLIFY_CONFIG_JSON = "__log_hub_amplify_config_json__";
@@ -77,12 +67,6 @@ export const VPC_TASK_SUFFIX = "-vpcflow";
 export const AWSCONFIG_TASK_SUFFIX = "-config";
 
 export const LAMBDA_TASK_GROUP_PREFIX = "/aws/lambda/";
-export const RDS_TASK_GROUP_PREFIX = "/aws/rds";
-
-export const RDS_LOG_GROUP_SUFFIX_ERROR = "/error";
-export const RDS_LOG_GROUP_SUFFIX_SLOWQUERY = "/slowquery";
-export const RDS_LOG_GROUP_SUFFIX_GENERAL = "/general";
-export const RDS_LOG_GROUP_SUFFIX_AUDIT = "/audit";
 
 export const EN_LANGUAGE_LIST = ["en", "en_US", "en-US", "en_GB"];
 export const ZH_LANGUAGE_LIST = ["zh", "zh_CN", "zh-CN", "zh_TW"];
@@ -221,9 +205,6 @@ export const CLOUDWATCH_PRICING_LINK =
 export const PIPELINE_ALARM_DOC_LINK =
   "https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/log-alarms.html";
 
-export const PIPLINE_MONITORING_COST_LINK =
-  "https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/pipeline-monitoring.html";
-
 export const CLOUDWATCH_ALARM_LINK =
   "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html";
 
@@ -235,6 +216,9 @@ export const ATHENA_FORMAT_LINK =
 
 export const LAMBDA_CONCURRENCY_DOC_LINK =
   "https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html";
+
+export const SHARD_NUMBER_LINK =
+  "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/sizing-domains.html#bp-sharding";
 
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
@@ -261,47 +245,47 @@ type ServiceTypeDesc = {
 
 export const ServiceTypeDescMap: ServiceTypeDesc = {
   Amazon_S3: {
-    desc: "<bucket name>" + S3_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: S3_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: S3_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: S3_TASK_SUFFIX,
   },
   Amazon_RDS: {
-    desc: "<db identifier>" + RDS_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: RDS_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: RDS_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: RDS_TASK_SUFFIX,
   },
   Amazon_CloudTrail: {
-    desc: "<cloudtrail name>" + CLOUDTRAIL_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: CLOUDTRAIL_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: CLOUDTRAIL_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: CLOUDTRAIL_TASK_SUFFIX,
   },
   Amazon_CloudFront: {
-    desc: "<distribution id>" + CLOUDFRONT_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: CLOUDFRONT_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: CLOUDFRONT_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: CLOUDFRONT_TASK_SUFFIX,
   },
   Amazon_Lambda: {
-    desc: "<function name>" + LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: LAMBDA_TASK_SUFFIX,
   },
   Amazon_ELB: {
-    desc: "<elb name>" + ELB_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: ELB_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: ELB_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: ELB_TASK_SUFFIX,
   },
   Amazon_WAF: {
-    desc: "<waf name>" + WAF_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: WAF_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: WAF_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: WAF_TASK_SUFFIX,
   },
   Amazon_VPCLogs: {
-    desc: "<vpc name>" + VPC_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: VPC_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: VPC_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: VPC_TASK_SUFFIX,
   },
   Amazon_Config: {
-    desc: "<config name>" + AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
     pureSuffix: AWSCONFIG_TASK_SUFFIX,
   },
@@ -315,17 +299,17 @@ export enum ResourceStatus {
   INACTIVE = "INACTIVE",
 }
 
-export const ServiceTypeMap: LogMapType = {
-  S3: "S3",
-  CloudTrail: "CloudTrail",
-  CloudFront: "CloudFront",
-  Lambda: "Lambda",
-  RDS: "RDS",
-  ELB: "ELB",
-  WAF: "WAF",
-  WAFSampled: "WAFSampled",
-  VPC: "VPC",
-  Config: "Config",
+export const ServiceTypeNameMap: LogMapType = {
+  S3: "servicelog:create.service.s3",
+  CloudTrail: "servicelog:create.service.trail",
+  CloudFront: "servicelog:create.service.cloudfront",
+  Lambda: "servicelog:create.service.lambda",
+  RDS: "servicelog:create.service.rds",
+  ELB: "servicelog:create.service.elb",
+  WAF: "servicelog:create.service.waf",
+  WAFSampled: "servicelog:create.service.waf",
+  VPC: "servicelog:create.service.vpc",
+  Config: "servicelog:create.service.config",
 };
 
 export const ServiceTypeMapMidSuffix: any = {
@@ -355,57 +339,57 @@ export const ServiceLogTypeMap: LogMapType = {
 
 export const ServiceLogList = [
   {
-    value: ServiceLogType.Amazon_S3,
-    name: "servicelog:create.service.s3",
-    img: IMAGE_SL_Amazon_S3,
-    disabled: false,
-  },
-  {
-    value: ServiceLogType.Amazon_CloudTrail,
-    name: "servicelog:create.service.trail",
-    img: IMAGE_SL_Amazon_CloudTrail,
-    disabled: false,
-  },
-  {
-    value: ServiceLogType.Amazon_RDS,
-    name: "servicelog:create.service.rds",
-    img: IMAGE_SL_Amazon_RDS,
-    disabled: false,
-  },
-  {
     value: ServiceLogType.Amazon_CloudFront,
-    name: "servicelog:create.service.cloudfront",
+    name: ServiceTypeNameMap.CloudFront,
     img: IMAGE_SL_Amazon_CloudFront,
     disabled: false,
   },
   {
-    value: ServiceLogType.Amazon_Lambda,
-    name: "servicelog:create.service.lambda",
-    img: IMAGE_SL_Amazon_Lambda,
-    disabled: false,
-  },
-  {
-    value: ServiceLogType.Amazon_ELB,
-    name: "servicelog:create.service.elb",
-    img: IMAGE_SL_Amazon_ELB,
-    disabled: false,
-  },
-  {
     value: ServiceLogType.Amazon_WAF,
-    name: "servicelog:create.service.waf",
+    name: ServiceTypeNameMap.WAF,
     img: IMAGE_SL_Amazon_WAF,
     disabled: false,
   },
   {
+    value: ServiceLogType.Amazon_ELB,
+    name: ServiceTypeNameMap.ELB,
+    img: IMAGE_SL_Amazon_ELB,
+    disabled: false,
+  },
+  {
     value: ServiceLogType.Amazon_VPCLogs,
-    name: "servicelog:create.service.vpc",
+    name: ServiceTypeNameMap.VPC,
     img: IMAGE_SL_Amazon_VPCLogs,
     disabled: false,
   },
   {
+    value: ServiceLogType.Amazon_RDS,
+    name: ServiceTypeNameMap.RDS,
+    img: IMAGE_SL_Amazon_RDS,
+    disabled: false,
+  },
+  {
+    value: ServiceLogType.Amazon_CloudTrail,
+    name: ServiceTypeNameMap.CloudTrail,
+    img: IMAGE_SL_Amazon_CloudTrail,
+    disabled: false,
+  },
+  {
     value: ServiceLogType.Amazon_Config,
-    name: "servicelog:create.service.config",
+    name: ServiceTypeNameMap.Config,
     img: IMAGE_SL_Amazon_Config,
+    disabled: false,
+  },
+  {
+    value: ServiceLogType.Amazon_Lambda,
+    name: ServiceTypeNameMap.Lambda,
+    img: IMAGE_SL_Amazon_Lambda,
+    disabled: false,
+  },
+  {
+    value: ServiceLogType.Amazon_S3,
+    name: ServiceTypeNameMap.S3,
+    img: IMAGE_SL_Amazon_S3,
     disabled: false,
   },
 ];
@@ -580,86 +564,6 @@ export const REPLICA_COUNT_LIST = [
   { name: "2", value: "2" },
   { name: "3", value: "3" },
 ];
-
-export const AMPLIFY_ZH_DICT = {
-  zh: {
-    "Account recovery requires verified contact information":
-      "帐户恢复需要验证的联系信息",
-    "Add your Profile": "添加您的个人资料",
-    "Add your Website": "添加您的网站",
-    "Back to Sign In": "返回登录",
-    "Change Password": "更改密码",
-    Changing: "正在更改",
-    Code: "代码",
-    "Confirm Password": "确认密码",
-    "Confirm Sign Up": "确认注册",
-    "Confirm SMS Code": "确认短信验证码",
-    "Confirm TOTP Code": "确认 TOTP 验证码",
-    Confirm: "确认",
-    "Confirmation Code": "确认码",
-    Confirming: "正在确认",
-    "Create a new account": "创建新帐户",
-    "Create Account": "创建帐户",
-    "Creating Account": "正在创建帐户",
-    "Dismiss alert": "关闭告警",
-    Email: "电子邮件",
-    "Enter your Birthdate": "输入您的生日",
-    "Enter your code": "输入您的代码",
-    "Enter your Confirmation Code": "输入您的确认码",
-    "Enter your Email": "输入您的电子邮件",
-    "Enter your Family Name": "输入您的姓",
-    "Enter your Given Name": "输入您的名",
-    "Enter your Middle Name": "输入您的中间名",
-    "Enter your Name": "输入您的姓名",
-    "Enter your Nickname": "输入您的昵称",
-    "Enter your Password": "输入您的密码",
-    "Enter your phone number": "输入您的电话号码",
-    "Enter your Preferred Username": "输入您的首选用户名",
-    "Enter your username": "输入您的邮箱",
-    "Forgot password?": "忘记密码？",
-    "Forgot your password?": "忘记密码？",
-    "Hide password": "隐藏密码",
-    "It may take a minute to arrive": "可能需要一分钟",
-    Loading: "加载中",
-    "New password": "新密码",
-    or: "或",
-    Password: "密码",
-    "Phone Number": "电话号码",
-    "Please confirm your Password": "请确认您的密码",
-    "Resend Code": "重新发送代码",
-    "Reset your password": "重置密码",
-    "Reset your Password": "重置密码",
-    "Send code": "发送代码",
-    "Send Code": "发送代码",
-    Sending: "正在发送",
-    "Setup TOTP": "设置 TOTP",
-    "Show password": "显示密码",
-    "Sign in to your account": "登录到您的帐户",
-    "Sign In with Amazon": "使用亚马逊登录",
-    "Sign In with Apple": "使用苹果登录",
-    "Sign In with Facebook": "使用 Facebook 登录",
-    "Sign In with Google": "使用 Google 登录",
-    "Sign in": "登录",
-    "Sign In": "登录",
-    "Signing in": "正在登录",
-    Skip: "跳过",
-    Submit: "提交",
-    Submitting: "正在提交",
-    Username: "用户名",
-    "Verify Contact": "验证联系方式",
-    Verify: "验证",
-    "Reset Password": "重置密码",
-    "We Emailed You": "我们已向您发送电子邮件",
-    "We Sent A Code": "我们已发送代码",
-    "We Texted You": "我们已向您发送短信",
-    "Your code is on the way. To log in, enter the code we emailed to":
-      "您的代码已发送。要登录，请输入我们发送到您电子邮件的代码",
-    "Your code is on the way. To log in, enter the code we sent you":
-      "您的代码已发送。要登录，请输入我们发送给您的代码",
-    "Your code is on the way. To log in, enter the code we texted to":
-      "您的代码已发送。要登录，请输入我们发送到您手机的代码",
-  },
-};
 
 export const COMPRESS_TYPE = [
   {
@@ -970,3 +874,12 @@ export const APACHE_LOG_REG_MAP: any = {
 
 export const VPC_FLOW_LOG_SELECT_ALL_FIELDS =
   "${account-id} ${action} ${az-id} ${bytes} ${dstaddr} ${dstport} ${end} ${flow-direction} ${instance-id} ${interface-id} ${log-status} ${packets} ${pkt-dst-aws-service} ${pkt-dstaddr} ${pkt-src-aws-service} ${pkt-srcaddr} ${protocol} ${region} ${srcaddr} ${srcport} ${start} ${sublocation-id} ${sublocation-type} ${subnet-id} ${tcp-flags} ${traffic-path} ${type} ${version} ${vpc-id}";
+
+export const genSvcStepTitle = (isOSI = false) => {
+  return [
+    "step.logSource",
+    "step.analyticsEngine",
+    "step.logProcessing",
+    isOSI ? "step.tags" : "step.alarmTags",
+  ];
+};

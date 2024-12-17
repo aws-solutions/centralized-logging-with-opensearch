@@ -1,9 +1,14 @@
 {
   "testEnvironment": "node",
-  "roots": ["<rootDir>/test"],
-  "testMatch": ["**/*.test.ts"],
+  "detectOpenHandles": true,
+  "forceExit": true,
+  "roots": [
+    "<rootDir>/test"
+  ],
+  "testMatch": [
+    "**/*.test.ts"
+  ],
   "transform": {
     "^.+\\.tsx?$": "ts-jest"
   }
 }
-

@@ -19,6 +19,8 @@ import ASGSelect from "../ASGSelect";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { EC2GroupPlatform } from "API";
+import { appSyncRequestQuery } from "assets/js/request";
+import { act } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -33,6 +35,10 @@ jest.mock("react-i18next", () => ({
     type: "3rdParty",
     init: jest.fn(),
   },
+}));
+
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
 }));
 
 beforeEach(() => {
@@ -52,5 +58,34 @@ describe("ASGSelect", () => {
         />
       </MemoryRouter>
     );
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listResources: [
+          {
+            id: "1",
+            name: "asg1",
+            parentId: null,
+            description: "asg1",
+            __typename: "Resource",
+          },
+        ],
+      },
+    });
+    const mockChangeASG = jest.fn();
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <ASGSelect
+            accountId={""}
+            instanceGroupInfo={undefined}
+            changeASG={mockChangeASG}
+            platform={EC2GroupPlatform.Linux}
+          />
+        </MemoryRouter>
+      );
+    });
   });
 });

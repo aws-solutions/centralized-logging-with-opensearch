@@ -62,7 +62,10 @@ const Sidecar: React.FC<SidecarProps> = (props: SidecarProps) => {
       <HeaderPanel title={t("ekslog:ingest.detail.sidecarTab.guide")}>
         <div>
           <div>
-            <Alert content={t("ekslog:ingest.detail.sidecarTab.alert")} />
+            <Alert
+              title={t("ekslog:ingest.detail.sidecarTab.howTo")}
+              content={t("ekslog:ingest.detail.sidecarTab.alert")}
+            />
             <CodeCopy loading={loadingData} code={sidecarGuide} />
           </div>
         </div>

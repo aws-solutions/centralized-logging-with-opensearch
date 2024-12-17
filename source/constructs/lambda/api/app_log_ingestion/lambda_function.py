@@ -50,6 +50,11 @@ def list_app_log_ingestions(**args):
     return ingestion_svc.list_app_log_ingestions(**args)
 
 
+@router.route(field_name="refreshAppLogIngestion")
+def refresh_app_log_ingestion(**args):
+    return ingestion_svc.refresh_app_log_ingestion(**args)
+
+
 @router.route(field_name="getK8sDeploymentContentWithDaemonSet")
 def get_k8s_deployment_content_with_daemon_set(**args) -> str:
     source_id = args.get("sourceId")

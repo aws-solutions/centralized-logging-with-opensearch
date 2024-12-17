@@ -41,3 +41,49 @@ export const AppStoreMockData = {
   showInfoBar: false,
   infoBarType: undefined,
 };
+
+export const MockMemberAccountData = {
+  id: "test",
+  subAccountId: "111111111111",
+  region: "us-example-1",
+  subAccountName: "test-en",
+  subAccountRoleArn:
+    "arn:aws:iam::111111111111:role/test-CrossAccountRoleFACE29D1-xxx",
+  agentInstallDoc: "test-FluentBitDocumentInstallationForLinux-xxx",
+  agentConfDoc: "test-FluentBitConfigDownloading-xxx",
+  windowsAgentInstallDoc:
+    "test-WindowsFluentBitDocumentInstallationForWindows-xxxx",
+  windowsAgentConfDoc: "test-FluentBitConfigDownloadingForWindows-xxxx",
+  agentStatusCheckDoc: "test-FluentBitStatusCheckDocument-xxxx",
+  subAccountBucketName: "test-xxxx-xxxx",
+  subAccountStackId:
+    "arn:aws:cloudformation:us-example-1:111111111111:stack/test/xxxx-xxxx-xxxx-xxxx-xxxx",
+  subAccountKMSKeyArn:
+    "arn:aws:kms:us-example-1:111111111111:key/xxxx-xxxx-xxxx-xxxx-xxxx",
+  subAccountVpcId: "vpc-test",
+  subAccountPublicSubnetIds: "subnet-1, subnet-2",
+  subAccountIamInstanceProfileArn:
+    "arn:aws:iam::111111111111:instance-profile/test-xxxx-xxxx",
+  subAccountFlbConfUploadingEventTopicArn:
+    "arn:aws:sns:us-example-1:111111111111:test-FlbUploadingEventSubscriptionTopic822D837F-xxxx",
+  createdAt: "2024-02-05T02:38:03Z",
+  status: "ACTIVE",
+  tags: [],
+  __typename: "SubAccountLink",
+};
+
+export const MockNewAccountData = [
+  "test-en",
+  "111111111111",
+  "arn:aws:iam::111111111111:role/test-CrossAccountRoleFACE29D1-xxx",
+  "test-FluentBitDocumentInstallationForLinux-xxx",
+  "test-FluentBitConfigDownloading-xxx",
+  "test-WindowsFluentBitDocumentInstallationForWindows-xxxx",
+  "test-FluentBitConfigDownloadingForWindows-xxxx",
+  "test-FluentBitStatusCheckDocument-xxxx",
+  "test-xxxx-xxxx",
+  "arn:aws:cloudformation:us-example-1:111111111111:stack/test/xxxx-xxxx-xxxx-xxxx-xxxx",
+  "arn:aws:kms:us-example-1:111111111111:key/xxxx-xxxx-xxxx-xxxx-xxxx",
+  "arn:aws:iam::111111111111:instance-profile/test-xxxx-xxxx",
+  "arn:aws:sns:us-example-1:111111111111:test-FlbUploadingEventSubscriptionTopic822D837F-xxxx",
+];

@@ -17,7 +17,6 @@ import { LAMBDA_CONCURRENCY_DOC_LINK } from "assets/js/const";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
-import ExpandableSection from "components/ExpandableSection";
 import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
@@ -32,7 +31,6 @@ import {
 import React, { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { InfoBarTypes } from "reducer/appReducer";
 import { Actions, RootState } from "reducer/reducers";
 import {
   LogProcessorType,
@@ -44,13 +42,24 @@ import { Dispatch } from "redux";
 interface SelectProcessorProps {
   supportOSI: boolean;
   enablePlugins?: boolean;
+  hideTitle?: boolean;
+  disableLambda?: boolean;
+  disableOSI?: boolean;
+  disableInput?: boolean;
 }
 
 const SelectLogProcessor: React.FC<SelectProcessorProps> = (
   props: SelectProcessorProps
 ) => {
   const { t } = useTranslation();
-  const { supportOSI, enablePlugins } = props;
+  const {
+    hideTitle,
+    supportOSI,
+    enablePlugins,
+    disableLambda,
+    disableOSI,
+    disableInput,
+  } = props;
   const selectProcessor = useSelector(
     (state: RootState) => state.selectProcessor
   );
@@ -100,7 +109,7 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
 
   if (selectProcessor.serviceAvailableCheckedLoading) {
     return (
-      <PagePanel title={t("processor.selectLogProcessor")}>
+      <PagePanel title={t("step.logProcessing")}>
         <HeaderPanel title={t("processor.logProcessorSettings")}>
           <LoadingText />
         </HeaderPanel>
@@ -109,9 +118,9 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
   }
 
   return (
-    <PagePanel title={t("processor.selectLogProcessor")}>
+    <PagePanel title={hideTitle ? "" : t("step.logProcessing")}>
       <HeaderPanel title={t("processor.logProcessorSettings")}>
-        <FormItem optionTitle={t("processor.logProcessorType")}>
+        <FormItem optionTitle="">
           <Tiles
             onChange={(e) => {
               dispatch({
@@ -122,29 +131,27 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
             value={selectProcessor.logProcessorType}
             items={[
               {
-                label: "Lambda",
+                disabled: disableLambda,
+                label: t("processor.lambda"),
                 description: t("processor.lambdaDesc"),
                 value: LogProcessorType.LAMBDA,
               },
-              ...(supportOSI && selectProcessor.serviceAvailable
-                ? [
-                    {
-                      label: "OSI",
-                      description: t("processor.osiDesc"),
-                      value: LogProcessorType.OSI,
-                      infoSpanType: InfoBarTypes.OSI_PIPELINE,
-                    },
-                  ]
-                : []),
+
+              {
+                disabled:
+                  !supportOSI ||
+                  !selectProcessor.serviceAvailable ||
+                  disableOSI,
+                label: t("processor.osi"),
+                description: t("processor.osiDesc"),
+                value: LogProcessorType.OSI,
+              },
             ]}
           />
         </FormItem>
         <>
           {selectProcessor.logProcessorType === LogProcessorType.LAMBDA && (
-            <ExpandableSection
-              defaultExpanded={true}
-              headerText={t("processor.lambdaConcurrency")}
-            >
+            <FormItem optionTitle={t("processor.lambdaConcurrency")}>
               <>
                 <div className="mb-10">
                   {t("processor.accountConcurrency")}
@@ -175,74 +182,80 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
                     type="number"
                     value={selectProcessor.logProcessorConcurrency}
                     onChange={(e) => {
-                      dispatch({
-                        type: SelectProcessorActionTypes.CHANGE_LAMBDA_CONCURRENCY,
-                        concurrency: e.target.value,
-                      });
+                      if (/^[0-9]*$/.test(e.target.value)) {
+                        dispatch({
+                          type: SelectProcessorActionTypes.CHANGE_LAMBDA_CONCURRENCY,
+                          concurrency: e.target.value,
+                        });
+                      }
                     }}
                   />
                 </FormItem>
               </>
-            </ExpandableSection>
+            </FormItem>
+          )}
+        </>
+        <>
+          {selectProcessor.logProcessorType === LogProcessorType.OSI && (
+            <>
+              <FormItem
+                optionTitle={t("processor.pipelineCapacity")}
+                optionDesc={t("processor.pipelineCapacityDesc")}
+              >
+                <>
+                  <FormItem
+                    optionTitle={t("processor.min")}
+                    errorText={t(selectProcessor.minOCUError)}
+                  >
+                    <TextInput
+                      disabled={disableInput}
+                      placeholder="1"
+                      className="m-w-45p"
+                      type="number"
+                      value={selectProcessor.minOCU}
+                      onChange={(e) => {
+                        dispatch({
+                          type: SelectProcessorActionTypes.CHANGE_MIN_OCU,
+                          minOCU: e.target.value,
+                        });
+                      }}
+                    />
+                  </FormItem>
+
+                  <FormItem
+                    optionTitle={t("processor.max")}
+                    errorText={t(selectProcessor.maxOCUError)}
+                  >
+                    <TextInput
+                      disabled={disableInput}
+                      placeholder="4"
+                      className="m-w-45p"
+                      type="number"
+                      value={selectProcessor.maxOCU}
+                      onChange={(e) => {
+                        dispatch({
+                          type: SelectProcessorActionTypes.CHANGE_MAX_OCU,
+                          maxOCU: e.target.value,
+                        });
+                      }}
+                    />
+                  </FormItem>
+                  <Alert content={t("processor.minMaxTips")} />
+                </>
+              </FormItem>
+
+              {enablePlugins && (
+                <div className="mt-m10">
+                  <Alert
+                    type={AlertType.Warning}
+                    content={t("processor.disabledEnrich")}
+                  />
+                </div>
+              )}
+            </>
           )}
         </>
       </HeaderPanel>
-      <>
-        {selectProcessor.logProcessorType === LogProcessorType.OSI && (
-          <>
-            <HeaderPanel
-              title={t("processor.pipelineCapacity")}
-              desc={t("processor.pipelineCapacityDesc")}
-            >
-              <FormItem
-                optionTitle={t("processor.min")}
-                errorText={t(selectProcessor.minOCUError)}
-              >
-                <TextInput
-                  placeholder="1"
-                  className="m-w-45p"
-                  type="number"
-                  value={selectProcessor.minOCU}
-                  onChange={(e) => {
-                    dispatch({
-                      type: SelectProcessorActionTypes.CHANGE_MIN_OCU,
-                      minOCU: e.target.value,
-                    });
-                  }}
-                />
-              </FormItem>
-
-              <FormItem
-                optionTitle={t("processor.max")}
-                errorText={t(selectProcessor.maxOCUError)}
-              >
-                <TextInput
-                  placeholder="4"
-                  className="m-w-45p"
-                  type="number"
-                  value={selectProcessor.maxOCU}
-                  onChange={(e) => {
-                    dispatch({
-                      type: SelectProcessorActionTypes.CHANGE_MAX_OCU,
-                      maxOCU: e.target.value,
-                    });
-                  }}
-                />
-              </FormItem>
-
-              <Alert content={t("processor.minMaxTips")} />
-            </HeaderPanel>
-            {enablePlugins && (
-              <div className="mt-m10">
-                <Alert
-                  type={AlertType.Warning}
-                  content={t("processor.disabledEnrich")}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </>
     </PagePanel>
   );
 };

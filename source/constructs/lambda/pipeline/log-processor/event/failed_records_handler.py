@@ -4,17 +4,19 @@
 import os
 import json
 from commonlib.logging import get_logger
+from commonlib import AWSConnection
 from io import StringIO
 import csv
-import boto3
+
 from datetime import datetime
-from pathlib import Path
+
 
 logger = get_logger(__name__)
 
 default_region = os.environ.get("AWS_REGION")
 failed_log_bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
-s3_local = boto3.resource("s3", region_name=default_region)
+conn = AWSConnection()
+s3_local = conn.get_client("s3", client_type="resource")
 
 index_prefix = os.environ.get("INDEX_PREFIX").lower()
 

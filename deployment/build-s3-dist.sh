@@ -226,6 +226,7 @@ staging_dist_dir="$template_dir/staging"
 template_dist_dir="$template_dir/global-s3-assets"
 build_dist_dir="$template_dir/regional-s3-assets"
 source_dir="$template_dir/../source"
+s3_list_objects_dir="$template_dir/../deployment/ecr/clo-s3-list-objects"
 
 echo "------------------------------------------------------------------------------"
 echo "${bold}[Init] Remove any old dist files from previous runs${normal}"
@@ -370,3 +371,7 @@ cleanup_temporary_generted_files
 
 # Return to original directory from when we started the build
 cd $template_dir
+
+# build ecr
+echo "Run s3_list_objects_dir/build.sh"
+t do_cmd $s3_list_objects_dir/build.sh

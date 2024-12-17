@@ -1,7 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import json
 from commonlib.logging import get_logger
 import os
 from datetime import datetime
@@ -9,7 +8,13 @@ from boto3.dynamodb.conditions import Attr
 
 
 from commonlib.model import LogConfig, StatusEnum
-from commonlib import AWSConnection, handle_error, AppSyncRouter, APIException, ErrorCode
+from commonlib import (
+    AWSConnection,
+    handle_error,
+    AppSyncRouter,
+    APIException,
+    ErrorCode,
+)
 from commonlib.utils import paginate
 
 from commonlib.dao import LogConfigDao
@@ -27,8 +32,13 @@ dao = LogConfigDao(log_config_table_name)
 
 @handle_error
 def lambda_handler(event, _):
-    logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
+
     return router.resolve(event)
+
+
+@router.route(field_name="listLogConfigVersions")
+def list_log_config_versions(**args):
+    return dao.list_log_config_versions(args["id"])
 
 
 @router.route(field_name="createLogConfig")
@@ -38,14 +48,20 @@ def create_log_config(**args):
         raise APIException(ErrorCode.ITEM_ALREADY_EXISTS, r"${common:error.configAlreadyExists}")
     # fmt: on
     args["version"] = 1
-    s = LogConfig(**args)
-    return dao.save(s)
+    try:
+        s = LogConfig(**args)
+        return dao.save(s)
+    except ValueError:
+        raise APIException(ErrorCode.INVALID_ITEM)
 
 
 @router.route(field_name="updateLogConfig")
 def update_log_config(**args):
-    s = LogConfig(**args)
-    return dao.update_log_config(s)
+    try:
+        s = LogConfig(**args)
+        return dao.update_log_config(s)
+    except ValueError:
+        raise APIException(ErrorCode.INVALID_ITEM)
 
 
 @router.route(field_name="deleteLogConfig")

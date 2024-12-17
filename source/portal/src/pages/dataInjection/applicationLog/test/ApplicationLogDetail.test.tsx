@@ -18,6 +18,9 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter, useParams } from "react-router-dom";
 import ApplicationLogDetail from "../ApplicationLogDetail";
+import { appSyncRequestQuery } from "assets/js/request";
+import { MockAppLogDetailData } from "test/applog.mock";
+import { instanceGroupMockData } from "test/instance.mock";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,6 +42,11 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   const mockParams = { id: "i-xxxxxxxx", version: "1" };
   // Make useParams return the mock parameters
@@ -48,6 +56,12 @@ beforeEach(() => {
 
 describe("ApplicationLogDetail", () => {
   it("renders without errors", () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getAppPipeline: { ...MockAppLogDetailData },
+        getLogSource: instanceGroupMockData,
+      },
+    });
     const { getByText } = renderWithProviders(
       <MemoryRouter
         initialEntries={["/log-pipeline/application-log/detail/xxx-xxx"]}

@@ -56,6 +56,13 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
+            <ValueWithLabel
+              label={t("ekslog:ingest.detail.configTab.revision")}
+            >
+              {`${curLogConfig?.version ?? "-"}`}
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("ekslog:ingest.detail.configTab.type")}>
               {defaultStr(curLogConfig?.logType, "-")}
             </ValueWithLabel>
@@ -202,9 +209,6 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                         <th className="time format">
                           {t("resource:config.detail.timeFormat")}
                         </th>
-                        <th className="time key">
-                          {t("resource:config.parsing.timeKey")}
-                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -222,11 +226,6 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                                 element?.format,
                                 "-"
                               )}
-                            </td>
-                            <td className="flex-1">
-                              {element?.key === curLogConfig.timeKey
-                                ? `${t("yes")} (${element?.format ?? "-"})`
-                                : t("no")}
                             </td>
                           </tr>
                         );
@@ -271,7 +270,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             <div>
               <div className="mt-10">
                 <ValueWithLabel label={t("resource:config.parsing.timeKey")}>
-                  {defaultStr(curLogConfig.timeKey, t("none"))}
+                  {defaultStr(curLogConfig.timeKey, "-")}
                 </ValueWithLabel>
               </div>
 
@@ -303,57 +302,62 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             </div>
           )}
 
-          {curLogConfig?.filterConfigMap?.filters && (
-            <div className="mt-10">
-              <ValueWithLabel label={t("resource:config.filter.name")}>
-                <>
-                  <div className="mt-10">
-                    {t("resource:config.filter.enabled")}:{" "}
-                    {curLogConfig.filterConfigMap.enabled ? t("yes") : t("no")}
-                  </div>
-                  {curLogConfig.filterConfigMap.enabled && (
-                    <div className="mt-10 m-w-75p">
-                      <table className="log-detail-specs">
-                        <thead>
-                          <tr>
-                            <th className="name">
-                              {t("resource:config.filter.key")}
-                            </th>
-                            <th className="type">
-                              {t("resource:config.filter.condition")}
-                            </th>
-                            <th className="value">
-                              {t("resource:config.filter.regex")}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {curLogConfig.filterConfigMap.filters?.map(
-                            (element, index) => {
-                              return (
-                                <tr key={identity(index)}>
-                                  <td className="flex-1">{element?.key}</td>
-                                  <td className="flex-1">
-                                    {t(
-                                      FILTER_CONDITION_LIST.find(
-                                        (ele) =>
-                                          element?.condition === ele.value
-                                      )?.name ?? ""
-                                    )}
-                                  </td>
-                                  <td className="flex-1">{element?.value}</td>
-                                </tr>
-                              );
-                            }
-                          )}
-                        </tbody>
-                      </table>
+          {curLogConfig?.filterConfigMap?.filters &&
+            curLogConfig.filterConfigMap.enabled && (
+              <div className="mt-10">
+                <ValueWithLabel label={t("resource:config.filter.name")}>
+                  <>
+                    <div className="mt-10">
+                      {t("resource:config.filter.enabled")}:{" "}
+                      {curLogConfig.filterConfigMap.enabled
+                        ? t("yes")
+                        : t("no")}
                     </div>
-                  )}
-                </>
-              </ValueWithLabel>
-            </div>
-          )}
+                    {curLogConfig.filterConfigMap.enabled && (
+                      <div className="mt-10 m-w-75p">
+                        <table className="log-detail-specs">
+                          <thead>
+                            <tr>
+                              <th className="name">
+                                {t("resource:config.filter.key")}
+                              </th>
+                              <th className="type">
+                                {t("resource:config.filter.condition")}
+                              </th>
+                              <th className="value">
+                                {t("resource:config.filter.regex")}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {curLogConfig.filterConfigMap.filters?.map(
+                              (element, index) => {
+                                return (
+                                  <tr key={identity(index)}>
+                                    <td className="flex-1">{element?.key}</td>
+                                    <td className="flex-1">
+                                      {t(
+                                        defaultStr(
+                                          FILTER_CONDITION_LIST.find(
+                                            (ele) =>
+                                              element?.condition === ele.value
+                                          )?.name
+                                        )
+                                      )}
+                                    </td>
+                                    <td className="flex-1">{element?.value}</td>
+                                  </tr>
+                                );
+                              }
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                </ValueWithLabel>
+              </div>
+            )}
         </div>
       </div>
     </div>

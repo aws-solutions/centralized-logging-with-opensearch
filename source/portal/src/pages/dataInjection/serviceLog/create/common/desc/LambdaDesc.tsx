@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import ExtLink from "components/ExtLink";
-import LambdaArch from "assets/images/desc/lambdaArch.webp";
-import { LAMBDA_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 const LambdaDesc: React.FC = () => {
   const { t } = useTranslation();
@@ -27,22 +24,6 @@ const LambdaDesc: React.FC = () => {
       </div>
       <div className="ingest-desc-desc">
         {t("servicelog:lambda.desc.ingest")}
-        <ExtLink to={LAMBDA_LOG_LINK}>
-          {t("servicelog:lambda.desc.lambdaLog")}
-        </ExtLink>{" "}
-        {t("intoDomain")}
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:lambda.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
-      <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={LambdaArch}
-        />
       </div>
     </div>
   );

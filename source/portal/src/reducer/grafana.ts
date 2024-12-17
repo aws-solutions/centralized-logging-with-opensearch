@@ -21,10 +21,7 @@ import {
   GrafanaStatusCheckResponse,
 } from "API";
 import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
-import {
-  pipFieldValidator,
-  validateRequiredText,
-} from "assets/js/utils";
+import { pipFieldValidator, validateRequiredText } from "assets/js/utils";
 import { checkGrafana } from "graphql/queries";
 import i18n from "i18n";
 
@@ -112,7 +109,7 @@ export const validateGrafanaToken = pipFieldValidator(
 );
 
 export const validateGrafanaUrl = pipFieldValidator(
-  validateRequiredText(() => i18n.t("lightengine:grafana.noUrlError")),
+  validateRequiredText(() => i18n.t("lightengine:grafana.noUrlError"))
 );
 
 export const grafana = createSlice({

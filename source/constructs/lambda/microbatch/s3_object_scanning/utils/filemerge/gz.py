@@ -9,20 +9,22 @@ from typing import Callable, Iterator, TypeVar
 
 
 def stream_to_gzip(path: Path, contents: Iterator[bytes]) -> None:
-    with gzip.open(path, 'w') as writer:
+    with gzip.open(path, "w") as writer:
         for content in contents:
             writer.write(content)
 
 
 def stream_from_gzip(path: Path) -> Iterator[gzip.GzipFile]:
-    with gzip.open(path, 'r') as reader:
+    with gzip.open(path, "r") as reader:
         yield reader
 
 
 T = TypeVar("T")
 
 
-def merge(items: Iterator, max_size: int, sizer: Callable = sys.getsizeof) -> Iterator[list]:
+def merge(
+    items: Iterator, max_size: int, sizer: Callable = sys.getsizeof
+) -> Iterator[list]:
     """Coalesce items into chunks. Tries to maximize chunk size and not exceed max_size.
 
     If an item is larger than max_size, we will always exceed max_size, so make a
@@ -53,8 +55,8 @@ def stream_from_dir(directory: Path) -> Iterator[gzip.GzipFile]:
             yield from stream_from_gzip(path)
 
 
-def merge_gzip(in_directory: Path, output_path, max_size: int = 20 * 2 ** 20) -> None:
+def merge_gzip(in_directory: Path, output_path, max_size: int = 20 * 2**20) -> None:
     gz_files = stream_from_dir(in_directory)
     content_groups = merge(gz_files, max_size)
-    merge_contents = (b''.join(group) for group in content_groups)
+    merge_contents = (b"".join(group) for group in content_groups)
     stream_to_gzip(output_path, merge_contents)

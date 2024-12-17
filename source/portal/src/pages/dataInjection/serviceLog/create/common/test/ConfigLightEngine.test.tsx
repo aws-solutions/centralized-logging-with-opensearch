@@ -59,7 +59,7 @@ describe("ConfigLightEngine", () => {
       }
     );
     expect(
-      getByText("lightengine:engine.create.specifyLightEngine")
+      getByText("lightengine:engine.create.configTitle")
     ).toBeInTheDocument();
   });
 });

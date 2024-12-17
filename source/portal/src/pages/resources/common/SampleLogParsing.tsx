@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import HeaderPanel from "components/HeaderPanel";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PageType } from "./LogConfigComp";
 import TextArea from "components/TextArea";
@@ -32,7 +32,7 @@ import {
   isCustomRegexType,
   isCustomType,
   isMultilineCustom,
-  isNginxOrApache,
+  isApache,
   isSingleLineText,
   isSpringBootType,
   jsonSchemaChanged,
@@ -78,7 +78,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = ({ pageType }) => {
     if (
       (logConfig.data.userSampleLog && pageType === PageType.New) ||
       (pageType === PageType.Edit &&
-        isNginxOrApache(logConfig.data.logType) &&
+        isApache(logConfig.data.logType) &&
         logConfig.data.userSampleLog)
     ) {
       if (
@@ -91,6 +91,15 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = ({ pageType }) => {
       }
     }
   }, [logConfig.data.userSampleLog]);
+
+  const showTimezone = useMemo(() => {
+    return (
+      logConfig.data.timeKey &&
+      !logConfig.regexKeyList
+        .find((item) => item.key === logConfig.data.timeKey)
+        ?.format?.includes("%z")
+    );
+  }, [logConfig.selectTimeKeyList, logConfig.data.timeKey]);
 
   return (
     <>
@@ -155,8 +164,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = ({ pageType }) => {
                     />
                   )}
 
-                {(logConfig.data.logType === LogType.Nginx ||
-                  logConfig.data.logType === LogType.Apache) &&
+                {logConfig.data.logType === LogType.Apache &&
                   Object.keys(logConfig.logResMap).map(
                     (item: any, index: number) => {
                       return (
@@ -185,22 +193,23 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = ({ pageType }) => {
               logConfig.regexKeyList?.length > 0 &&
               isCustomType(logConfig) && <TimeKey />}
 
-            {(isCustomType(logConfig) || isSpringBootType(logConfig)) && (
-              <FormItem
-                optionTitle={t("resource:config.parsing.timezone")}
-                optionDesc={t("resource:config.parsing.timezoneDesc")}
-              >
-                <Select
-                  className="m-w-35p"
-                  placeholder={t("resource:config.parsing.selectTimezone")}
-                  optionList={generateTimeZoneList()}
-                  value={defaultStr(logConfig.data.timeOffset)}
-                  onChange={(event) => {
-                    dispatch(timeOffsetChanged(event.target.value));
-                  }}
-                ></Select>
-              </FormItem>
-            )}
+            {(isCustomType(logConfig) || isSpringBootType(logConfig)) &&
+              showTimezone && (
+                <FormItem
+                  optionTitle={t("resource:config.parsing.timezone")}
+                  optionDesc={t("resource:config.parsing.timezoneDesc")}
+                >
+                  <Select
+                    className="m-w-35p"
+                    placeholder={t("resource:config.parsing.selectTimezone")}
+                    optionList={generateTimeZoneList()}
+                    value={defaultStr(logConfig.data.timeOffset)}
+                    onChange={(event) => {
+                      dispatch(timeOffsetChanged(event.target.value));
+                    }}
+                  ></Select>
+                </FormItem>
+              )}
           </>
         </HeaderPanel>
       )}

@@ -45,10 +45,9 @@ const LogConfig: React.FC = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [curTipsLogConfig, setCurTipsLogConfig] = useState<LogConf>();
   const [selectedLogConfig, setSelectedLogConfig] = useState<any[]>([]);
-  const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [logConfigList, setLogConfigList] = useState<LogConf[]>([]);
-  const [totoalCount, setTotoalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [curPage, setCurPage] = useState(1);
 
   // Get Log Config List
@@ -64,7 +63,7 @@ const LogConfig: React.FC = () => {
       console.info("resData:", resData);
       const dataLogConfigList: LogConf[] =
         resData.data.listLogConfigs.logConfigs;
-      setTotoalCount(resData.data.listLogConfigs.total);
+      setTotalCount(resData.data.listLogConfigs.total);
       setLogConfigList(dataLogConfigList);
       setLoadingData(false);
     } catch (error) {
@@ -83,7 +82,7 @@ const LogConfig: React.FC = () => {
   };
 
   // Confirm to Remove Log Config By Id
-  const confimRemoveLogConfig = async () => {
+  const confirmRemoveLogConfig = async () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteLogConfig, {
@@ -99,11 +98,6 @@ const LogConfig: React.FC = () => {
     }
   };
 
-  // Click View Detail Button Redirect to detail page
-  const clickToReviewDetail = () => {
-    navigate(`/resources/log-config/detail/${selectedLogConfig[0]?.id}`);
-  };
-
   // Get Log Config list when page rendered.
   useEffect(() => {
     getLogConfigList();
@@ -111,12 +105,6 @@ const LogConfig: React.FC = () => {
 
   // Disable delete button and view detail button when no row selected.
   useEffect(() => {
-    console.info("selectedLogConfig:", selectedLogConfig);
-    if (selectedLogConfig.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
     if (selectedLogConfig.length > 0) {
       setDisabledDelete(false);
     } else {
@@ -135,7 +123,7 @@ const LogConfig: React.FC = () => {
       <div className="table-data">
         <TablePanel
           trackId="id"
-          title={t("resource:config.list.config")}
+          title={t("resource:config.name")}
           changeSelected={(item) => {
             console.info("item:", item);
             setSelectedLogConfig(item);
@@ -168,6 +156,7 @@ const LogConfig: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
                 onClick={() => {
@@ -181,14 +170,7 @@ const LogConfig: React.FC = () => {
                 <ButtonRefresh loading={loadingData} />
               </Button>
               <Button
-                disabled={disabledDetail}
-                onClick={() => {
-                  clickToReviewDetail();
-                }}
-              >
-                {t("button.viewDetail")}
-              </Button>
-              <Button
+                data-testid="delete-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeLogConfig();
@@ -197,6 +179,7 @@ const LogConfig: React.FC = () => {
                 {t("button.delete")}
               </Button>
               <Button
+                data-testid="create-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/resources/log-config/create");
@@ -208,7 +191,7 @@ const LogConfig: React.FC = () => {
           }
           pagination={
             <Pagination
-              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              count={Math.ceil(totalCount / PAGE_SIZE)}
               page={curPage}
               onChange={handlePageChange}
               size="small"
@@ -226,6 +209,7 @@ const LogConfig: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -235,10 +219,11 @@ const LogConfig: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {
-                confimRemoveLogConfig();
+                confirmRemoveLogConfig();
               }}
             >
               {t("button.delete")}

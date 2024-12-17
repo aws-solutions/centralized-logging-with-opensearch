@@ -135,14 +135,6 @@ describe("linkMemberAccount Reducer", () => {
     expect(newState.data.subAccountIamInstanceProfileArn).toEqual("test");
   });
 
-  it("should change fluent bit upload sns arn", () => {
-    const action = memberAccountSlice.actions.fbUploadSNSArnChanged("test");
-    const newState = memberAccountSlice.reducer(initialState, action);
-    expect(newState.data.subAccountFlbConfUploadingEventTopicArn).toEqual(
-      "test"
-    );
-  });
-
   it("should validate member account data", () => {
     const action = memberAccountSlice.actions.validateMemberAccount();
     const newState = memberAccountSlice.reducer(initialState, action);

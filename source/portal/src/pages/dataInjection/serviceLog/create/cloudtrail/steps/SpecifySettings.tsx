@@ -20,29 +20,24 @@ import PagePanel from "components/PagePanel";
 import AutoComplete from "components/AutoComplete";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
-import { Resource, ResourceType } from "API";
+import { DestinationType, Resource, ResourceLogConf, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
-import { listResources } from "graphql/queries";
+import { getResourceLogConfigs, listResources } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { CloudTrailTaskProps } from "../CreateCloudTrail";
-import ExtLink from "components/ExtLink";
-import { buildTrailLink } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-import SourceType from "./comp/SourceType";
+import SourceType, { S3SourceType, SuccessTextType } from "./comp/SourceType";
 import { RootState } from "reducer/reducers";
 import { CreateLogMethod } from "assets/js/const";
-import { InfoBarTypes } from "reducer/appReducer";
-import Tiles from "components/Tiles";
 import TextInput from "components/TextInput";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import { defaultStr, splitStringToBucketAndPrefix } from "assets/js/utils";
 
 interface SpecifySettingsProps {
   cloudTrailTask: CloudTrailTaskProps;
-  setCloudTrailPipelineTask: React.Dispatch<
-    React.SetStateAction<CloudTrailTaskProps>
-  >;
   changeCloudTrailObj: (trail: OptionType | null) => void;
   changeBucket: (bucket: string) => void;
   changeLogPath: (logPath: string) => void;
@@ -53,19 +48,17 @@ interface SpecifySettingsProps {
   manualCwlArnEmptyError: boolean;
   setISChanging: (changing: boolean) => void;
   changeCrossAccount: (id: string) => void;
-  changeSourceType: (type: string) => void;
   changeTmpFlowList: (list: SelectItem[]) => void;
   changeS3SourceType: (type: string) => void;
   changeSuccessTextType: (type: string) => void;
   changeLogSource: (source: string) => void;
-  sourceTypeEmptyError?: boolean;
   shardNumError: boolean;
   maxShardNumError: boolean;
-  standardOnly?: boolean;
   changeMinCapacity: (num: string) => void;
   changeEnableAS: (enable: string) => void;
   changeMaxCapacity: (num: string) => void;
   manualChangeCloudTrail: (trail: string) => void;
+  changeTaskType: (type: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -83,19 +76,17 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setTrailEmptyError,
     setISChanging,
     changeCrossAccount,
-    changeSourceType,
     changeTmpFlowList,
     changeS3SourceType,
     changeSuccessTextType,
     changeLogSource,
-    sourceTypeEmptyError,
     shardNumError,
     maxShardNumError,
     changeMinCapacity,
     changeEnableAS,
     changeMaxCapacity,
-    standardOnly,
     manualChangeCloudTrail,
+    changeTaskType,
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -107,6 +98,97 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   >([]);
   const [loadingCloudTrail, setLoadingCloudTrail] = useState(false);
   const [disableTrail, setDisableTrail] = useState(false);
+
+  const [s3FLowList, setS3FLowList] = useState<SelectItem[]>([]);
+  const [cwlFlowList, setCwlFlowList] = useState<SelectItem[]>([]);
+  const [loadingBucket, setLoadingBucket] = useState(false);
+  const buildSourceOptionList = (resSourceList: any) => {
+    const tmpS3SourceList: SelectItem[] = [];
+    const tmpCWLSourceList: SelectItem[] = [];
+    if (resSourceList && resSourceList.length > 0) {
+      resSourceList.forEach((element: ResourceLogConf) => {
+        if (element.destinationType === DestinationType.S3) {
+          tmpS3SourceList.push({
+            name: defaultStr(element.name),
+            value: defaultStr(element.destinationName),
+            description: defaultStr(element.logFormat),
+            optTitle: defaultStr(element.region),
+          });
+        }
+        if (element.destinationType === DestinationType.CloudWatch) {
+          tmpCWLSourceList.push({
+            name: defaultStr(element.name),
+            value: defaultStr(element.destinationName),
+            description: defaultStr(element.logFormat),
+            optTitle: defaultStr(element.region),
+          });
+        }
+      });
+    }
+    return { tmpS3SourceList, tmpCWLSourceList };
+  };
+
+  const getCloudTrailLoggingConfig = async (trailId: string) => {
+    setLoadingBucket(true);
+    setISChanging(true);
+    const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
+      type: ResourceType.Trail,
+      resourceName: trailId,
+      accountId: cloudTrailTask.logSourceAccountId,
+    });
+    const resSourceList = resData?.data?.getResourceLogConfigs;
+    const { tmpS3SourceList, tmpCWLSourceList } =
+      buildSourceOptionList(resSourceList);
+    setS3FLowList(tmpS3SourceList);
+    setCwlFlowList(tmpCWLSourceList);
+
+    if (cloudTrailTask.destinationType === DestinationType.S3) {
+      changeTmpFlowList(tmpS3SourceList);
+    }
+
+    if (cloudTrailTask.destinationType === DestinationType.CloudWatch) {
+      changeTmpFlowList(tmpCWLSourceList);
+    }
+    setLoadingBucket(false);
+    setISChanging(false);
+  };
+
+  const handleS3SourceChange = () => {
+    changeTmpFlowList(s3FLowList);
+    // change bucket and prefix when s3 log config only one
+    if (s3FLowList.length > 0) {
+      if (s3FLowList[0].optTitle === amplifyConfig.aws_project_region) {
+        changeS3SourceType(S3SourceType.SAMEREGION);
+        const { bucket, prefix } = splitStringToBucketAndPrefix(
+          s3FLowList[0].value
+        );
+        changeBucket(bucket);
+        changeLogPath(prefix);
+        changeSuccessTextType(SuccessTextType.S3_ENABLED);
+      } else {
+        changeSuccessTextType("");
+        changeS3SourceType(S3SourceType.DIFFREGION);
+      }
+    } else {
+      changeS3SourceType(S3SourceType.NONE);
+    }
+  };
+
+  // Monitor source type / destination change
+  useEffect(() => {
+    if (cloudTrailTask.params.curTrailObj) {
+      if (cloudTrailTask.destinationType === DestinationType.S3) {
+        handleS3SourceChange();
+      }
+      if (cloudTrailTask.destinationType === DestinationType.CloudWatch) {
+        changeTmpFlowList(cwlFlowList);
+        if (cwlFlowList.length > 0) {
+          changeSuccessTextType(SuccessTextType.CWL_ENABLED);
+          changeLogSource(cwlFlowList[0]?.value);
+        }
+      }
+    }
+  }, [s3FLowList, cwlFlowList]);
 
   const getCloudTrailList = async (accountId: string) => {
     try {
@@ -133,51 +215,30 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   };
 
   useEffect(() => {
+    if (cloudTrailTask.params.curTrailObj) {
+      getCloudTrailLoggingConfig(cloudTrailTask.params.curTrailObj.value);
+    }
+  }, [cloudTrailTask.params.curTrailObj]);
+
+  useEffect(() => {
     getCloudTrailList(cloudTrailTask.logSourceAccountId);
   }, [cloudTrailTask.logSourceAccountId]);
 
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:trail.logEnable")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:s3.creationMethod")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={cloudTrailTask.params.taskType}
-                  onChange={(event) => {
-                    changeCloudTrailObj(null);
-                    props.setCloudTrailPipelineTask((prev) => {
-                      return {
-                        ...prev,
-                        params: {
-                          ...prev.params,
-                          taskType: event.target.value,
-                        },
-                      };
-                    });
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:s3.auto"),
-                      description: t("servicelog:trail.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:s3.manual"),
-                      description: t("servicelog:trail.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-          <HeaderPanel title={t("servicelog:create.service.trail")}>
+          <LogSourceEnable
+            value={cloudTrailTask.params.taskType}
+            onChange={(value) => {
+              changeCloudTrailObj(null);
+              changeTaskType(value);
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <div className="pb-50">
                 <CrossAccountSelect
@@ -195,19 +256,23 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   CreateLogMethod.Automatic && (
                   <FormItem
                     optionTitle={t("servicelog:trail.trail")}
-                    optionDesc={
-                      <div>
-                        {t("servicelog:trail.select")}
-                        <ExtLink
-                          to={buildTrailLink(amplifyConfig.aws_project_region)}
-                        >
-                          {t("servicelog:trail.curAccount")}
-                        </ExtLink>
-                        .
-                      </div>
-                    }
+                    optionDesc={t("servicelog:trail.select")}
                     errorText={
                       trailEmptyError ? t("servicelog:trail.trailError") : ""
+                    }
+                    successText={
+                      (cloudTrailTask.params.successTextType ===
+                        SuccessTextType.S3_ENABLED &&
+                      cloudTrailTask.params?.tmpFlowList[0]
+                        ? t("servicelog:create.savedTips") +
+                          cloudTrailTask.params?.tmpFlowList[0]?.value
+                        : "") ||
+                      (cloudTrailTask.params.successTextType ===
+                        SuccessTextType.CWL_ENABLED &&
+                      cloudTrailTask.params?.tmpFlowList[0]
+                        ? t("servicelog:trail.logSourceCWLDest") +
+                          cloudTrailTask.params?.tmpFlowList[0]?.value
+                        : "")
                     }
                   >
                     <AutoComplete
@@ -230,17 +295,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 {cloudTrailTask.params.taskType === CreateLogMethod.Manual && (
                   <FormItem
                     optionTitle={t("servicelog:trail.trail")}
-                    optionDesc={
-                      <div>
-                        {t("servicelog:trail.manual")}
-                        <ExtLink
-                          to={buildTrailLink(amplifyConfig.aws_project_region)}
-                        >
-                          {t("servicelog:trail.curAccount")}
-                        </ExtLink>
-                        .
-                      </div>
-                    }
+                    optionDesc={t("servicelog:trail.manual")}
                     errorText={
                       trailEmptyError
                         ? t("servicelog:trail.trailManualError")
@@ -249,7 +304,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   >
                     <TextInput
                       className="m-w-75p"
-                      placeholder={""}
+                      placeholder={"example-cloudtrail-name"}
                       value={cloudTrailTask.source}
                       onChange={(event) => {
                         setTrailEmptyError(false);
@@ -260,19 +315,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   </FormItem>
                 )}
                 <SourceType
-                  region={amplifyConfig.aws_project_region}
-                  standardOnly={standardOnly}
+                  loadingBucket={loadingBucket}
                   cloudTrailTask={cloudTrailTask}
-                  sourceTypeEmptyError={sourceTypeEmptyError}
                   shardNumError={shardNumError}
                   maxShardNumError={maxShardNumError}
                   manualS3EmptyError={manualS3EmptyError}
                   manualCwlArnEmptyError={manualCwlArnEmptyError}
                   changeManualS3={(s3) => {
                     changeManualS3(s3);
-                  }}
-                  changeSourceType={(type) => {
-                    changeSourceType(type);
                   }}
                   changeBucket={(bucket) => {
                     changeBucket(bucket);
@@ -286,9 +336,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   }}
                   changeTmpFlowList={(list) => {
                     changeTmpFlowList(list);
-                  }}
-                  changeS3SourceType={(type) => {
-                    changeS3SourceType(type);
                   }}
                   changeSuccessTextType={(type) => {
                     changeSuccessTextType(type);

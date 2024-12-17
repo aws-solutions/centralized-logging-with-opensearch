@@ -46,6 +46,7 @@ const UpdateSubAccountModal: React.FC<UpdateSubAccountModalProps> = (
       actions={
         <div className="button-action no-pb text-right">
           <Button
+            data-testid="cancel-button"
             btnType="text"
             onClick={() => {
               closeModal(false);
@@ -54,6 +55,7 @@ const UpdateSubAccountModal: React.FC<UpdateSubAccountModalProps> = (
             {t("button.cancel")}
           </Button>
           <Button
+            data-testid="confirm-button"
             btnType="primary"
             onClick={() => {
               closeModal(false);

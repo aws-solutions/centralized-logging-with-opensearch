@@ -15,7 +15,7 @@ limitations under the License.
 */
 import React from "react";
 
-interface CheckBoxProps {
+interface CheckBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   id: string;
   type: string;
   name: string;
@@ -25,7 +25,8 @@ interface CheckBoxProps {
 }
 
 const Checkbox: React.FC<CheckBoxProps> = (props: CheckBoxProps) => {
-  const { id, type, name, handleClick, isChecked, disabled } = props;
+  const { id, type, name, handleClick, isChecked, disabled, ...restProps } =
+    props;
   return (
     <input
       id={id}
@@ -34,6 +35,7 @@ const Checkbox: React.FC<CheckBoxProps> = (props: CheckBoxProps) => {
       onChange={handleClick}
       checked={isChecked}
       disabled={disabled}
+      {...restProps}
     />
   );
 };

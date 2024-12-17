@@ -16,11 +16,9 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import Tiles from "components/Tiles";
 import Alert from "components/Alert";
-import { CreateLogMethod, S3_ACCESS_LOG_LINK } from "assets/js/const";
+import { CreateLogMethod } from "assets/js/const";
 import FormItem from "components/FormItem";
-import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
 import { LoggingBucket, Resource, ResourceType } from "API";
@@ -29,10 +27,11 @@ import AutoComplete from "components/AutoComplete";
 import { S3TaskProps } from "../CreateS3";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
-import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import LogLocation from "../../common/LogLocation";
 
 interface SpecifySettingsProps {
   s3Task: S3TaskProps;
@@ -147,43 +146,23 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:s3.s3logEnable")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:s3.creationMethod")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={s3Task.params.taskType}
-                  onChange={(event) => {
-                    changeTaskType(event.target.value);
-                    changeLogBucketObj(null);
-                    if (event.target.value === CreateLogMethod.Automatic) {
-                      changeLogPath("");
-                      getS3List(s3Task.logSourceAccountId);
-                    }
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:s3.auto"),
-                      description: t("servicelog:s3.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:s3.manual"),
-                      description: t("servicelog:s3.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel title={t("servicelog:s3.title")}>
+          <LogSourceEnable
+            value={s3Task.params.taskType}
+            onChange={(value) => {
+              changeTaskType(value);
+              changeLogBucketObj(null);
+              if (value === CreateLogMethod.Automatic) {
+                changeLogPath("");
+                getS3List(s3Task.logSourceAccountId);
+              }
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <Alert content={t("servicelog:s3.alert")} />
               <CrossAccountSelect
@@ -201,14 +180,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 <div className="pb-50">
                   <FormItem
                     optionTitle={t("servicelog:s3.bucket")}
-                    optionDesc={
-                      <div>
-                        {t("servicelog:s3.bucketDesc")}
-                        <ExtLink to={S3_ACCESS_LOG_LINK}>
-                          {t("servicelog:s3.serverAccessLog")}
-                        </ExtLink>
-                      </div>
-                    }
+                    optionDesc={t("servicelog:s3.bucketDesc")}
                     errorText={
                       autoS3EmptyError
                         ? t("servicelog:s3.bucketEmptyError")
@@ -216,7 +188,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                     successText={
                       showSuccessText && previewS3Path
-                        ? t("servicelog:s3.savedTips") + previewS3Path
+                        ? t("servicelog:create.savedTips") + previewS3Path
                         : ""
                     }
                   >
@@ -281,27 +253,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  <FormItem
-                    optionTitle={t("servicelog:s3.s3LogLocation")}
-                    optionDesc={t("servicelog:s3.s3LogLocationDesc")}
-                    errorText={
-                      (manualS3EmptyError
-                        ? t("servicelog:s3.s3LogLocationError")
-                        : "") ||
-                      (manualS3PathInvalid
-                        ? t("servicelog:s3InvalidError")
-                        : "")
-                    }
-                  >
-                    <TextInput
-                      className="m-w-75p"
-                      value={s3Task.params.manualBucketS3Path}
-                      placeholder="s3://bucket/prefix"
-                      onChange={(event) => {
-                        changeLogPath(event.target.value);
-                      }}
-                    />
-                  </FormItem>
+                  <LogLocation
+                    manualS3EmptyError={manualS3EmptyError}
+                    manualS3PathInvalid={manualS3PathInvalid}
+                    logLocation={s3Task.params.manualBucketS3Path}
+                    changeLogPath={(value) => {
+                      changeLogPath(value);
+                    }}
+                  />
                 </div>
               )}
             </div>

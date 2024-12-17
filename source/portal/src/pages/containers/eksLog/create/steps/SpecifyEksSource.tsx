@@ -23,8 +23,6 @@ import {
   SubAccountLink,
 } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
-import { buildEKSLink } from "assets/js/utils";
-import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import Select, { SelectItem } from "components/Select/select";
@@ -119,7 +117,21 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
 
   return (
     <div>
-      <HeaderPanel title={t("ekslog:create.eksSource.eks")}>
+      <HeaderPanel title={t("ekslog:create.eksSource.eksSettings")}>
+        <FormItem
+          optionTitle={t("ekslog:create.eksSource.prerequisites")}
+          optionDesc={t("ekslog:create.eksSource.prerequisitesDesc")}
+        >
+          <ul>
+            {[1, 2, 3].map((item) => {
+              return (
+                <li key={item}>
+                  {t(`ekslog:create.eksSource.prerequisitesTip${item}`)}
+                </li>
+              );
+            })}
+          </ul>
+        </FormItem>
         <div>
           <CrossAccountSelect
             disabled={loadingEksList}
@@ -133,15 +145,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
           />
           <FormItem
             optionTitle={t("ekslog:create.eksSource.eksCluster")}
-            optionDesc={
-              <div>
-                {t("ekslog:create.eksSource.eksClusterDesc")}
-                <ExtLink to={buildEKSLink(amplifyConfig.aws_appsync_region)}>
-                  {t("ekslog:create.eksSource.curAccount")}
-                </ExtLink>
-                .
-              </div>
-            }
+            optionDesc={t("ekslog:create.eksSource.eksClusterDesc")}
             errorText={
               eksEmptyError ? t("ekslog:create.eksSource.eksClusterError") : ""
             }

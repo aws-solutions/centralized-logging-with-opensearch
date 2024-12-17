@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { Duration, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
+import { Duration, aws_lambda as lambda, aws_ec2 as ec2 } from 'aws-cdk-lib';
 
-import { ManagedKafkaEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { ManagedKafkaEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { Construct } from 'constructs';
 
-import { AppLogProcessor } from "./app-log-processor";
+import { AppLogProcessor } from './app-log-processor';
 
 export interface MSKStackProps {
   /**
@@ -50,16 +50,16 @@ export interface MSKStackProps {
    */
   readonly engineType: string;
   /**
- * OpenSearch Domain Name
- *
- * @default - None.
- */
+   * OpenSearch Domain Name
+   *
+   * @default - None.
+   */
   readonly domainName: string;
   /**
-* Wheather to create Sample Dashboard
-*
-* @default - Yes.
-*/
+   * Wheather to create Sample Dashboard
+   *
+   * @default - Yes.
+   */
   readonly createDashboard?: string;
 
   /**
@@ -89,10 +89,10 @@ export interface MSKStackProps {
 
   readonly logType: string;
   /**
-  * A list of plugins
-  *
-  * @default - None.
-  */
+   * A list of plugins
+   *
+   * @default - None.
+   */
   readonly plugins?: string;
 
   /**
@@ -131,8 +131,8 @@ export class MSKStack extends Construct {
       domainName: props.domainName,
       createDashboard: props.createDashboard,
       backupBucketName: props.backupBucketName,
-      source: "MSK",
-      subCategory: "FLB",
+      source: 'MSK',
+      subCategory: 'FLB',
       shardNumbers: props.shardNumbers,
       replicaNumbers: props.replicaNumbers,
       warmAge: props.warmAge,
@@ -147,14 +147,13 @@ export class MSKStack extends Construct {
       stackPrefix: props.stackPrefix,
       enableConfigJsonParam: false,
       indexTemplateGzipBase64: props.indexTemplateGzipBase64,
-      logProcessorConcurrency: props.logProcessorConcurrency
+      logProcessorConcurrency: props.logProcessorConcurrency,
     });
-
 
     // The Kafka topic you want to subscribe to
     // Currently, this can only be hardcoded, will replace the value in build scripts
     // The topic must exist before adding that as source.
-    const topic = "test";
+    const topic = 'test';
 
     const mskSource = new ManagedKafkaEventSource({
       clusterArn: props.mskClusterArn,

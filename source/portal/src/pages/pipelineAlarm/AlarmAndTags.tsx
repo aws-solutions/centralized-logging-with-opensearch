@@ -56,7 +56,13 @@ const AlarmAndTags: React.FC<AlarmAndTagsProps> = (
   const { pipelineTask, osiParams, applicationPipeline, engineType } = props;
   const { t } = useTranslation();
   return (
-    <PagePanel title={t("servicelog:create.step.createTags")}>
+    <PagePanel
+      title={
+        osiParams?.logProcessorType === LogProcessorType.OSI
+          ? t("step.tags")
+          : t("step.alarmTags")
+      }
+    >
       <>
         {pipelineTask && (
           <>

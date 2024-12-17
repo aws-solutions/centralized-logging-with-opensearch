@@ -2,12 +2,10 @@ $select-color: #0073bb;
 $input-max-width: 50px;
 .gsui-table-pannel {
   background-color: #fff;
-  padding-top: 10px;
   .desc {
-    padding: 0 20px;
+    padding: 2 0px;
     color: #666;
     font-size: 14px;
-    margin-top: -10px;
   }
   .table-header {
     width: 100%;
@@ -34,6 +32,9 @@ $input-max-width: 50px;
     .filter {
       flex: 1;
       max-width: 700px;
+    }
+    &.header-panel {
+      background-color: #fafafa;
     }
   }
   &.no-padding {

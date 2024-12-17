@@ -13,25 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React from "react";
 import FormItem from "components/FormItem";
 import Select from "components/Select";
 import { useTranslation } from "react-i18next";
-import {
-  AmplifyConfigType,
-  AnalyticEngineTypes,
-  CWL_LOG_S3,
-  CWL_SOURCE_LIST,
-} from "types";
+import { AmplifyConfigType, AnalyticEngineTypes } from "types";
 import { VpcLogTaskProps } from "../../CreateVPC";
-import { appSyncRequestQuery } from "assets/js/request";
-import { getResourceLogConfigs } from "graphql/queries";
-import { DestinationType, ResourceLogConf, ResourceType } from "API";
-import {
-  CLOUDWATCH_PRICING_LINK,
-  CreateLogMethod,
-  VPC_FLOW_LOG_SELECT_ALL_FIELDS,
-} from "assets/js/const";
+import { DestinationType, ResourceType } from "API";
+import { CLOUDWATCH_PRICING_LINK, CreateLogMethod } from "assets/js/const";
 import LoadingText from "components/LoadingText";
 import TextInput from "components/TextInput";
 import AutoEnableLogging from "../../../common/AutoEnableLogging";
@@ -45,11 +34,11 @@ import { useSelector } from "react-redux";
 import { AlertType } from "components/Alert/alert";
 import KDSSettings from "../../../common/KDSSettings";
 import { RootState } from "reducer/reducers";
+import LogLocation from "../../../common/LogLocation";
 
 interface SourceTypeProps {
   engineType: AnalyticEngineTypes;
   vpcLogTask: VpcLogTaskProps;
-  changeSourceType: (type: string) => void;
   changeManualS3: (s3: string) => void;
   changeBucket: (bucket: string) => void;
   changeLogPath: (logPath: string) => void;
@@ -70,6 +59,7 @@ interface SourceTypeProps {
   changeMinCapacity?: (num: string) => void;
   changeEnableAS?: (enable: string) => void;
   changeMaxCapacity?: (num: string) => void;
+  loadingBucket: boolean;
 }
 
 export enum VPCLogSourceType {
@@ -85,9 +75,7 @@ export enum VPCLogSourceType {
 
 const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   const {
-    engineType,
     vpcLogTask,
-    changeSourceType,
     changeManualS3,
     changeBucket,
     changeLogPath,
@@ -99,7 +87,6 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     changeTmpFlowList,
     changeVpcLogSourceType,
     changeLogFormat,
-    sourceTypeEmptyError,
     manualS3EmptyError,
     manualS3PathInvalid,
     vpcFlowLogEmptyError,
@@ -108,6 +95,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     changeMinCapacity,
     changeEnableAS,
     changeMaxCapacity,
+    loadingBucket,
   } = props;
   const { t } = useTranslation();
 
@@ -115,139 +103,12 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     (state: RootState) => state.app.amplifyConfig
   );
 
-  const [loadingBucket, setLoadingBucket] = useState(false);
-
-  const getVpcLoggingConfig = async (vpcId: string) => {
-    setLoadingBucket(true);
-    setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
-      type: ResourceType.VPC,
-      resourceName: vpcId,
-      accountId: vpcLogTask.logSourceAccountId,
-    });
-
-    const tmpS3SourceList: SelectItem[] = [];
-    const tmpCWLSourceList: SelectItem[] = [];
-    const resSourceList = resData?.data?.getResourceLogConfigs;
-    if (resSourceList?.length > 0) {
-      resSourceList.forEach((element: ResourceLogConf) => {
-        const sourceObj = {
-          name: defaultStr(element.name),
-          value: defaultStr(element.destinationName),
-          description: defaultStr(element.logFormat),
-          optTitle: defaultStr(element.region),
-        };
-        if (element.destinationType === DestinationType.S3) {
-          if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
-            if (element.logFormat === VPC_FLOW_LOG_SELECT_ALL_FIELDS) {
-              tmpS3SourceList.push(sourceObj);
-            }
-          } else {
-            tmpS3SourceList.push(sourceObj);
-          }
-        } else {
-          tmpCWLSourceList.push(sourceObj);
-        }
-      });
-    }
-
-    changeS3FlowList(tmpS3SourceList);
-    changeCWLFlowList(tmpCWLSourceList);
-
-    setLoadingBucket(false);
-    setISChanging(false);
-  };
-
-  useEffect(() => {
-    if (vpcLogTask.params.vpcLogObj?.value) {
-      getVpcLoggingConfig(vpcLogTask.params.vpcLogObj.value);
-    }
-  }, [vpcLogTask.params.vpcLogObj]);
-
-  const changeSourceTypeWhenDestS3 = () => {
-    if (vpcLogTask.params.s3FLowList.length > 0) {
-      // check the only one s3 source
-      if (vpcLogTask.params.s3FLowList.length === 1) {
-        if (
-          vpcLogTask.params.s3FLowList[0].optTitle ===
-          amplifyConfig.aws_project_region
-        ) {
-          // means the only exists one is valid
-          changeVpcLogSourceType(VPCLogSourceType.ONE_S3_SAME_REGION);
-          const { bucket, prefix } = splitStringToBucketAndPrefix(
-            vpcLogTask.params.s3FLowList[0].value
-          );
-          changeBucket(bucket);
-          changeLogPath(prefix);
-        } else {
-          changeVpcLogSourceType(VPCLogSourceType.ONE_S3_DIFF_REGION);
-        }
-      } else {
-        changeVpcLogSourceType(VPCLogSourceType.MULTI_S3_NOT_SELECT);
-      }
-    } else {
-      changeVpcLogSourceType(VPCLogSourceType.NONE);
-    }
-  };
-
-  // Monitor source type / destination change
-  useEffect(() => {
-    if (vpcLogTask.destinationType === DestinationType.S3) {
-      changeTmpFlowList(vpcLogTask.params.s3FLowList);
-      changeSourceTypeWhenDestS3();
-    }
-
-    if (vpcLogTask.destinationType === DestinationType.CloudWatch) {
-      changeTmpFlowList(vpcLogTask.params.cwlFlowList);
-      if (vpcLogTask.params.cwlFlowList.length > 0) {
-        // check the only one cwl source
-        if (vpcLogTask.params.cwlFlowList.length === 1) {
-          changeVpcLogSourceType(VPCLogSourceType.ONE_CWL);
-          changeVPCFLowLog(vpcLogTask.params.cwlFlowList[0]?.value);
-          changeLogFormat(
-            defaultStr(vpcLogTask.params.cwlFlowList[0]?.description)
-          );
-        } else {
-          changeVpcLogSourceType(VPCLogSourceType.MULTI_CWL);
-        }
-      } else {
-        changeVpcLogSourceType(VPCLogSourceType.NONE);
-      }
-    }
-  }, [vpcLogTask.destinationType]);
-
-  // Monitor vpc flow change
-  useEffect(() => {
-    if (
-      vpcLogTask.params.logSource &&
-      vpcLogTask.params.tmpFlowList.length > 0
-    ) {
-      if (vpcLogTask.destinationType === DestinationType.S3) {
-        const curSelectItem = vpcLogTask.params.tmpFlowList.find(
-          (element) => element.value === vpcLogTask.params.logSource
-        );
-        if (curSelectItem?.optTitle === amplifyConfig.aws_project_region) {
-          // user selected log source is same region
-          changeVpcLogSourceType(VPCLogSourceType.MULTI_S3_SAME_REGION);
-          const { bucket, prefix } = splitStringToBucketAndPrefix(
-            curSelectItem.value
-          );
-          changeBucket(bucket);
-          changeLogPath(prefix);
-        } else {
-          // user selected log source is not same region
-          changeVpcLogSourceType(VPCLogSourceType.MULTI_S3_DIFF_REGION);
-        }
-      }
-    }
-  }, [vpcLogTask.params.logSource]);
-
   const buildLogSourceSuccessText = () => {
     return (
       (vpcLogTask.destinationType === DestinationType.S3 &&
       vpcLogTask.params.vpcLogSourceType ===
         VPCLogSourceType.MULTI_S3_SAME_REGION
-        ? t("servicelog:vpc.savedTips") + vpcLogTask.params.logSource
+        ? t("servicelog:create.savedTips") + vpcLogTask.params.logSource
         : "") ||
       (vpcLogTask.destinationType === DestinationType.CloudWatch &&
       vpcLogTask.params.vpcLogSourceType === VPCLogSourceType.MULTI_CWL &&
@@ -261,44 +122,6 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
 
   return (
     <>
-      <FormItem
-        optionTitle={t("servicelog:vpc.logSource")}
-        optionDesc={t("servicelog:vpc.logSourceDesc")}
-        errorText={
-          sourceTypeEmptyError ? t("servicelog:vpc.logSourceEmptyError") : ""
-        }
-        successText={
-          (vpcLogTask.params.vpcLogSourceType ===
-          VPCLogSourceType.ONE_S3_SAME_REGION
-            ? `${t("servicelog:vpc.savedTips")} ${
-                vpcLogTask.params.tmpFlowList[0]?.value
-              }`
-            : "") ||
-          (vpcLogTask.params.vpcLogSourceType === VPCLogSourceType.ONE_CWL
-            ? `${t("servicelog:vpc.logCWLEnabled1")} ${
-                vpcLogTask.params.tmpFlowList[0]?.value
-              } ${t("servicelog:vpc.logCWLEnabled2")}`
-            : "")
-        }
-      >
-        <Select
-          disabled={
-            vpcLogTask.params.taskType === CreateLogMethod.Automatic &&
-            (loadingBucket || vpcLogTask.params.vpcLogObj === null)
-          }
-          placeholder={t("servicelog:vpc.chooseLogSource")}
-          className="m-w-45p"
-          optionList={
-            engineType === AnalyticEngineTypes.LIGHT_ENGINE
-              ? CWL_LOG_S3
-              : CWL_SOURCE_LIST
-          }
-          value={vpcLogTask.destinationType}
-          onChange={(event) => {
-            changeSourceType(event.target.value);
-          }}
-        />
-      </FormItem>
       {loadingBucket ? (
         <LoadingText />
       ) : (
@@ -421,39 +244,27 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
           {vpcLogTask.params.taskType === CreateLogMethod.Manual && (
             <>
               {vpcLogTask.destinationType === DestinationType.S3 && (
-                <FormItem
-                  optionTitle={t("servicelog:vpc.vpcLogLocation")}
-                  optionDesc={t("servicelog:vpc.vpcLogLocationDesc")}
-                  errorText={
-                    (manualS3EmptyError
-                      ? t("servicelog:vpc.vpcLogLocationError")
-                      : "") ||
-                    (manualS3PathInvalid ? t("servicelog:s3InvalidError") : "")
-                  }
-                >
-                  <TextInput
-                    className="m-w-75p"
-                    value={vpcLogTask.params.manualBucketS3Path}
-                    placeholder="s3://bucket/prefix"
-                    onChange={(event) => {
-                      const { bucket, prefix } = splitStringToBucketAndPrefix(
-                        event.target.value
-                      );
-                      changeLogPath(prefix);
-                      changeBucket(bucket);
-                      changeManualS3(event.target.value);
-                    }}
-                  />
-                </FormItem>
+                <LogLocation
+                  manualS3EmptyError={manualS3EmptyError}
+                  manualS3PathInvalid={manualS3PathInvalid}
+                  logLocation={vpcLogTask.params.manualBucketS3Path}
+                  changeLogPath={(value) => {
+                    const { bucket, prefix } =
+                      splitStringToBucketAndPrefix(value);
+                    changeLogPath(prefix);
+                    changeBucket(bucket);
+                    changeManualS3(value);
+                  }}
+                />
               )}
 
               {vpcLogTask.destinationType === DestinationType.CloudWatch && (
                 <FormItem
-                  optionTitle={t("servicelog:vpc.flowLogLocation")}
-                  optionDesc={t("servicelog:vpc.flowLogLocationDesc")}
+                  optionTitle={t("servicelog:create.flowLogLocation")}
+                  optionDesc={t("servicelog:create.flowLogLocationDesc")}
                   errorText={ternary(
                     vpcFlowLogEmptyError,
-                    t("servicelog:vpc.vpcLogLocationError"),
+                    t("servicelog:create.logLocationError"),
                     undefined
                   )}
                 >

@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import * as path from 'path';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Aws,
   Duration,
   RemovalPolicy,
+  aws_appsync as appsync,
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_lambda as lambda,
@@ -45,10 +45,10 @@ export interface CloudWatchStackProps {
 
   readonly solutionId: string;
   readonly stackPrefix: string;
-  readonly svcPipelineTableArn: string;
-  readonly appPipelineTableArn: string;
-  readonly appLogIngestionTableArn: string;
-  readonly logSourceTableArn: string;
+  readonly svcPipelineTable: ddb.Table;
+  readonly appPipelineTable: ddb.Table;
+  readonly appLogIngestionTable: ddb.Table;
+  readonly logSourceTable: ddb.Table;
 }
 export class CloudWatchStack extends Construct {
   public fluentBitLogGroup: string;
@@ -56,26 +56,10 @@ export class CloudWatchStack extends Construct {
   constructor(scope: Construct, id: string, props: CloudWatchStackProps) {
     super(scope, id);
 
-    const svcPipelineTable = ddb.Table.fromTableArn(
-      this,
-      'svcPipeline',
-      props.svcPipelineTableArn
-    );
-    const appPipelineTable = ddb.Table.fromTableArn(
-      this,
-      'appPipeline',
-      props.appPipelineTableArn
-    );
-    const appLogIngestionTable = ddb.Table.fromTableArn(
-      this,
-      'appLogIngestion',
-      props.appLogIngestionTableArn
-    );
-    const logSourceTable = ddb.Table.fromTableArn(
-      this,
-      'logSource',
-      props.logSourceTableArn
-    );
+    const svcPipelineTable = props.svcPipelineTable;
+    const appPipelineTable = props.appPipelineTable;
+    const appLogIngestionTable = props.appLogIngestionTable;
+    const logSourceTable = props.logSourceTable;
 
     // Create the central cloudwatch metric for Fluent-bit agent
     const logGroup = new logs.LogGroup(this, 'FluentBitLogGroup', {

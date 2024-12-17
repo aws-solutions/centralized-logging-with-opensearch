@@ -18,6 +18,8 @@ import React, {
   useState,
   ButtonHTMLAttributes,
   AnchorHTMLAttributes,
+  useEffect,
+  useRef,
 } from "react";
 import classNames from "classnames";
 import LoadingText from "components/LoadingText";
@@ -39,6 +41,7 @@ interface DropDownListProp {
   text: string;
   id: string;
   disabled?: boolean;
+  testId?: string;
 }
 
 interface BaseButtonProps {
@@ -79,7 +82,6 @@ export const Button: FC<ButtonProps> = (props) => {
     isI18N,
     ...restProps
   } = props;
-  // btn, btn-lg, btn-primary
   const classes = classNames("btn", className, {
     [`btn-${btnType}`]: btnType,
     [`btn-${size}`]: size,
@@ -87,6 +89,24 @@ export const Button: FC<ButtonProps> = (props) => {
   });
   const [showDropdown, setShowDropdown] = useState(false);
   const { t } = useTranslation();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target as Node)
+    ) {
+      setShowDropdown(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   if (loading) {
     return (
       <button className={classes} disabled={true} {...restProps}>
@@ -103,7 +123,7 @@ export const Button: FC<ButtonProps> = (props) => {
       );
     } else {
       return (
-        <div className="btn-drop-down-wrap">
+        <div className="btn-drop-down-wrap" ref={dropdownRef}>
           <button
             onClick={() => {
               setShowDropdown(!showDropdown);
@@ -123,12 +143,16 @@ export const Button: FC<ButtonProps> = (props) => {
                 return (
                   <div
                     key={element.id}
+                    data-testid={element.testId}
                     onClick={() => {
-                      if (onItemClick) {
+                      if (onItemClick && !element.disabled) {
                         onItemClick(element);
+                        setShowDropdown(false);
                       }
                     }}
-                    className="menu-item"
+                    className={classNames("menu-item", {
+                      disabled: element.disabled,
+                    })}
                   >
                     {isI18N ? t(element.text) : element.text}
                   </div>

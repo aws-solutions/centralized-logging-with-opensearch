@@ -15,9 +15,7 @@ limitations under the License.
 */
 import React, { ReactElement } from "react";
 import { SvcDetailProps } from "../ServiceLogDetail";
-import HeaderWithValueLabel, {
-  LabelValueDataItem,
-} from "pages/comps/HeaderWithValueLabel";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
 import { useTranslation } from "react-i18next";
 import {
   buildCloudFrontLink,
@@ -29,20 +27,21 @@ import {
   buildTrailLink,
   buildVPCLink,
   buildWAFLink,
-  formatLocalTime,
+  defaultStr,
+  splitStringToBucketAndPrefix,
+  ternary,
 } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
-import { AmplifyConfigType, CWLSourceType } from "types";
+import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { RootState } from "reducer/reducers";
 import { DestinationType, ServiceType } from "API";
-import { ServiceTypeMap } from "assets/js/const";
+import { ServiceTypeNameMap } from "assets/js/const";
 import AccountName from "pages/comps/account/AccountName";
 
 const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
   const { pipelineInfo } = props;
   const { t } = useTranslation();
-  console.info("pipelineInfo:", pipelineInfo);
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
@@ -52,7 +51,7 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
       <ExtLink
         to={buildLambdaLink(
           amplifyConfig.aws_project_region,
-          pipelineInfo?.source ?? ""
+          defaultStr(pipelineInfo?.source)
         )}
       >
         {pipelineInfo?.source}
@@ -65,7 +64,7 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
       <ExtLink
         to={buildS3Link(
           amplifyConfig.aws_project_region,
-          pipelineInfo?.source ?? ""
+          defaultStr(pipelineInfo?.source)
         )}
       >
         {pipelineInfo?.source}
@@ -78,7 +77,7 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
       <ExtLink
         to={buildCloudFrontLink(
           amplifyConfig.aws_project_region,
-          pipelineInfo?.source || ""
+          defaultStr(pipelineInfo?.source)
         )}
       >
         {pipelineInfo?.source}
@@ -112,7 +111,7 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
       <ExtLink
         to={buildVPCLink(
           amplifyConfig.aws_project_region,
-          pipelineInfo?.source ?? ""
+          defaultStr(pipelineInfo?.source)
         )}
       >
         {pipelineInfo?.source}
@@ -142,6 +141,25 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
         {pipelineInfo?.source}
       </ExtLink>
     );
+  };
+
+  const buildLogLocationLink = () => {
+    if (!pipelineInfo?.logLocation) {
+      return "";
+    } else if (pipelineInfo.logLocation.toLocaleLowerCase().startsWith("s3:")) {
+      const { bucket, prefix } = splitStringToBucketAndPrefix(
+        pipelineInfo.logLocation
+      );
+      return (
+        <ExtLink
+          to={buildS3Link(amplifyConfig.aws_project_region, bucket, prefix)}
+        >
+          {pipelineInfo?.logLocation}
+        </ExtLink>
+      );
+    } else {
+      return pipelineInfo.logLocation;
+    }
   };
 
   const buildDiffServiceInfo = (): ReactElement | null => {
@@ -179,48 +197,52 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
     return serviceInfo;
   };
 
-  const buildServiceResourceAndLogLocation = (): LabelValueDataItem[] => {
-    const serviceResourceAndLogLocation: LabelValueDataItem[] = [
-      { label: "AWS service resource", data: buildDiffServiceInfo() },
-    ];
-    serviceResourceAndLogLocation.push({
-      label:
-        pipelineInfo?.destinationType === DestinationType.CloudWatch
-          ? t("servicelog:overview.logGroup")
-          : t("servicelog:overview.logLocation"),
-      data:
-        (pipelineInfo?.destinationType === DestinationType.KDS
-          ? "Kinesis Data Streams"
-          : "") || (pipelineInfo?.logLocation ? pipelineInfo.logLocation : "-"),
-    });
-    return serviceResourceAndLogLocation;
-  };
-
-  const buildCreateTimeInfo = (): LabelValueDataItem[] => {
-    return [
-      {
-        label: t("servicelog:detail.createdAt"),
-        data: formatLocalTime(pipelineInfo?.createTime || ""),
-      },
-    ];
-  };
-
   const buildLogTypeValue = () => {
-    if (pipelineInfo?.type === ServiceType.CloudFront) {
-      if (pipelineInfo?.destinationType === DestinationType.KDS) {
-        return t("servicelog:cloudfront.realtimeLogs");
-      } else {
-        return t("servicelog:cloudfront.standardLogs");
-      }
+    const typeMappings: any = {
+      [ServiceType.CloudFront]: {
+        [DestinationType.KDS]: "servicelog:create.ingestTypeKDS",
+        default: "servicelog:create.ingestTypeS3",
+      },
+      [ServiceType.CloudTrail]: {
+        [DestinationType.CloudWatch]: "servicelog:create.ingestTypeCloudWatch",
+        default: "servicelog:create.ingestTypeAmazonS3",
+      },
+      [ServiceType.WAF]: {
+        default: "servicelog:create.ingestTypeFullRequest",
+      },
+      [ServiceType.WAFSampled]: {
+        default: "servicelog:create.ingestTypeSampledRequest",
+      },
+      [ServiceType.ELB]: {
+        default: "servicelog:create.ingestTypeALB",
+      },
+      [ServiceType.VPC]: {
+        [DestinationType.CloudWatch]: "servicelog:create.ingestTypeCloudWatch",
+        default: "servicelog:create.ingestTypeAmazonS3",
+      },
+      [ServiceType.S3]: {
+        default: "servicelog:create.ingestTypeS3",
+      },
+      [ServiceType.Lambda]: {
+        default: "servicelog:create.ingestTypeCloudWatch",
+      },
+      [ServiceType.Config]: {
+        default: "servicelog:create.ingestTypeAmazonS3",
+      },
+      [ServiceType.RDS]: {
+        default: "servicelog:create.ingestTypeAmazonS3",
+      },
+    };
+
+    if (!pipelineInfo) {
+      return "-";
     }
-    if (pipelineInfo?.type === ServiceType.CloudTrail) {
-      if (pipelineInfo?.destinationType === DestinationType.CloudWatch) {
-        return CWLSourceType.CWL;
-      } else {
-        return CWLSourceType.S3;
-      }
-    }
-    return t("servicelog:cloudfront.standardLogs");
+
+    const typeConfig = typeMappings[pipelineInfo?.type];
+
+    const translationKey: string =
+      typeConfig?.[pipelineInfo?.destinationType] || typeConfig?.default || "-";
+    return t(translationKey);
   };
 
   return (
@@ -228,6 +250,49 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
       numberOfColumns={3}
       headerTitle={t("servicelog:tab.logSource")}
       fixedDataList={[
+        [
+          {
+            label: t("servicelog:detail.type"),
+            data: t(ServiceTypeNameMap[defaultStr(pipelineInfo?.type)]),
+          },
+          {
+            label: t("servicelog:detail.resources"),
+            data: buildDiffServiceInfo(),
+          },
+          ...(pipelineInfo?.type === ServiceType.CloudFront &&
+          pipelineInfo?.destinationType === DestinationType.KDS
+            ? [
+                {
+                  label: t("servicelog:detail.samplingRate"),
+                  data: ternary(
+                    pipelineInfo?.samplingRate,
+                    pipelineInfo?.samplingRate + "%",
+                    "-"
+                  ),
+                },
+              ]
+            : []),
+        ],
+        [
+          {
+            label: t("servicelog:detail.logType"),
+            data: buildLogTypeValue(),
+          },
+          {
+            label: ternary(
+              pipelineInfo?.destinationType === DestinationType.CloudWatch,
+              t("servicelog:overview.logGroup"),
+              t("servicelog:overview.logLocation")
+            ),
+            data:
+              (pipelineInfo?.destinationType === DestinationType.KDS
+                ? "Kinesis Data Streams"
+                : "") ||
+              buildLogLocationLink() ||
+              "-",
+          },
+        ],
+
         [
           {
             label: t("resource:crossAccount.account"),
@@ -238,28 +303,7 @@ const LogSource: React.FC<SvcDetailProps> = (props: SvcDetailProps) => {
               />
             ),
           },
-          {
-            label: t("servicelog:detail.type"),
-            data: ServiceTypeMap[pipelineInfo?.type || ""],
-          },
-          {
-            label: t("servicelog:detail.logType"),
-            data: buildLogTypeValue(),
-          },
-          ...(pipelineInfo?.type === ServiceType.CloudFront &&
-          pipelineInfo?.destinationType === DestinationType.KDS
-            ? [
-                {
-                  label: t("servicelog:detail.samplingRate"),
-                  data: pipelineInfo?.samplingRate
-                    ? pipelineInfo?.samplingRate + "%"
-                    : "-",
-                },
-              ]
-            : []),
         ],
-        buildServiceResourceAndLogLocation(),
-        buildCreateTimeInfo(),
       ]}
     />
   );

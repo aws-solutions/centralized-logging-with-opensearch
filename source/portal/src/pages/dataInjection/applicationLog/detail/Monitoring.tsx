@@ -38,15 +38,14 @@ import AppLogFlbAgentMetrics from "./monitor/AppLogFlbAgentSourceMetrics";
 import AppLogSyslogSourceMetrics from "./monitor/AppLogSyslogSourceMetrics";
 
 import {
-  buildSQSLink,
   buildKDSLink,
   buildLambdaLink,
   defaultStr,
   buildOSIPipelineNameByPipelineId,
+  buildEventRuleLink,
 } from "assets/js/utils";
 import Button from "components/Button";
 import { RootState } from "reducer/reducers";
-import { PIPLINE_MONITORING_COST_LINK } from "assets/js/const";
 import Alert from "components/Alert";
 import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
 import { isWindowsLog } from "reducer/createLogConfig";
@@ -77,18 +76,11 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     <div>
       <HeaderPanel
         title={t("common:monitoring.title")}
-        desc={
-          <div>
-            {t("info:monitoring.intro")}
-            {"  "}
-            <ExtLink to={PIPLINE_MONITORING_COST_LINK}>
-              {t("info:monitoring.monitoringCost")}
-            </ExtLink>
-          </div>
-        }
+        desc={<div>{t("info:monitoring.intro")}</div>}
       >
         <>
-          {pipelineInfo?.status === PipelineStatus.ACTIVE ? (
+          {pipelineInfo?.status === PipelineStatus.ACTIVE ||
+          pipelineInfo?.status === PipelineStatus.PAUSED ? (
             <div>
               <div
                 style={{
@@ -167,9 +159,11 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                 <ExpandableSection headerText={t("monitoring.buffer")}>
                   <div>
                     <div className="flex">
-                      <ValueWithLabel label="SQS">
+                      <ValueWithLabel
+                        label={pipelineInfo.logEventQueueType || ""}
+                      >
                         <ExtLink
-                          to={buildSQSLink(
+                          to={buildEventRuleLink(
                             amplifyConfig.aws_project_region,
                             pipelineInfo?.logEventQueueName as string
                           )}

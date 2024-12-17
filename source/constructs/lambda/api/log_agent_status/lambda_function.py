@@ -6,7 +6,6 @@ import concurrent.futures
 import time
 import boto3
 import requests
-import json
 
 from functools import partial
 from enum import Enum
@@ -41,7 +40,6 @@ class DocumentType(Enum):
 
 @handle_error
 def lambda_handler(event, _):
-    logger.info(f"The requests is {json.dumps(event)}")
     return router.resolve(event)
 
 
@@ -372,11 +370,11 @@ def single_agent_installation(
     )
     logger.info(f"document_name is {document_name}")
     flb_download_addr = (
-        "https://packages.fluentbit.io/windows/fluent-bit-3.0.4-win64.zip"
+        "https://packages.fluentbit.io/windows/fluent-bit-3.1.4-win64.zip"
     )
     if "aws-solutions-assets.s3.cn-north-1.amazonaws.com.cn" in flb_download_s3_addr:
         flb_download_addr = (
-            flb_download_s3_addr + "aws-for-fluent-bit/fluent-bit-3.0.4-win64.zip"
+            flb_download_s3_addr + "aws-for-fluent-bit/fluent-bit-3.1.4-win64.zip"
         )
 
     if platform_type == "Linux":
@@ -390,18 +388,18 @@ def single_agent_installation(
             "workingDirectory": ["C:/"],
             "source": [f"{flb_download_addr}"],
             "sourceHash": [
-                "241F542BC4D7FFAFA662E6F8EAF4AA947807F388F1859D9B0503D4E85F7EC5A3"
+                "94494966a81a1bb726851212fde1b93611812e51b66ed166e99f8bfad98f8c9c"
             ],
             "commands": [
-                f"curl -o C:/fluent-bit-3.0.4-win64.zip {flb_download_addr}",
-                "Expand-Archive -Path C:/fluent-bit-3.0.4-win64.zip -Force -DestinationPath C:/",
-                'New-Item -ItemType Directory -Path "C:/fluent-bit-3.0.4-win64/etc"',
-                '(Get-Content C:/fluent-bit-3.0.4-win64/conf/fluent-bit.conf) -replace "http_server  Off","http_server  On"|Set-Content C:/fluent-bit-3.0.4-win64/conf/fluent-bit.conf -Force',
-                '(Get-Content C:/fluent-bit-3.0.4-win64/conf/fluent-bit.conf) -replace "http_port    2020","http_port    2022"|Set-Content C:/fluent-bit-3.0.4-win64/conf/fluent-bit.conf -Force',
-                "Copy-Item -Path C:/fluent-bit-3.0.4-win64/conf/* -Force -Destination C:/fluent-bit-3.0.4-win64/etc -Recurse",
-                "Copy-Item -Path C:/fluent-bit/etc/* -Force -Destination C:/fluent-bit-3.0.4-win64/etc -Recurse",
+                f"curl -o C:/fluent-bit-3.1.4-win64.zip {flb_download_addr}",
+                "Expand-Archive -Path C:/fluent-bit-3.1.4-win64.zip -Force -DestinationPath C:/",
+                'New-Item -ItemType Directory -Path "C:/fluent-bit-3.1.4-win64/etc"',
+                '(Get-Content C:/fluent-bit-3.1.4-win64/conf/fluent-bit.conf) -replace "http_server  Off","http_server  On"|Set-Content C:/fluent-bit-3.1.4-win64/conf/fluent-bit.conf -Force',
+                '(Get-Content C:/fluent-bit-3.1.4-win64/conf/fluent-bit.conf) -replace "http_port    2020","http_port    2022"|Set-Content C:/fluent-bit-3.1.4-win64/conf/fluent-bit.conf -Force',
+                "Copy-Item -Path C:/fluent-bit-3.1.4-win64/conf/* -Force -Destination C:/fluent-bit-3.1.4-win64/etc -Recurse",
+                "Copy-Item -Path C:/fluent-bit/etc/* -Force -Destination C:/fluent-bit-3.1.4-win64/etc -Recurse",
                 "Stop-Service fluent-bit",
-                "xcopy C:\\fluent-bit-3.0.4-win64 C:\\fluent-bit\\ /s /e /y",
+                "xcopy C:\\fluent-bit-3.1.4-win64 C:\\fluent-bit\\ /s /e /y",
                 'New-Service fluent-bit -BinaryPathName "C:/fluent-bit/bin/fluent-bit.exe -c C:/fluent-bit/etc/fluent-bit.conf" -StartupType Automatic',
                 "Start-Service fluent-bit",
             ],

@@ -26,9 +26,9 @@ The solution has the following features:
 
 ## Architecture
 
-Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
+Deploying this solution with the default parameters builds the following environment in the AWS Cloud. For more details about the architecture description, please refer to [architecture overview](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/architecture-overview.html), and [architecture details](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/architecture-details.html).
 
-![Architecture](docs/images/architecture/arch.png)
+![Architecture](arch.png)
 
 
 ## Deployment

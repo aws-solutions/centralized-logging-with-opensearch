@@ -17,7 +17,7 @@ class Dashboard:
         return self.api.get(path=get_dashboard_path)
 
     def update_dashboard(self, json: dict) -> dict:
-        """ 
+        """
 
         :param dashboard:
         :return:
@@ -33,4 +33,3 @@ class Dashboard:
         """
         delete_dashboard_path = f"/dashboards/uid/{dashboard_uid}"
         return self.api.delete(path=delete_dashboard_path)
-

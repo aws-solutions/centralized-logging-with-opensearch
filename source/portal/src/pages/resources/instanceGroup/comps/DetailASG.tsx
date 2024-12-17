@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 
 import ASGGuide from "./ASGGuide";
 import { defaultStr } from "assets/js/utils";
+import InstancePermission from "pages/dataInjection/applicationLog/common/InstancePermission";
 
 interface DetailASGProps {
   instanceGroup: LogSource;
@@ -29,7 +30,7 @@ interface DetailASGProps {
 const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
   const { instanceGroup } = props;
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("asgGuide");
+  const [activeTab, setActiveTab] = useState("instanceTable");
 
   return (
     <div data-testid="asg-detail-tab">
@@ -40,19 +41,21 @@ const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
         }}
       >
         <AntTab
-          data-testid="a"
-          label={t("resource:group.detail.asg.asgGuide")}
-          value="asgGuide"
-        />
-        <AntTab
-          data-testid="b"
+          data-testid="instanceTable"
           label={t("resource:group.detail.asg.instance")}
           value="instanceTable"
         />
+        <AntTab
+          data-testid="instanceTable"
+          label={t("resource:group.detail.permissions")}
+          value="permissions"
+        />
+        <AntTab
+          data-testid="asgGuide"
+          label={t("resource:group.detail.asg.asgGuide")}
+          value="asgGuide"
+        />
       </AntTabs>
-      <TabPanel value={activeTab} index="asgGuide">
-        <ASGGuide instanceGroup={instanceGroup} />
-      </TabPanel>
       <TabPanel value={activeTab} index="instanceTable">
         <InstanceTable
           platform={instanceGroup.ec2?.groupPlatform ?? EC2GroupPlatform.Linux}
@@ -68,6 +71,12 @@ const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
           ]}
           accountId={defaultStr(instanceGroup.accountId)}
         />
+      </TabPanel>
+      <TabPanel value={activeTab} index="permissions">
+        <InstancePermission />
+      </TabPanel>
+      <TabPanel value={activeTab} index="asgGuide">
+        <ASGGuide instanceGroup={instanceGroup} />
       </TabPanel>
     </div>
   );

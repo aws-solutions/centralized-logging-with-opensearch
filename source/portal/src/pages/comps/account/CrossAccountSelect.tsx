@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import Select from "components/Select";
 import { useTranslation } from "react-i18next";
@@ -23,6 +22,7 @@ import { listSubAccountLinks } from "graphql/queries";
 import { SubAccountLink } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { defaultStr } from "assets/js/utils";
+import { Link } from "react-router-dom";
 
 interface CrossAccountSelectProps {
   accountId: string;
@@ -90,9 +90,10 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
       optionDesc={
         <div>
           {t("resource:crossAccount.selectDesc1")}
-          <ExtLink to="/resources/cross-account">
+          <Link to="/resources/cross-account">
             {t("resource:crossAccount.linkAccount")}
-          </ExtLink>
+          </Link>
+          .
         </div>
       }
     >

@@ -15,11 +15,16 @@ from commonlib import AWSConnection, handle_error
 from commonlib.utils import create_stack_name
 from commonlib.exception import APIException, ErrorCode
 from commonlib.model import (
+    DomainImportStatusEnum,
     DomainStatus,
     DomainStatusCheckItem,
     DomainImportType,
     DomainStatusCheckType,
+    OpenSearchDomain,
+    ProxyInput,
+    Vpc,
 )
+from commonlib.dao import AppPipelineDao, SvcPipelineDao, OpenSearchDomainDao
 
 from cluster_auto_import_mgr import ClusterAutoImportManager
 from util.metric import get_metric_data
@@ -51,9 +56,10 @@ sts = conn.get_client("sts")
 ec2 = conn.get_client("ec2")
 aos = conn.get_client("opensearch")
 
-cluster_table = dynamodb.Table(cluster_table_name)
-app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
-svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
+aos_domain_dao = OpenSearchDomainDao(cluster_table_name)
+app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
+svc_pipeline_dao = SvcPipelineDao(svc_pipeline_table_name)
+
 account_id = sts.get_caller_identity()["Account"]
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
 
@@ -97,7 +103,6 @@ def set_master_user_arn(aos_client, domain_name, master_role_arn: str):
 
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     action = event["info"]["fieldName"]
     args = event["arguments"]
@@ -160,22 +165,9 @@ def list_domain_names(region=default_region):
     if not region:
         region = default_region
 
-    resp = cluster_table.scan(
-        ProjectionExpression="domainName, #status",
-        FilterExpression=Attr("region").eq(region) & Attr("status").ne("INACTIVE"),
-        ExpressionAttributeNames={
-            "#status": "status",
-        },
-    )
+    aos_domains = aos_domain_dao.list_domains()
 
-    items = resp["Items"]
-
-    imported_domains = {
-        item["domainName"]: DomainStatus.FAILED
-        if item.get("status") == "FAILED"
-        else (get_or_default(item, "status", DomainStatus.IMPORTED))
-        for item in items
-    }
+    imported_domains = {item.domainName: item.status for item in aos_domains}
 
     es = conn.get_client("es", region_name=region)
     resp = es.list_domain_names()
@@ -339,27 +331,31 @@ def import_domain(**args):
     logger.info(f"Set master user arn {OPENSEARCH_MASTER_ROLE_ARN} to {domain_name}")
     set_master_user_arn(aos, domain_name, OPENSEARCH_MASTER_ROLE_ARN)
 
-    cluster_table.put_item(
-        Item={
-            "id": cluster_id,
-            "domainArn": arn,
-            "domainName": domain["DomainName"],
-            "engine": engine,
-            "version": version,
-            "endpoint": domain["Endpoints"]["vpc"],
-            "region": region_name,
-            "accountId": account_id,
-            "masterRoleArn": OPENSEARCH_MASTER_ROLE_ARN,
-            "vpc": vpc,
-            "resources": related_resources,
-            "domainInfo": domain_info,
-            "proxyStatus": "DISABLED",
-            "alarmStatus": "DISABLED",
-            "importMethod": import_method,
-            "status": DomainStatus.IMPORTED,
-            "tags": args.get("tags", []),
-            "importedDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
+    aos_domain_dao.save(
+        OpenSearchDomain(
+            id=cluster_id,
+            domainArn=arn,
+            domainName=domain["DomainName"],
+            engine=engine,
+            version=version,
+            endpoint=domain["Endpoints"]["vpc"],
+            region=str(region_name),
+            accountId=account_id,
+            masterRoleArn=OPENSEARCH_MASTER_ROLE_ARN,
+            vpc=Vpc(
+                vpcId=str(solution_vpc_id),
+                securityGroupId=str(solution_sg_id),
+                privateSubnetIds=str(solution_private_subnet_ids_str),
+            ),
+            resources=related_resources,
+            domainInfo=domain_info,
+            proxyStatus="DISABLED",
+            alarmStatus="DISABLED",
+            importMethod=import_method,
+            status=DomainImportStatusEnum.IMPORTED,
+            tags=args.get("tags", []),
+            importedDt=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
     )
 
     return {
@@ -391,40 +387,24 @@ def remove_domain(id, **args) -> dict:
     logger.info(f"Trying to remove domain {id}")
 
     aos_domain = get_domain_by_id(id)
-    if aos_domain.get("proxyStatus") in ["CREATING", "DELETING"] or aos_domain.get(
-        "alarmStatus"
-    ) in ["CREATING", "DELETING"]:
+    if aos_domain.proxyStatus in ["CREATING", "DELETING"] or aos_domain.alarmStatus in [
+        "CREATING",
+        "DELETING",
+    ]:
         raise APIException(ErrorCode.ASSOCIATED_STACK_UNDER_PROCESSING)
 
-    domain_name = aos_domain["domainName"]
+    domain_name = aos_domain.domainName
 
     # check service pipeline
     conditions = Attr("status").eq("ACTIVE")
     conditions = conditions.__and__(Attr("target").eq(domain_name))
-    svc_pipeline_resp = svc_pipeline_table.scan(
-        FilterExpression=conditions,
-        ProjectionExpression="id, #parameters, #s",
-        ExpressionAttributeNames={
-            "#parameters": "parameters",
-            "#s": "status",
-        },
-    )
-    logger.info(f"svc_pipeline_resp is {svc_pipeline_resp}")
-    if "Items" in svc_pipeline_resp and len(svc_pipeline_resp["Items"]) > 0:
+    if len(svc_pipeline_dao.list_svc_pipelines(conditions)) > 0:
         raise APIException(ErrorCode.SVC_PIPELINE_NOT_CLEANED)
 
     # check app pipeline
     conditions = Attr("status").eq("ACTIVE")
     conditions = conditions.__and__(Attr("aosParas.domainName").eq(domain_name))
-    app_pipeline_resp = app_pipeline_table.scan(
-        FilterExpression=conditions,
-        ProjectionExpression="id, #aosParams,#s",
-        ExpressionAttributeNames={
-            "#aosParams": "aosParams",
-            "#s": "status",
-        },
-    )
-    if "Items" in app_pipeline_resp and len(app_pipeline_resp["Items"]) > 0:
+    if len(app_pipeline_dao.list_app_pipelines(conditions)) > 0:
         raise APIException(ErrorCode.APP_PIPELINE_NOT_CLEANED)
 
     # Domain information must be obtained from ddb, not through OpenSearch api.
@@ -453,7 +433,9 @@ def remove_domain(id, **args) -> dict:
         error_message,
         resources,
     ) = cluster_auto_import_mgr.reverse_domain_related_resources(
-        id, is_reverse_conf, cluster_table
+        id,
+        is_reverse_conf,
+        aos_domain_dao,
     )
 
     return {
@@ -466,17 +448,8 @@ def remove_domain(id, **args) -> dict:
 def get_domain_by_id(id):
     """Helper function to query domain by id in Cluster table"""
     logger.info("Query domain by id in cluster table in DynamoDB")
-    response = cluster_table.get_item(
-        Key={
-            "id": id,
-        }
-    )
-    # logger.info(response)
-    if "Item" not in response:
-        raise APIException(
-            ErrorCode.ITEM_NOT_FOUND, "Cannot find domain in the imported list"
-        )
-    return response["Item"]
+
+    return aos_domain_dao.get_domain_by_id(id)
 
 
 def exist_domain(domain_name, region_name):
@@ -487,14 +460,15 @@ def exist_domain(domain_name, region_name):
     arn = f"arn:{partition}:es:{region_name}:{account_id}:domain/{domain_name}"
     # Get the id
     cluster_id = unique_id(arn)
-    response = cluster_table.get_item(
-        Key={
-            "id": cluster_id,
-        }
-    )
-    if "Item" in response and response["Item"]["status"] != "INACTIVE":
-        return True
-    return False
+
+    try:
+        domain = get_domain_by_id(cluster_id)
+        return domain.status != "INACTIVE"
+    except APIException as e:
+        if e.type == ErrorCode.ITEM_NOT_FOUND.name:
+            return False
+        else:
+            raise e
 
 
 def automatic_imported_domain(domain_name, region_name):
@@ -502,43 +476,28 @@ def automatic_imported_domain(domain_name, region_name):
     arn = f"arn:{partition}:es:{region_name}:{account_id}:domain/{domain_name}"
     # Get the id
     cluster_id = unique_id(arn)
-    response = cluster_table.get_item(
-        Key={
-            "id": cluster_id,
-        }
-    )
-    if (
-        "Item" in response
-        and response["Item"]["status"] != "INACTIVE"
-        and response["Item"].get("importMethod") == DomainImportType.AUTOMATIC
-    ):
-        return True
-    return False
+
+    try:
+        domain = get_domain_by_id(cluster_id)
+        return (
+            domain.status != "INACTIVE"
+            and domain.importMethod == DomainImportType.AUTOMATIC
+        )
+    except APIException as e:
+        if e.type == ErrorCode.ITEM_NOT_FOUND.name:
+            return False
+        else:
+            raise e
 
 
 def query_domains(include_failed):
     default_conditions = Attr("status").ne("INACTIVE")
 
     if include_failed:
-        resp = cluster_table.scan(
-            FilterExpression=default_conditions,
-            ProjectionExpression="id, domainName, engine, #region, version, endpoint, #status",
-            ExpressionAttributeNames={
-                "#region": "region",
-                "#status": "status",
-            },
-        )
+        return aos_domain_dao.list_domains(default_conditions)
     else:
         conditions = Attr("status").ne("FAILED")
-        resp = cluster_table.scan(
-            FilterExpression=default_conditions & conditions,
-            ProjectionExpression="id, domainName, engine, #region, version, endpoint",
-            ExpressionAttributeNames={
-                "#region": "region",
-            },
-        )
-
-    return resp["Items"]
+        return aos_domain_dao.list_domains(default_conditions & conditions)
 
 
 def set_domain_engine_and_version(result):
@@ -587,6 +546,7 @@ def list_imported_domains(**args):
     logger.info("List all domains in cluster table in DynamoDB")
 
     result = query_domains(include_failed)
+    result = [each.dict() for each in result]
     set_domain_engine_and_version(result)
 
     domain_list = [item.get("domainName") for item in result]
@@ -647,11 +607,11 @@ def get_domain_details(id: str, metrics: bool = False):
     logger.info(f"Get domain details for id {id}")
 
     item = get_domain_by_id(id)
-    domain_name = item["domainName"]
-    region_name = item["region"]
+    domain_name = item.domainName
+    region_name = item.region
 
     es = conn.get_client("es", region_name=region_name)
-    detail = item
+    detail = item.dict()
 
     try:
         resp = es.describe_elasticsearch_domain(DomainName=domain_name)
@@ -668,7 +628,7 @@ def get_domain_details(id: str, metrics: bool = False):
     es_vpc = domain["VPCOptions"]
     cognito = domain["CognitoOptions"]
 
-    get_domain_engine_and_version_dynamically(domain, item)
+    get_domain_engine_and_version_dynamically(domain, detail)
 
     node = domain["ElasticsearchClusterConfig"]
     es_vpc = domain["VPCOptions"]
@@ -691,9 +651,11 @@ def get_domain_details(id: str, metrics: bool = False):
         "warmEnabled": node["WarmEnabled"],
         "warmType": node.get("WarmType", "N/A"),
         "warmCount": node.get("WarmCount", 0),
-        "coldEnabled": node["ColdStorageOptions"]["Enabled"]
-        if "ColdStorageOptions" in node
-        else False,
+        "coldEnabled": (
+            node["ColdStorageOptions"]["Enabled"]
+            if "ColdStorageOptions" in node
+            else False
+        ),
     }
     detail["cognito"] = {
         "enabled": cognito["Enabled"],
@@ -981,7 +943,10 @@ def delete_sub_stack(id: str, stack_type="Proxy"):
     item = get_domain_by_id(id)
     status = "DISABLED"
 
-    stack_id = item.get(f"{stack_type.lower()}StackId")
+    if stack_type == "Proxy":
+        stack_id = item.proxyStackId
+    else:
+        stack_id = item.alarmStackId
 
     if stack_id:
         status = "DELETING"
@@ -989,7 +954,7 @@ def delete_sub_stack(id: str, stack_type="Proxy"):
         exec_sfn_flow(id, "STOP", stack_type, args)
 
     # Update status in DynamoDB
-    _update_stack_info(id, status, {}, stack_type)
+    _update_stack_info(id, status, None, stack_type)
 
     return "OK"
 
@@ -1017,10 +982,10 @@ def start_sub_stack(id, input, stack_type="Proxy"):
     if stack_type == "Proxy":
         input.update({"elbAccessLogBucketName": default_logging_bucket})
         params = _get_proxy_params(id, input)
+        _update_stack_info(id, "CREATING", ProxyInput.parse_obj(input), stack_type)
     else:
         params = _get_alarm_params(id, input)
-
-    _update_stack_info(id, "CREATING", input, stack_type)
+        _update_stack_info(id, "CREATING", input, stack_type)
 
     logger.info(params)
     args = {
@@ -1076,9 +1041,9 @@ def _get_proxy_params(id, input):
     logger.info("Get parameters for proxy stack")
 
     item = get_domain_by_id(id)
-    endpoint = item["endpoint"]
-    engine = item["engine"]
-    process_sg = item["vpc"]["securityGroupId"]
+    endpoint = item.endpoint
+    engine = item.engine
+    process_sg = item.vpc.securityGroupId
 
     logger.info(input)
     param_map = {
@@ -1120,8 +1085,8 @@ def _get_alarm_params(id, input):
     item = get_domain_by_id(id)
 
     param_map = {
-        "endpoint": item["endpoint"],
-        "domainName": item["domainName"],
+        "endpoint": item.endpoint,
+        "domainName": item.domainName,
         "email": input["email"],
     }
 
@@ -1146,17 +1111,10 @@ def _get_alarm_params(id, input):
 
 def _update_stack_info(id, status, input, stack_type="Proxy"):
     """Helper function to set stack status and store the stack input in cluster table"""
-    cluster_table.update_item(
-        Key={
-            "id": id,
-        },
-        UpdateExpression="SET #s = :s, #input = :input",
-        ExpressionAttributeNames={
-            "#s": f"{stack_type.lower()}Status",
-            "#input": f"{stack_type.lower()}Input",
-        },
-        ExpressionAttributeValues={":s": status, ":input": input},
-    )
+    if stack_type == "Proxy":
+        aos_domain_dao.update_proxy(id, status, input)
+    elif stack_type == "Alarm":
+        aos_domain_dao.update_alarm(id, status, input)
 
 
 def _create_stack_params(param_map):
@@ -1213,12 +1171,8 @@ def unique_id(s):
 
 def get_domain_info(id):
     """Get the domain info from ddb"""
-    item = cluster_table.get_item(Key={"id": id})
-    if "Item" not in item:
-        raise APIException(
-            ErrorCode.ITEM_NOT_FOUND, "Cannot find domain in the imported list"
-        )
-    return item["Item"].get("domainInfo", {})
+
+    return aos_domain_dao.get_domain_by_id(id).domainInfo
 
 
 def get_domain_engine_and_version_dynamically(resp_from_api, item_from_ddb):

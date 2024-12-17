@@ -37,6 +37,7 @@ const AppLogProcessor: React.FC<AppLogProcessorProps> = (
         defaultStr(pipelineInfo?.pipelineId)
       )}
       processorLambda={pipelineInfo?.processorLogGroupName}
+      logProcessorConcurrency={pipelineInfo?.logProcessorConcurrency}
     />
   );
 };

@@ -31,7 +31,6 @@ export type MemberAccountState = {
   stackIdError: string;
   kmsArnError: string;
   instanceProfileError: string;
-  fbUploadSNSArnError: string;
 };
 
 export const INIT_MEMBER_ACCOUNT_DATA: MemberAccountState = {
@@ -64,7 +63,6 @@ export const INIT_MEMBER_ACCOUNT_DATA: MemberAccountState = {
   stackIdError: "",
   kmsArnError: "",
   instanceProfileError: "",
-  fbUploadSNSArnError: "",
 };
 
 export const validateAccountName = (state: MemberAccountState) => {
@@ -229,22 +227,6 @@ export const validateInstanceProfile = (state: MemberAccountState) => {
   return "";
 };
 
-export const validateFBUploadSNSArn = (state: MemberAccountState) => {
-  if (!state.data.subAccountFlbConfUploadingEventTopicArn?.trim()) {
-    return "resource:crossAccount.link.inputFBConfigUploadSNSTopicArn";
-  }
-  if (
-    !new RegExp(
-      `^arn:(aws-cn|aws):sns:\\w+-\\w+-\\d:${
-        state.data.subAccountId || "\\d{12}"
-      }:.+`
-    ).test(state.data.subAccountFlbConfUploadingEventTopicArn.trim())
-  ) {
-    return "resource:crossAccount.link.fbConfigUploadSNSTopicArnFormatError";
-  }
-  return "";
-};
-
 export const validateMemberAccountInput = (accountInfo: MemberAccountState) => {
   return !(
     validateAccountName(accountInfo) ||
@@ -258,8 +240,7 @@ export const validateMemberAccountInput = (accountInfo: MemberAccountState) => {
     validateS3Bucket(accountInfo) ||
     validateStackId(accountInfo) ||
     validateKMSArn(accountInfo) ||
-    validateInstanceProfile(accountInfo) ||
-    validateFBUploadSNSArn(accountInfo)
+    validateInstanceProfile(accountInfo)
   );
 };
 
@@ -324,10 +305,6 @@ export const memberAccountSlice = createSlice({
       state.data.subAccountIamInstanceProfileArn = payload;
       state.instanceProfileError = "";
     },
-    fbUploadSNSArnChanged: (state, { payload }: PayloadAction<string>) => {
-      state.data.subAccountFlbConfUploadingEventTopicArn = payload;
-      state.fbUploadSNSArnError = "";
-    },
     validateMemberAccount: (state) => {
       state.nameError = validateAccountName(state);
       state.idError = validateAccountId(state);
@@ -341,7 +318,6 @@ export const memberAccountSlice = createSlice({
       state.stackIdError = validateStackId(state);
       state.kmsArnError = validateKMSArn(state);
       state.instanceProfileError = validateInstanceProfile(state);
-      state.fbUploadSNSArnError = validateFBUploadSNSArn(state);
     },
   },
 });
@@ -362,6 +338,5 @@ export const {
   stackIdChanged,
   kmsArnChanged,
   instanceProfileChanged,
-  fbUploadSNSArnChanged,
   validateMemberAccount,
 } = memberAccountSlice.actions;

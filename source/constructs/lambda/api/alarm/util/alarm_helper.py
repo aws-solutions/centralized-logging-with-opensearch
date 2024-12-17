@@ -17,7 +17,7 @@ from commonlib.logging import get_logger
 
 from boto3.dynamodb.conditions import Attr
 
-logger = get_logger('alarm.util')
+logger = get_logger("alarm.util")
 
 conn = AWSConnection()
 
@@ -29,8 +29,10 @@ svc_pipeline_table_name = os.environ.get("PIPELINE_TABLE_NAME")
 app_log_ingestion_table_name = os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
 metadata_table_name = os.environ["METADATA_TABLE_NAME"]
 
-SQS_OLDEST_MESSAGE_AGE_THRESHOLD_SECONDS = 1800
-SQS_OLDEST_MESSAGE_AGE_PERIOD = 60
+THROTTLE_LAMBDA_ARN = os.environ.get("THROTTLE_LAMBDA_ARN", "")
+
+EVT_DEAD_LETTER_INVOCATIONS_THRESHOLD = 1
+EVT_DEAD_LETTER_INVOCATIONS_PERIOD = 60 * 5
 
 PROCESSOR_ERROR_INVOCATION_THRESHOLD_COUNT = 10
 PROCESSOR_ERROR_INVOCATION_PERIOD = 60
@@ -187,6 +189,93 @@ class AlarmHelper:
             ComparisonOperator=comparison_operator,
         )
 
+    def _create_lambda_error_rate_alarm(
+        self,
+        lambda_function_name,
+        alarm_name,
+        period=60,  # Default to 5 minutes
+        evaluation_periods=5,
+        threshold=0.5,  # Default to 50% error rate
+        alarm_actions=None,
+    ):
+        """
+        Creates a CloudWatch alarm for monitoring the error rate of a Lambda function.
+
+        This function sets up a CloudWatch alarm that triggers when the error rate of the specified Lambda function exceeds the given threshold over the specified evaluation period.
+
+        Args:
+            self (object): The instance of the class.
+            lambda_function_name (str): The name of the Lambda function to monitor.
+            alarm_name (str): The name of the CloudWatch alarm.
+            period (int, optional): The time in seconds over which the specified statistic is applied. Defaults to 60 seconds (1 minute).
+            evaluation_periods (int, optional): The number of periods over which data is compared to the specified threshold. Defaults to 5.
+            threshold (float, optional): The error rate threshold, expressed as a decimal value, at which the alarm will trigger. Defaults to 0.5 (50% error rate).
+            alarm_actions (list, optional): A list of AWS Resource Names (ARNs) for the actions to perform when the alarm is triggered. Defaults to an empty list.
+
+        Returns:
+            dict: The response from the `put_metric_alarm` operation, which includes details about the created CloudWatch alarm.
+        """
+        if alarm_actions is None:
+            alarm_actions = []
+
+        # Calculate the alarm description
+        threshold_percentage = threshold * 100
+        period_minutes = period * evaluation_periods / 60
+        alarm_description = f"Alarm when Lambda error rate exceeds {threshold_percentage}% in {period_minutes} minutes"
+
+        # Create the CloudWatch alarm
+        response = self._cwl_client.put_metric_alarm(
+            AlarmName=alarm_name,
+            AlarmDescription=alarm_description,
+            ActionsEnabled=True,
+            AlarmActions=alarm_actions,
+            EvaluationPeriods=evaluation_periods,
+            DatapointsToAlarm=evaluation_periods,
+            Threshold=threshold,
+            ComparisonOperator="GreaterThanOrEqualToThreshold",
+            TreatMissingData="notBreaching",
+            Metrics=[
+                {
+                    "Id": "errors",
+                    "MetricStat": {
+                        "Metric": {
+                            "Namespace": "AWS/Lambda",  # NOSONAR
+                            "MetricName": "Errors",
+                            "Dimensions": [
+                                {"Name": "FunctionName", "Value": lambda_function_name}
+                            ],
+                        },
+                        "Period": period,
+                        "Stat": "Sum",
+                    },
+                    "ReturnData": False,
+                },
+                {
+                    "Id": "invocations",
+                    "MetricStat": {
+                        "Metric": {
+                            "Namespace": "AWS/Lambda",  # NOSONAR
+                            "MetricName": "Invocations",
+                            "Dimensions": [
+                                {"Name": "FunctionName", "Value": lambda_function_name}
+                            ],
+                        },
+                        "Period": period,
+                        "Stat": "Sum",
+                    },
+                    "ReturnData": False,
+                },
+                {
+                    "Id": "errorRate",
+                    "Expression": "errors / invocations",
+                    "Label": "ErrorRate",
+                    "ReturnData": True,
+                },
+            ],
+        )
+
+        return response
+
     def create_alarms(self, custom_sns_topic_name: str = "") -> None:
         """Create all alarms for a specific pipeline"""
         # First to get the sns topic arn
@@ -194,6 +283,15 @@ class AlarmHelper:
         sns_topic_name, self._sns_topic_arn = self._get_sns_topic_arn(
             custom_sns_topic_name
         )
+
+        if "processorLogGroupName" in self._alarm_info:
+            self._create_lambda_error_rate_alarm(
+                alarm_name=self.generate_alarm_name(
+                    PipelineAlarmType.PROCESSOR_ERROR_RATE_ALARM
+                ),
+                lambda_function_name=self._alarm_info["processorFnName"],
+                alarm_actions=[THROTTLE_LAMBDA_ARN],
+            )
 
         alarm_configs = self.generate_alarm_configs()
         for alarm_config in alarm_configs:
@@ -218,13 +316,27 @@ class AlarmHelper:
             self._emails,
             id_key=self._id_key,
         )
-        
-        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
+
+        self.update_light_engine_notification(
+            recipients=self._sns_topic_arn, service="SNS"
+        )
 
     def delete_alarms(self) -> None:
         """Delete all alarms"""
         self.generate_alarm_configs()
-        self._cwl_client.delete_alarms(AlarmNames=self._alarm_names)
+        self._cwl_client.delete_alarms(
+            AlarmNames=(
+                [
+                    self.generate_alarm_name(
+                        PipelineAlarmType.PROCESSOR_ERROR_RATE_ALARM
+                    ),
+                    self.generate_alarm_name(
+                        PipelineAlarmType.OLDEST_MESSAGE_AGE_ALARM
+                    ),
+                ]
+                + self._alarm_names
+            )
+        )
 
         # Update the alarm status in pipeline table
         self._alarm_dao.update_pipeline_alarm_status(
@@ -232,8 +344,10 @@ class AlarmHelper:
             status=PipelineAlarmStatus.DISABLED,
             id_key=self._id_key,
         )
-        
-        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
+
+        self.update_light_engine_notification(
+            recipients=self._sns_topic_arn, service="SNS"
+        )
 
     def update_alarms(self) -> None:
         """Update alarms
@@ -275,9 +389,11 @@ class AlarmHelper:
                 ComparisonOperator=current_alarm_config["ComparisonOperator"],
                 Threshold=current_alarm_config["Threshold"],
                 OKActions=current_alarm_config.get("OKActions", []),
-                **{"Unit": current_alarm_config.get("Unit")}
-                if current_alarm_config.get("Unit")
-                else {},
+                **(
+                    {"Unit": current_alarm_config.get("Unit")}
+                    if current_alarm_config.get("Unit")
+                    else {}
+                ),
             )
 
         # Update the alarm status in pipeline ddb table
@@ -289,8 +405,10 @@ class AlarmHelper:
             self._emails,
             id_key=self._id_key,
         )
-        
-        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
+
+        self.update_light_engine_notification(
+            recipients=self._sns_topic_arn, service="SNS"
+        )
 
     def get_alarms(self, alarm_name: str) -> dict:
         """Get all alarms for a specific pipeline"""
@@ -342,21 +460,21 @@ class AlarmHelper:
             log_event_queue_name = self._alarm_info["logEventQueueName"]
             alarm_config = {
                 "alarm_name": self.generate_alarm_name(
-                    PipelineAlarmType.OLDEST_MESSAGE_AGE_ALARM
+                    PipelineAlarmType.DEAD_LETTER_INVOCATIONS
                 ),
-                "namespace": "AWS/SQS",
-                "metric_name": "ApproximateAgeOfOldestMessage",
-                "statistic": "Maximum",
+                "namespace": "AWS/Events",
+                "metric_name": "DeadLetterInvocations",
+                "statistic": "Sum",
                 "dimensions": [
                     {
                         "Name": "QueueName",
                         "Value": log_event_queue_name,
                     },
                 ],
-                "period": SQS_OLDEST_MESSAGE_AGE_PERIOD,
+                "period": EVT_DEAD_LETTER_INVOCATIONS_PERIOD,
                 "evaluation_periods": 1,
-                "threshold": SQS_OLDEST_MESSAGE_AGE_THRESHOLD_SECONDS,
-                "unit": "Seconds",
+                "threshold": EVT_DEAD_LETTER_INVOCATIONS_THRESHOLD,
+                "unit": "",
                 "comparison_operator": "GreaterThanOrEqualToThreshold",
             }
             alarm_configs.append(alarm_config)
@@ -364,29 +482,6 @@ class AlarmHelper:
 
         # If pipeline has a processor lambda, then create processor related alarms
         if "processorLogGroupName" in self._alarm_info:
-            # Processor error invocation alarm, average 10% of invocations error in last 1 minutes
-            alarm_config = {
-                "alarm_name": self.generate_alarm_name(
-                    PipelineAlarmType.PROCESSOR_ERROR_INVOCATION_ALARM
-                ),
-                "namespace": "AWS/Lambda",
-                "metric_name": "Errors",
-                "statistic": "Average",
-                "dimensions": [
-                    {
-                        "Name": "FunctionName",
-                        "Value": self._alarm_info["processorFnName"],
-                    },
-                ],
-                "period": PROCESSOR_ERROR_INVOCATION_PERIOD,
-                "evaluation_periods": 1,
-                "threshold": PROCESSOR_ERROR_INVOCATION_THRESHOLD_COUNT,
-                "unit": "",
-                "comparison_operator": "GreaterThanOrEqualToThreshold",
-            }
-            alarm_configs.append(alarm_config)
-            self._alarm_names.append(alarm_config["alarm_name"])
-
             # Processor error record alarm, 1 error recorded in last 5 minutes
             alarm_config = {
                 "alarm_name": self.generate_alarm_name(
@@ -415,7 +510,7 @@ class AlarmHelper:
                 "alarm_name": self.generate_alarm_name(
                     PipelineAlarmType.PROCESSOR_DURATION_ALARM
                 ),
-                "namespace": "AWS/Lambda",
+                "namespace": "AWS/Lambda",  # NOSONAR
                 "metric_name": "Duration",
                 "statistic": "Average",
                 "dimensions": [
@@ -533,21 +628,18 @@ class AlarmHelper:
         return (
             stack_prefix + "-pipe-" + self._pipeline_id[:8] + "-" + alarm_type + suffix
         )
-        
-    def update_light_engine_notification(self, recipients: str, service: str = 'SNS'):
-        if self._alarm_info['engineType'] == EngineType.OPEN_SEARCH:
-            return 
 
-        pipeline_info = self._metadata_table.get_item(key={'metaName': self._pipeline_id})
+    def update_light_engine_notification(self, recipients: str, service: str = "SNS"):
+        if self._alarm_info["engineType"] == EngineType.OPEN_SEARCH:
+            return
+
+        pipeline_info = self._metadata_table.get_item(
+            key={"metaName": self._pipeline_id}
+        )
         if pipeline_info:
-            data = pipeline_info.get('data', {})
+            data = pipeline_info.get("data", {})
             if data:
-                data['notification'] = {
-                    'recipients': recipients,
-                    'service': service
-                }
-                self._metadata_table.update_item(key={'metaName': self._pipeline_id}, attributes_map={'data': data})
-                
-
-
-
+                data["notification"] = {"recipients": recipients, "service": service}
+                self._metadata_table.update_item(
+                    key={"metaName": self._pipeline_id}, attributes_map={"data": data}
+                )

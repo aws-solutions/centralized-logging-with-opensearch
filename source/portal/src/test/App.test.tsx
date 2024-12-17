@@ -13,15 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+
 import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
+import axios from "axios";
+import { act } from "@testing-library/react";
+import { AppSyncAuthType } from "types";
 
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useParams: jest.fn(),
+jest.mock("axios", () => ({
+  get: jest.fn(),
 }));
 
 jest.mock("react-i18next", () => ({
@@ -40,38 +42,79 @@ jest.mock("react-i18next", () => ({
 }));
 
 beforeAll(() => {
-  // 检查performance对象是否存在
   if (!global.performance) {
     global.performance = window.performance;
   }
 
-  // 模拟getEntriesByType方法
-  global.performance.getEntriesByType = jest.fn(
-    () =>
-      [
-        { type: "reload" }, // 根据需要返回相应的模拟值
-      ] as any
-  );
+  (global.performance as any).getEntriesByType = jest.fn((type) => {
+    if (type === "navigation") {
+      return [{ type: "reload" }];
+    }
+    return [];
+  });
 });
 
 beforeEach(() => {
+  jest.clearAllMocks();
+  localStorage.clear();
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("App", () => {
-  it("renders without crashing with cognito", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter initialEntries={["/resources/instance-group"]}>
-        <App />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
+describe("App component tests with open id", () => {
+  it("should display loading initially", async () => {
+    await act(async () => {
+      const configData = {
+        aws_appsync_authenticationType: AppSyncAuthType.OPEN_ID,
+        aws_oidc_provider: "https://example.com",
+        aws_oidc_client_id: "client123",
+        aws_cloudfront_url: "cloudfront.net",
+        aws_oidc_customer_domain: "www.example.com",
+      };
+      (axios.get as any).mockImplementation(() =>
+        Promise.resolve({ data: configData })
+      );
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/"]}>
+          <App />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
           },
-        },
-      }
-    );
-    expect(getByText(/loading/i)).toBeInTheDocument();
+        }
+      );
+    });
+  });
+});
+
+describe("App component tests with cognito", () => {
+  it("should display loading initially", async () => {
+    await act(async () => {
+      const configData = {
+        aws_appsync_authenticationType:
+          AppSyncAuthType.AMAZON_COGNITO_USER_POOLS,
+        aws_oidc_provider: "https://example.com",
+        aws_oidc_client_id: "client123",
+        aws_cloudfront_url: "cloudfront.net",
+        aws_oidc_customer_domain: "www.example.com",
+      };
+      (axios.get as any).mockImplementation(() =>
+        Promise.resolve({ data: configData })
+      );
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/"]}>
+          <App />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
   });
 });

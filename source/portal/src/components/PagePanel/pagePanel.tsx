@@ -30,7 +30,7 @@ export const PagePanel: React.FC<PagePanelProps> = (props: PagePanelProps) => {
   return (
     <div className="gsui-page-panel">
       <div className="title">
-        <div className="page-title">{title}</div>
+        {title && <div className="page-title">{title}</div>}
         <div className="actions">{actions}</div>
       </div>
       {desc && <div className="page-desc">{desc}</div>}

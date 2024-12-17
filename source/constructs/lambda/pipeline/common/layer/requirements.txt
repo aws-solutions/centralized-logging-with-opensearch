@@ -1,5 +1,2 @@
-urllib3
 requests
 requests-aws4auth
-boto3
-botocore

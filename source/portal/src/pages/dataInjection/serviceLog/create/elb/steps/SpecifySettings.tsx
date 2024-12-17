@@ -17,7 +17,6 @@ import React, { useState, useEffect } from "react";
 
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import Tiles from "components/Tiles";
 import { CreateLogMethod } from "assets/js/const";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
@@ -28,10 +27,12 @@ import AutoComplete from "components/AutoComplete";
 import { ELBTaskProps } from "../CreateELB";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
-import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import { defaultStr } from "assets/js/utils";
+import LogLocation from "../../common/LogLocation";
 
 interface SpecifySettingsProps {
   elbTask: ELBTaskProps;
@@ -116,8 +117,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setISChanging(false);
     setPreviewS3Path(` s3://${logginBucket.bucket}/${logginBucket.prefix}`);
     if (logginBucket.enabled) {
-      changeELBBucket(logginBucket.bucket || "");
-      changeLogPath(logginBucket.prefix || "");
+      changeELBBucket(defaultStr(logginBucket.bucket));
+      changeLogPath(defaultStr(logginBucket.prefix));
       setShowSuccessText(true);
     } else {
       setShowInfoText(true);
@@ -129,7 +130,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setShowSuccessText(false);
     setShowInfoText(false);
     setNextStepDisableStatus(false);
-    if (elbTask.params.elbObj && elbTask.params.elbObj.value) {
+    if (elbTask.params.elbObj?.value) {
       getBucketPrefix(elbTask.params.elbObj.value);
     }
   }, [elbTask.params.elbObj]);
@@ -146,42 +147,22 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:elb.logCreation")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:elb.creationMethod")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={elbTask.params.taskType}
-                  onChange={(event) => {
-                    changeTaskType(event.target.value);
-                    changeELBObj(null);
-                    if (event.target.value === CreateLogMethod.Automatic) {
-                      changeLogPath("");
-                    }
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:elb.auto"),
-                      description: t("servicelog:elb.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:elb.manual"),
-                      description: t("servicelog:elb.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel title={t("servicelog:elb.title")}>
+          <LogSourceEnable
+            value={elbTask.params.taskType}
+            onChange={(value) => {
+              changeTaskType(value);
+              changeELBObj(null);
+              if (value === CreateLogMethod.Automatic) {
+                changeLogPath("");
+              }
+            }}
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <CrossAccountSelect
                 disabled={loadingELBList}
@@ -204,7 +185,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                     successText={
                       showSuccessText && previewS3Path
-                        ? t("servicelog:elb.savedTips") + previewS3Path
+                        ? t("servicelog:create.savedTips") + previewS3Path
                         : ""
                     }
                   >
@@ -269,27 +250,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  <FormItem
-                    optionTitle={t("servicelog:elb.logLocation")}
-                    optionDesc={t("servicelog:elb.logLocationDesc")}
-                    errorText={
-                      (manualELBEmptyError
-                        ? t("servicelog:elb.logLocationError")
-                        : "") ||
-                      (manualS3PathInvalid
-                        ? t("servicelog:s3InvalidError")
-                        : "")
-                    }
-                  >
-                    <TextInput
-                      className="m-w-75p"
-                      value={elbTask.params.manualBucketELBPath}
-                      placeholder="s3://bucket/prefix"
-                      onChange={(event) => {
-                        changeLogPath(event.target.value);
-                      }}
-                    />
-                  </FormItem>
+                  <LogLocation
+                    manualS3EmptyError={manualELBEmptyError}
+                    manualS3PathInvalid={manualS3PathInvalid}
+                    logLocation={elbTask.params.manualBucketELBPath}
+                    changeLogPath={(value) => {
+                      changeLogPath(value);
+                    }}
+                  />
                 </div>
               )}
             </div>

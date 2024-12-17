@@ -31,9 +31,9 @@ import {
   aws_s3 as s3,
   aws_ec2 as ec2,
   aws_sqs as sqs,
-  aws_s3_notifications as s3n,
   IAspect,
   Aspects,
+  aws_cognito as cognito,
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
@@ -46,7 +46,10 @@ import { EcsClusterStack } from './main/ecs-cluster-stack';
 import { PortalStack } from './main/portal-stack';
 import { VpcStack } from './main/vpc-stack';
 import { MicroBatchStack } from './microbatch/main/services/amazon-services-stack';
-import { EnforceUnmanagedS3BucketNotificationsAspects, UseS3BucketNotificationsWithRetryAspects } from './util/stack-helper';
+import {
+  EnforceUnmanagedS3BucketNotificationsAspects,
+  UseS3BucketNotificationsWithRetryAspects,
+} from './util/stack-helper';
 
 const { VERSION } = process.env;
 
@@ -105,8 +108,6 @@ export class MainStack extends Stack {
   private oidcCustomerDomain = '';
   private iamCertificateId = '';
   private acmCertificateArn = '';
-  private flbConfUploadingEventQueueArn = '';
-
 
   constructor(scope: Construct, id: string, props: MainProps) {
     super(scope, id, props);
@@ -137,7 +138,6 @@ export class MainStack extends Stack {
     });
     this.addToParamLabels('Admin User Email', username.logicalId);
     this.addToParamGroups('Authentication', username.logicalId);
-
 
     if (this.authType === AuthType.OIDC) {
       oidcProvider = new CfnParameter(this, 'OidcProvider', {
@@ -275,7 +275,7 @@ export class MainStack extends Stack {
     });
 
     // Create a CMK for SQS encryption
-    const sqsCMKKey = new kms.Key(this, 'KMSCMK', {
+    const cmkKey = new kms.Key(this, 'KMSCMK', {
       removalPolicy: RemovalPolicy.DESTROY,
       pendingWindow: Duration.days(7),
       description: 'KMS-CMK for encrypting the objects in the SQS',
@@ -307,16 +307,16 @@ export class MainStack extends Stack {
             actions: ['kms:GenerateDataKey*', 'kms:Decrypt', 'kms:Encrypt'],
             resources: ['*'], // support app log from s3 by not limiting the resource
             principals: [
-              new iam.ServicePrincipal("s3.amazonaws.com"),
-              new iam.ServicePrincipal("lambda.amazonaws.com"),
-              new iam.ServicePrincipal("sqs.amazonaws.com"),
-              new iam.ServicePrincipal("sns.amazonaws.com"),
-              new iam.ServicePrincipal("ec2.amazonaws.com"),
-              new iam.ServicePrincipal("athena.amazonaws.com"),
-              new iam.ServicePrincipal("dynamodb.amazonaws.com"),
-              new iam.ServicePrincipal("cloudwatch.amazonaws.com"),
-              new iam.ServicePrincipal("glue.amazonaws.com"),
-              new iam.ServicePrincipal("delivery.logs.amazonaws.com"),
+              new iam.ServicePrincipal('s3.amazonaws.com'),
+              new iam.ServicePrincipal('lambda.amazonaws.com'),
+              new iam.ServicePrincipal('sqs.amazonaws.com'),
+              new iam.ServicePrincipal('sns.amazonaws.com'),
+              new iam.ServicePrincipal('ec2.amazonaws.com'),
+              new iam.ServicePrincipal('athena.amazonaws.com'),
+              new iam.ServicePrincipal('dynamodb.amazonaws.com'),
+              new iam.ServicePrincipal('cloudwatch.amazonaws.com'),
+              new iam.ServicePrincipal('glue.amazonaws.com'),
+              new iam.ServicePrincipal('delivery.logs.amazonaws.com'),
             ],
           }),
         ],
@@ -355,93 +355,50 @@ export class MainStack extends Stack {
       { id: 'AwsSolutions-SQS3', reason: 'it is a DLQ' },
     ]);
 
-    const flbConfUploadingEventQueue = new sqs.Queue(
-      this,
-      `${stackPrefix}-FlbConfUploadingEventQueue`,
-      {
-        visibilityTimeout: Duration.seconds(910),
-        retentionPeriod: Duration.days(14),
-        deadLetterQueue: {
-          queue: flbConfUploadingEventDLQ,
-          maxReceiveCount: 3,
-        },
-        encryption: sqs.QueueEncryption.KMS,
-        dataKeyReuse: Duration.minutes(5),
-        encryptionMasterKey: sqsCMKKey,
-        enforceSSL: true,
-      }
-    );
-    this.flbConfUploadingEventQueueArn = flbConfUploadingEventQueue.queueArn;
-
-    //allows the Amazon SNS topic in the member account to send a message to the Amazon SQS queue in the parent account.
-    flbConfUploadingEventQueue.addToResourcePolicy(
-      new iam.PolicyStatement({
-        actions: ['sqs:SendMessage'],
-        effect: iam.Effect.ALLOW,
-        resources: [this.flbConfUploadingEventQueueArn],
-        conditions: {
-          ['ArnLike']: {
-            'aws:SourceArn': `arn:${Aws.PARTITION}:sns:${Aws.REGION}:*:*FlbUploadingEventSubscriptionTopic*`,
-          },
-        },
-        principals: [new iam.ServicePrincipal('sns.amazonaws.com')],
-      })
-    );
-
     // Create a default logging bucket
-    const loggingBucket = new s3.Bucket(
-      this,
-      `${stackPrefix}LoggingBucket`,
-      {
-        encryption: s3.BucketEncryption.S3_MANAGED,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-        accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
-        objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
-        versioned: true,
-        enforceSSL: true,
-        notificationsHandlerRole: new iam.Role(this, 'NotiRole', {
-          assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-          description: 'A role for s3 bucket notification lambda',
-          managedPolicies: [
-            iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-          ],
-          inlinePolicies: {
-            BucketNotification: iam.PolicyDocument.fromJson({
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "s3:PutBucketNotification",
-                    "s3:GetBucketNotification"
-                  ],
-                  "Resource": "*"
-                }
-              ]
-            }),
-          },
-        }),
-        lifecycleRules: [
-          {
-            transitions: [
+    const loggingBucket = new s3.Bucket(this, `${stackPrefix}LoggingBucket`, {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
+      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
+      versioned: true,
+      enforceSSL: true,
+      notificationsHandlerRole: new iam.Role(this, 'NotiRole', {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        description: 'A role for s3 bucket notification lambda',
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            'service-role/AWSLambdaBasicExecutionRole'
+          ),
+        ],
+        inlinePolicies: {
+          BucketNotification: iam.PolicyDocument.fromJson({
+            Version: '2012-10-17',
+            Statement: [
               {
-                storageClass: s3.StorageClass.INTELLIGENT_TIERING,
-                transitionAfter: Duration.days(0),
+                Effect: 'Allow',
+                Action: [
+                  's3:PutBucketNotification',
+                  's3:GetBucketNotification',
+                ],
+                Resource: '*',
               },
             ],
-          },
-        ],
-      }
-    );
-    // Add the S3 event on the log bucket with the target is sqs queue
-    loggingBucket.addEventNotification(
-      s3.EventType.OBJECT_CREATED,
-      new s3n.SqsDestination(flbConfUploadingEventQueue),
-      {
-        prefix: 'app_log_config/',
-        suffix: 'applog_parsers.conf',
-      }
-    );
+          }),
+        },
+      }),
+      eventBridgeEnabled: true,
+      lifecycleRules: [
+        {
+          transitions: [
+            {
+              storageClass: s3.StorageClass.INTELLIGENT_TIERING,
+              transitionAfter: Duration.days(0),
+            },
+          ],
+        },
+      ],
+    });
     const elbRootAccountArnTable = new CfnMapping(
       this,
       'ELBRootAccountArnTable',
@@ -524,37 +481,38 @@ export class MainStack extends Stack {
         Fn.conditionEquals(Aws.REGION, 'il-central-1'),
         Fn.conditionEquals(Aws.REGION, 'ca-west-1'),
         Fn.conditionEquals(Aws.REGION, 'eu-south-2'),
-        Fn.conditionEquals(Aws.REGION, 'eu-central-2'),
+        Fn.conditionEquals(Aws.REGION, 'eu-central-2')
       ),
     });
     loggingBucket.addToResourcePolicy(
       iam.PolicyStatement.fromJson({
-        "Action": "s3:PutObject",
-        "Effect": "Allow",
-        "Principal": {
-          "Fn::If": [
+        Action: 's3:PutObject',
+        Effect: 'Allow',
+        Principal: {
+          'Fn::If': [
             isNewRegion.logicalId,
             {
-              "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
+              Service: 'logdelivery.elasticloadbalancing.amazonaws.com',
             },
             {
-              "AWS": {
-                "Fn::FindInMap": [
+              AWS: {
+                'Fn::FindInMap': [
                   elbRootAccountArnTable.logicalId,
                   {
-                    "Ref": "AWS::Region"
+                    Ref: 'AWS::Region',
                   },
-                  "elbRootAccountArn"
-                ]
-              }
-            }
-          ]
+                  'elbRootAccountArn',
+                ],
+              },
+            },
+          ],
         },
-        "Resource": [
+        Resource: [
           `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}/*`,
           `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}`,
         ],
-      }));
+      })
+    );
     loggingBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         resources: [
@@ -595,13 +553,19 @@ export class MainStack extends Stack {
 
     if (loggingBucket.policy) {
       Aspects.of(this).add(
-        new AddS3BucketNotificationsDependency(loggingBucket.policy.node.defaultChild as CfnResource)
+        new AddS3BucketNotificationsDependency(
+          loggingBucket.policy.node.defaultChild as CfnResource
+        )
       );
     }
 
-    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    const notificationHandler = Stack.of(this).node.tryFindChild(
+      'BucketNotificationsHandler050a0587b7544547bf325f094a3db834'
+    );
     if (notificationHandler) {
-      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+      Aspects.of(notificationHandler).add(
+        new UseS3BucketNotificationsWithRetryAspects()
+      );
     }
     Aspects.of(this).add(new EnforceUnmanagedS3BucketNotificationsAspects());
 
@@ -612,12 +576,18 @@ export class MainStack extends Stack {
       stackPrefix: stackPrefix,
       emailAddress: username.valueAsString,
       vpc: vpcStack.vpc.vpcId,
-      privateSubnets: vpcStack.vpc.privateSubnets.map((value) => { return value.subnetId }),
-      CMKArn: sqsCMKKey.keyArn,
-      SESState: "DISABLED",
+      privateSubnets: vpcStack.vpc.privateSubnets.map((value) => {
+        return value.subnetId;
+      }),
+      CMKArn: cmkKey.keyArn,
+      SESState: 'DISABLED',
     });
 
-    microBatchStack.microBatchLambdaStack.MetadataWriterStack.MetadataWriter.node.addDependency(vpcStack.vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).internetConnectivityEstablished);
+    microBatchStack.microBatchLambdaStack.MetadataWriterStack.MetadataWriter.node.addDependency(
+      vpcStack.vpc.selectSubnets({
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      }).internetConnectivityEstablished
+    );
 
     const openSearchMasterRole = new iam.Role(this, 'OpenSearchMasterRole', {
       assumedBy: new iam.AccountPrincipal(Aws.ACCOUNT_ID),
@@ -631,17 +601,18 @@ export class MainStack extends Stack {
       userPoolId: this.userPoolId,
       userPoolClientId: this.userPoolClientId,
       vpc: vpcStack.vpc,
-      subnetIds: vpcStack.vpc.privateSubnets.map(subnet => subnet.subnetId),
+      subnetIds: vpcStack.vpc.privateSubnets.map((subnet) => subnet.subnetId),
       processSg: vpcStack.processSg,
       processSgId: vpcStack.processSg.securityGroupId,
       authType: this.authType,
       defaultLoggingBucket: loggingBucket,
       ecsCluster: ecsClusterStack.ecsCluster,
-      cmkKeyArn: sqsCMKKey.keyArn,
+      cmkKeyArn: cmkKey.keyArn,
+      encryptionKey: cmkKey,
       solutionId: solutionId,
       stackPrefix: stackPrefix,
       microBatchStack: microBatchStack,
-      flbConfUploadingEventQueue: flbConfUploadingEventQueue,
+      snsEmailTopic: microBatchStack.microBatchSNSStack.SNSSendEmailTopic,
     });
     NagSuppressions.addResourceSuppressions(
       apiStack,
@@ -662,8 +633,7 @@ export class MainStack extends Stack {
       acmCertificateArn: this.acmCertificateArn,
       authenticationType: this.authType,
     });
-    portalStack.node.addDependency(sqsCMKKey);
-
+    portalStack.node.addDependency(cmkKey);
 
     portalStack.webUILoggingBucket.addToResourcePolicy(
       new iam.PolicyStatement({
@@ -675,15 +645,32 @@ export class MainStack extends Stack {
         ],
         conditions: {
           StringEquals: {
-            "aws:SourceAccount": `${Aws.ACCOUNT_ID}`,
+            'aws:SourceAccount': `${Aws.ACCOUNT_ID}`,
           },
           ArnLike: {
-            "aws:SourceArn": loggingBucket.bucketArn,
-          }
+            'aws:SourceArn': loggingBucket.bucketArn,
+          },
         },
       })
     );
-
+    if (this.userPoolId != '') {
+      new cognito.CfnLogDeliveryConfiguration(
+        this,
+        'CognitoLogDeliveryConfiguration',
+        {
+          userPoolId: this.userPoolId,
+          logConfigurations: [
+            {
+              s3Configuration: {
+                bucketArn: loggingBucket.bucketArn,
+              },
+              eventSource: 'userAuthEvents',
+              logLevel: 'INFO',
+            },
+          ],
+        }
+      );
+    }
     // Perform actions during solution deployment or update
     const crStack = new CustomResourceStack(this, 'CR', {
       apiStack: apiStack,
@@ -697,9 +684,11 @@ export class MainStack extends Stack {
       userPoolId: this.userPoolId,
       userPoolClientId: this.userPoolClientId,
       defaultLoggingBucket: loggingBucket.bucketName,
-      cmkKeyArn: sqsCMKKey.keyArn,
+      stagingBucket: microBatchStack.microBatchS3Stack.StagingBucket.bucketName,
+      cmkKeyArn: cmkKey.keyArn,
       authenticationType: this.authType,
       webUILoggingBucket: portalStack.webUILoggingBucket.bucketName,
+      snsEmailTopic: microBatchStack.microBatchSNSStack.SNSSendEmailTopic,
     });
 
     // Allow init config function to put aws-exports.json to portal bucket
@@ -722,13 +711,6 @@ export class MainStack extends Stack {
       description: 'Web Console URL (front-end)',
       value: portalStack.portalUrl,
     }).overrideLogicalId('WebConsoleUrl');
-
-    new CfnOutput(this, 'DefaultFlbConfUploadingEventQueueArn', {
-      description: 'Queue for config file upload events for Fluent Bit',
-      value: this.flbConfUploadingEventQueueArn,
-    }).overrideLogicalId('DefaultFlbConfUploadingEventQueueArn');
-
-
   }
 
   private addToParamGroups(label: string, ...param: string[]) {
@@ -742,18 +724,16 @@ export class MainStack extends Stack {
     this.paramLabels[param] = {
       default: label,
     };
-  };
+  }
 }
 
 class AddS3BucketNotificationsDependency implements IAspect {
-  public constructor(
-    private deps: CfnResource
-  ) { }
+  public constructor(private deps: CfnResource) { }
 
   public visit(node: IConstruct): void {
     if (
       node instanceof CfnResource &&
-      node.cfnResourceType === "Custom::S3BucketNotifications"
+      node.cfnResourceType === 'Custom::S3BucketNotifications'
     ) {
       node.addDependency(this.deps);
     }

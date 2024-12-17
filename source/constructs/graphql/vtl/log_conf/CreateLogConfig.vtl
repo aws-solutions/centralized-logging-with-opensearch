@@ -8,6 +8,19 @@ $util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $ctx.args.name), "Inva
 #set($ctx.args.regex = $util.urlDecode($ctx.args.regex))
 #set($ctx.args.timeKeyRegex = $util.urlDecode($ctx.args.timeKeyRegex))
 
+#if($ctx.args.userLogFormat.length() > 1024)
+    $util.error("userLogFormat cannot exceed 1024 characters.")
+#end
+#if($ctx.args.userSampleLog.length() > 2048)
+    $util.error("userSampleLog cannot exceed 2048 characters.")
+#end
+#if($ctx.args.regex.length() > 2048)
+    $util.error("regex cannot exceed 2048 characters.")
+#end
+#if($ctx.args.timeKeyRegex.length() > 1024)
+    $util.error("timeKeyRegex cannot exceed 1024 characters.")
+#end
+
 #foreach($param in $ctx.args.regexFieldSpecs)
     #set($param.key = $util.urlDecode($param.key))
     #if($param.key.length() > 250)

@@ -28,7 +28,9 @@ if custom_domain and not custom_domain.startswith("https://"):
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 region = os.environ.get("AWS_REGION")
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
+staging_bucket = os.environ.get("STAGING_BUCKET")
 access_logging_bucket = os.environ.get("ACCESS_LOGGING_BUCKET")
+SNS_EMAIL_TOPIC_ARN = os.environ.get("SNS_EMAIL_TOPIC_ARN")
 
 default_cmk_arn = os.environ.get("DEFAULT_CMK_ARN")
 
@@ -117,6 +119,7 @@ def get_config_str():
         "default_cmk_arn": default_cmk_arn,
         "solution_version": solution_version,
         "solution_name": solution_name,
+        "sns_email_topic_arn": SNS_EMAIL_TOPIC_ARN,
         "template_bucket": template_bucket,
     }
 
@@ -144,7 +147,7 @@ def cloudfront_invalidate(distribution_id, distribution_paths):
 
 def enable_s3_bucket_access_logging():
     s3_client = conn.get_client("s3")
-    logger.info("Enabling server access logging for default logging bucket")
+    logger.info("Enabling server access logging")
     logging_config = {
         "LoggingEnabled": {
             "TargetBucket": access_logging_bucket,
@@ -155,3 +158,14 @@ def enable_s3_bucket_access_logging():
         Bucket=default_logging_bucket, BucketLoggingStatus=logging_config
     )
     logger.info("Enabled server access logging for default logging bucket.")
+
+    logging_config = {
+        "LoggingEnabled": {
+            "TargetBucket": access_logging_bucket,
+            "TargetPrefix": f"{staging_bucket}/",
+        }
+    }
+    s3_client.put_bucket_logging(
+        Bucket=staging_bucket, BucketLoggingStatus=logging_config
+    )
+    logger.info("Enabled server access logging for staging bucket.")

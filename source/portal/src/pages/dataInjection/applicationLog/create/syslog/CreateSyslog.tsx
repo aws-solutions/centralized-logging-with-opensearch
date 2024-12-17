@@ -44,14 +44,10 @@ import { useTranslation } from "react-i18next";
 import {
   buildLambdaConcurrency,
   buildOSIParamsValue,
-  checkIndexNameValidate,
   ternary,
 } from "assets/js/utils";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
-import Tiles from "components/Tiles";
-import ExtLink from "components/ExtLink";
-import InfoSpan from "components/InfoSpan";
 import PagePanel from "components/PagePanel";
 import { ConfigValidateType } from "assets/js/applog";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
@@ -60,13 +56,11 @@ import ChooseBufferLayer from "../ec2/ChooseBufferLayer";
 import StepChooseSyslogSource from "./steps/StepChooseSyslogSource";
 import { Alert } from "assets/js/alert";
 import LogConfigSelector from "../../common/LogConfigSelector";
-import IndexName from "../../common/IndexName";
 import { Validator } from "pages/comps/Validator";
 import { buildInitPipelineData } from "assets/js/init";
 import AlarmAndTags from "pages/pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import {
   CreateAlarmActionTypes,
   validateAlarmInput,
@@ -81,6 +75,7 @@ import {
 import { createLightEngineApplicationPipeline } from "assets/js/helpers/lightEngineHelper";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -91,7 +86,6 @@ import { AppDispatch } from "reducer/store";
 import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import {
   convertOpenSearchStateToAppLogOpenSearchParam,
-  indexPrefixChanged,
   isIndexDuplicated,
   isIndexPrefixOverlap,
   validateOpenSearch,
@@ -101,7 +95,6 @@ import { useS3Buffer } from "assets/js/hooks/useS3Buffer";
 import { useKDSBuffer } from "assets/js/hooks/useKDSBuffer";
 import {
   convertS3BufferParameters,
-  logBucketPrefixChanged,
   setLogBucketAndCMKArn,
   validateS3Buffer,
   validateS3BufferParams,
@@ -114,6 +107,7 @@ import {
 import CommonLayout from "pages/layout/CommonLayout";
 import { DOMAIN_ALLOW_STATUS } from "assets/js/const";
 import IndexPrefixHandler from "../../common/IndexPrefixHandler";
+import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 
 export interface IngestionFromSysLogPropsType {
   syslogProtocol: ProtocolType | string;
@@ -175,7 +169,7 @@ const AppLogCreateSyslog: React.FC = () => {
 
   const [portChanged, setPortChanged] = useState(false);
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
   const osiParams = useSelectProcessor();
@@ -248,14 +242,6 @@ const AppLogCreateSyslog: React.FC = () => {
   const logConfigValidator = new Validator(() => {
     if (!logConfigJSON) {
       throw new Error(t("applog:logSourceDesc.eks.step2.selectConfig"));
-    }
-  });
-  const indexNameValidator = new Validator(() => {
-    if (!curApplicationLog.aosParams.indexPrefix) {
-      throw new Error(t("error.indexNameEmpty"));
-    }
-    if (!checkIndexNameValidate(curApplicationLog.aosParams.indexPrefix)) {
-      throw new Error(t("error.invalidIndexName"));
     }
   });
   const openSearchInputValidator = new Validator(() => {
@@ -342,6 +328,9 @@ const AppLogCreateSyslog: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -428,7 +417,7 @@ const AppLogCreateSyslog: React.FC = () => {
 
   const stepComps = [
     {
-      name: t("applog:logSourceDesc.syslog.step1.naviTitle"),
+      name: t("step.logSource"),
       element: (
         <PagePanel
           title={t("applog:logSourceDesc.syslog.step1.title")}
@@ -474,7 +463,7 @@ const AppLogCreateSyslog: React.FC = () => {
       validators: [logSourceValidator],
     },
     {
-      name: t("applog:logSourceDesc.syslog.step2.naviTitle"),
+      name: t("step.logConfig"),
       element: (
         <PagePanel title={t("applog:logSourceDesc.syslog.step2.title")}>
           <HeaderPanel title={t("applog:logSourceDesc.syslog.step2.panelName")}>
@@ -489,78 +478,48 @@ const AppLogCreateSyslog: React.FC = () => {
               engineType={engineType}
             />
           </HeaderPanel>
+          <>
+            {logConfigJSON && (
+              <HeaderPanel title={t("resource:config.detail.logParser")}>
+                <ConfigDetailComps
+                  hideBasicInfo
+                  curLogConfig={JSON.parse(logConfigJSON)}
+                />
+              </HeaderPanel>
+            )}
+          </>
         </PagePanel>
       ),
       validators: [logConfigValidator],
     },
     {
-      name: t("applog:logSourceDesc.syslog.step3_1.title"),
-      disabled: true,
-      validators: [],
-      element: (
-        <HeaderPanel title={t("applog:logSourceDesc.syslog.step3_1.title")}>
-          <>
-            <p>
-              {t("applog:logSourceDesc.syslog.step3_1.desc")}{" "}
-              <InfoSpan spanType={InfoBarTypes.PROCESSOR_TYPE} />
-            </p>
-            <Tiles
-              value={""}
-              items={[
-                {
-                  label: t("applog:logSourceDesc.syslog.step3_1.lambda"),
-                  description: t(
-                    "applog:logSourceDesc.syslog.step3_1.lambdaDesc"
-                  ),
-                  value: "lambda",
+      name: t("step.analyticsEngine"),
+      element: isLightEngine ? (
+        <ConfigLightEngine />
+      ) : (
+        <ConfigOpenSearch
+          onChangeIndexPrefix={(prefix) => {
+            setCurApplicationLog((prev) => {
+              return {
+                ...prev,
+                aosParams: {
+                  ...prev.aosParams,
+                  indexPrefix: prefix,
                 },
-                {
-                  label: t("applog:logSourceDesc.syslog.step3_1.osis"),
-                  description: (
-                    <>
-                      {t("applog:logSourceDesc.syslog.step3_1.osisDesc")}{" "}
-                      <ExtLink to="">{t("learnMore")}</ExtLink>
-                    </>
-                  ),
-                  value: "opensearch-ingestion-service",
-                },
-              ]}
-            />
-          </>
-        </HeaderPanel>
+              };
+            });
+          }}
+          taskType={LogSourceType.Syslog}
+        />
       ),
+      validators: [
+        isLightEngine ? lightEngineValidator : openSearchInputValidator,
+      ],
     },
     {
-      name: t("applog:logSourceDesc.syslog.step3.naviTitle"),
+      name: t("step.bufferLayer"),
       element: (
         <PagePanel title="">
-          {isLightEngine ? (
-            <></>
-          ) : (
-            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-              <IndexName
-                value={curApplicationLog.aosParams.indexPrefix}
-                setValue={(value) => {
-                  appDispatch(indexPrefixChanged(value as string));
-                  appDispatch(
-                    logBucketPrefixChanged(
-                      `AppLogs/${value}/year=%Y/month=%m/day=%d/`
-                    )
-                  );
-                  setCurApplicationLog((prev) => {
-                    return {
-                      ...prev,
-                      aosParams: {
-                        ...prev.aosParams,
-                        indexPrefix: value as string,
-                      },
-                    };
-                  });
-                }}
-                error={indexNameValidator.error}
-              />
-            </HeaderPanel>
-          )}
           <HeaderPanel
             title={t("applog:logSourceDesc.syslog.step3.title")}
             desc={t("applog:logSourceDesc.syslog.step3.desc")}
@@ -575,25 +534,11 @@ const AppLogCreateSyslog: React.FC = () => {
           </HeaderPanel>
         </PagePanel>
       ),
-      validators: [bufferLayerValidator].concat(
-        isLightEngine ? [] : [indexNameValidator]
-      ),
+      validators: [bufferLayerValidator],
     },
+
     {
-      name: isLightEngine
-        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
-        : t("applog:logSourceDesc.syslog.step4.naviTitle"),
-      element: isLightEngine ? (
-        <ConfigLightEngine />
-      ) : (
-        <ConfigOpenSearch taskType={LogSourceType.Syslog} />
-      ),
-      validators: [
-        isLightEngine ? lightEngineValidator : openSearchInputValidator,
-      ],
-    },
-    {
-      name: t("processor.logProcessorSettings"),
+      name: t("step.logProcessing"),
       disabled: engineType === AnalyticEngineTypes.LIGHT_ENGINE,
       element: (
         <SelectLogProcessor
@@ -606,7 +551,10 @@ const AppLogCreateSyslog: React.FC = () => {
       validators: [selectProcessorValidator],
     },
     {
-      name: t("applog:logSourceDesc.syslog.step5.naviTitle"),
+      name:
+        osiParams.logProcessorType === LogProcessorType.OSI
+          ? t("step.tags")
+          : t("step.alarmTags"),
       element: (
         <AlarmAndTags
           engineType={engineType}
@@ -709,6 +657,7 @@ const AppLogCreateSyslog: React.FC = () => {
           {stepComps[currentStep].element}
           <div className="button-action text-right">
             <Button
+              data-testid="syslog-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/application-log");
@@ -718,6 +667,7 @@ const AppLogCreateSyslog: React.FC = () => {
             </Button>
             {currentStep > 0 && (
               <Button
+                data-testid="syslog-previous-button"
                 onClick={() => {
                   setCurrentStep(Math.max(currentStep - 1, 0));
                 }}
@@ -727,6 +677,7 @@ const AppLogCreateSyslog: React.FC = () => {
             )}
             {currentStep < stepComps.length - 1 && (
               <Button
+                data-testid="syslog-next-button"
                 loading={loadingCheckPort || loadingCreateSource}
                 disabled={isNextDisabled()}
                 btnType="primary"
@@ -760,6 +711,7 @@ const AppLogCreateSyslog: React.FC = () => {
             )}
             {currentStep === stepComps.length - 1 && (
               <Button
+                data-testid="syslog-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

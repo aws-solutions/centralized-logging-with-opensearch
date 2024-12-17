@@ -38,11 +38,11 @@ import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
   FieldSortingArr,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import LogProcessing from "../common/LogProcessing";
 import {
   bucketNameIsValid,
   buildLambdaConcurrency,
@@ -56,7 +56,7 @@ import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
 import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import ConfigLightEngine, {
   covertSvcTaskToLightEngine,
-} from "../common/ConfigLightEngine";
+} from "pages/dataInjection/serviceLog/create/common/ConfigLightEngine";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import {
@@ -65,7 +65,6 @@ import {
 } from "reducer/createLightEngine";
 import { useLightEngine } from "assets/js/hooks/useLightEngine";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -74,6 +73,7 @@ import {
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -90,6 +90,7 @@ import { AppDispatch } from "reducer/store";
 import ConfigOpenSearch from "../common/ConfigOpenSearch";
 import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import CommonLayout from "pages/layout/CommonLayout";
+import EnrichedFields from "pages/dataInjection/common/EnrichFields";
 
 const BASE_EXCLUDE_PARAMS = [
   "taskType",
@@ -211,8 +212,9 @@ const CreateCloudFront: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
-  const totalStep =
-    searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 3 : 4;
+  const logIngestType = searchParams.get("ingestLogType") ?? DestinationType.S3;
+  console.info("logIngestType:", logIngestType);
+  const totalStep = 3;
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
@@ -222,23 +224,23 @@ const CreateCloudFront: React.FC = () => {
   const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [cloudFrontPipelineTask, setCloudFrontPipelineTask] =
-    useState<CloudFrontTaskProps>(DEFAULT_TASK_VALUE);
+    useState<CloudFrontTaskProps>({
+      ...DEFAULT_TASK_VALUE,
+      destinationType: logIngestType,
+    });
 
   const [autoS3EmptyError, setAutoS3EmptyError] = useState(false);
   const [manualS3EmptyError, setManualS3EmptyError] = useState(false);
   const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
 
   const [nextStepDisable, setNextStepDisable] = useState(false);
-  const [cloudFrontIsChanging, setCloudFrontIsChanging] = useState(false);
-
   const [showConfirmError, setShowConfirmError] = useState(false);
-  const [logTypeEmptyError, setLogTypeEmptyError] = useState(false);
   const [samplingRateError, setSamplingRateError] = useState(false);
   const [shardNumError, setShardNumError] = useState(false);
   const [maxShardNumError, setMaxShardNumError] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
@@ -265,7 +267,7 @@ const CreateCloudFront: React.FC = () => {
       pluginList.push(SupportPlugin.UserAgent);
     }
     if (pluginList.length > 0) {
-      params.parameters.push({
+      params?.parameters.push({
         parameterKey: "enrichmentPlugins",
         parameterValue: pluginList.join(","),
       });
@@ -407,6 +409,9 @@ const CreateCloudFront: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   useEffect(() => {
@@ -430,8 +435,8 @@ const CreateCloudFront: React.FC = () => {
     if (curStep === 2 && isLightEngine) {
       return false;
     }
+    console.info("nextStepDisable:", nextStepDisable);
     return (
-      cloudFrontIsChanging ||
       openSearch.domainLoading ||
       nextStepDisable ||
       (curStep === 2 &&
@@ -496,11 +501,6 @@ const CreateCloudFront: React.FC = () => {
       return false;
     }
 
-    // show error when destination type is empty
-    if (!cloudFrontPipelineTask.destinationType) {
-      setLogTypeEmptyError(true);
-      return false;
-    }
     // check realtime logs input
     if (cloudFrontPipelineTask.destinationType === DestinationType.KDS) {
       // Check sampling rate
@@ -562,45 +562,24 @@ const CreateCloudFront: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-cloudfront">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: t("servicelog:create.step.logProcessing"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               cloudFrontTask={cloudFrontPipelineTask}
-              setISChanging={(status) => {
-                setCloudFrontIsChanging(status);
-              }}
-              standardOnly={isLightEngine}
               manualS3EmptyError={manualS3EmptyError}
               manualS3PathInvalid={manualS3PathInvalid}
               autoS3EmptyError={autoS3EmptyError}
               showConfirmError={showConfirmError}
-              logTypeEmptyError={logTypeEmptyError}
               samplingRateError={samplingRateError}
               shardNumError={shardNumError}
               maxShardNumError={maxShardNumError}
@@ -609,17 +588,6 @@ const CreateCloudFront: React.FC = () => {
                   return {
                     ...prev,
                     logSourceAccountId: id,
-                    destinationType: "",
-                  };
-                });
-              }}
-              changeLogType={(type) => {
-                setLogTypeEmptyError(false);
-                setNextStepDisable(false);
-                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                  return {
-                    ...prev,
-                    destinationType: type,
                   };
                 });
               }}
@@ -669,7 +637,6 @@ const CreateCloudFront: React.FC = () => {
                   return {
                     ...prev,
                     source: defaultStr(cloudFrontObj?.value),
-                    destinationType: "",
                     params: {
                       ...prev.params,
                       cloudFrontObj: cloudFrontObj,
@@ -821,49 +788,9 @@ const CreateCloudFront: React.FC = () => {
                   };
                 });
               }}
-              changeSuccessTextType={(type) => {
-                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                  return {
-                    ...prev,
-                    params: {
-                      ...prev.params,
-                      successTextType: type,
-                    },
-                  };
-                });
-              }}
             />
           )}
           {curStep === 1 && (
-            <LogProcessing
-              changePluginSelect={(plugin, enable) => {
-                if (plugin === SupportPlugin.Geo) {
-                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                    return {
-                      ...prev,
-                      params: {
-                        ...prev.params,
-                        geoPlugin: enable,
-                      },
-                    };
-                  });
-                }
-                if (plugin === SupportPlugin.UserAgent) {
-                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                    return {
-                      ...prev,
-                      params: {
-                        ...prev.params,
-                        userAgentPlugin: enable,
-                      },
-                    };
-                  });
-                }
-              }}
-              pipelineTask={cloudFrontPipelineTask}
-            />
-          )}
-          {curStep === 2 && (
             <>
               {isLightEngine ? (
                 <ConfigLightEngine />
@@ -872,9 +799,36 @@ const CreateCloudFront: React.FC = () => {
               )}
             </>
           )}
-          {curStep === 3 && !isLightEngine && (
+          {curStep === 2 && (
             <div>
-              <SelectLogProcessor supportOSI={false} />
+              {!isLightEngine && <SelectLogProcessor supportOSI={false} />}
+              <EnrichedFields
+                pipelineTask={cloudFrontPipelineTask}
+                changePluginSelect={(plugin, enable) => {
+                  if (plugin === SupportPlugin.Geo) {
+                    setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                      return {
+                        ...prev,
+                        params: {
+                          ...prev.params,
+                          geoPlugin: enable,
+                        },
+                      };
+                    });
+                  }
+                  if (plugin === SupportPlugin.UserAgent) {
+                    setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                      return {
+                        ...prev,
+                        params: {
+                          ...prev.params,
+                          userAgentPlugin: enable,
+                        },
+                      };
+                    });
+                  }
+                }}
+              />
             </div>
           )}
           {curStep === totalStep && (
@@ -909,6 +863,7 @@ const CreateCloudFront: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
+                data-testid="cloudfront-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -917,12 +872,12 @@ const CreateCloudFront: React.FC = () => {
                       return;
                     }
                   }
-                  if (curStep === 2) {
+                  if (curStep === 1) {
                     if (!validateAnalyticsEngine()) {
                       return;
                     }
                   }
-                  if (curStep === 3) {
+                  if (curStep === 2 && !isLightEngine) {
                     dispatch({
                       type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
                     });
@@ -940,6 +895,7 @@ const CreateCloudFront: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="cloudfront-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

@@ -11,6 +11,7 @@ from commonlib.exception import ErrorCode
 from commonlib import DynamoDBUtil
 from commonlib.utils import paginate
 from util.grafana import GrafanaClient
+import json
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,10 +21,14 @@ router = AppSyncRouter()
 
 grafana_table_name = os.environ.get("GRAFANA_TABLE")
 ddb_util = DynamoDBUtil(grafana_table_name)
+grafana_secret_arn = os.environ.get("GRAFANA_SECRET_ARN")
+secretsmanager = conn.get_client("secretsmanager")
+
 
 @handle_error
 def lambda_handler(event, _):
     return router.resolve(event)
+
 
 @router.route(field_name="createGrafana")
 def create_grafana(**args):
@@ -41,7 +46,33 @@ def create_grafana(**args):
         "createdAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     ddb_util.put_item(item)
+    put_grafana_token(grafana_id, args["token"])
     return grafana_id
+
+
+def put_grafana_token(grafana_id, token):
+    grafana_secret = get_grafana_token()
+    grafana_secret[grafana_id] = token
+    secretsmanager.put_secret_value(
+        SecretId=grafana_secret_arn, SecretString=json.dumps(grafana_secret)
+    )
+
+
+def get_grafana_token():
+    secret_string = secretsmanager.get_secret_value(SecretId=grafana_secret_arn)[
+        "SecretString"
+    ]
+    grafana_secret = json.loads(secret_string)
+    return grafana_secret
+
+
+def delete_grafana_token(grafana_id):
+    grafana_secret = get_grafana_token()
+    del grafana_secret[grafana_id]
+    secretsmanager.put_secret_value(
+        SecretId=grafana_secret_arn, SecretString=json.dumps(grafana_secret)
+    )
+
 
 @router.route(field_name="listGrafanas")
 def list_grafanas(page=1, count=20):
@@ -54,12 +85,13 @@ def list_grafanas(page=1, count=20):
         "grafanas": grafanas,
     }
 
+
 @router.route(field_name="getGrafana")
 def get_grafana(id: str):
     logger.info(f"get grafana from DynamoDB by id {id}")
-
     item = ddb_util.get_item({"id": id})
     return item
+
 
 @router.route(field_name="deleteGrafana")
 def delete_grafana(id: str):
@@ -67,7 +99,9 @@ def delete_grafana(id: str):
     logger.info("Delete Grafana")
 
     ddb_util.delete_item({"id": id})
+    delete_grafana_token(id)
     return "OK"
+
 
 @router.route(field_name="updateGrafana")
 def update_grafana(id: str, **args):
@@ -75,10 +109,16 @@ def update_grafana(id: str, **args):
     logger.info("Update Grafana")
     updatable_attr = ["url", "token"]
     # only allow limited not-None key to be updated
-    update_body = {key: value for key, value in args.items() if value is not None and key in updatable_attr}
+    update_body = {
+        key: value
+        for key, value in args.items()
+        if value is not None and key in updatable_attr
+    }
 
     ddb_util.update_item({"id": id}, update_body)
+    put_grafana_token(id, args["token"])
     return "OK"
+
 
 @router.route(field_name="checkGrafana")
 def check_grafana(**args):
@@ -106,8 +146,10 @@ def check_grafana(**args):
 
     if grafana_id:
         # Fetch 'url' and 'token' based on 'id' from DDB
+        grafana_secret = get_grafana_token()
+
         item = ddb_util.get_item({"id": grafana_id})
-        url, token = item["url"], item["token"]
+        url, token = item["url"], item.get("token", grafana_secret.get(grafana_id))
 
     grafana_client = GrafanaClient(url=url, token=token, verify=False, timeout=30)
 
@@ -123,11 +165,31 @@ def check_grafana(**args):
 
     if check_url_connectivity_result:
         checks = [
-            (grafana_client.check_token_validity(), GrafanaStatusCheckItem.TOKEN_VALIDITY, ErrorCode.GRAFANA_TOKEN_VALIDATION_FAILED.name),
-            (grafana_client.has_installed_athena_plugin(), GrafanaStatusCheckItem.HAS_INSTALLED_ATHENA_PLUGIN, ErrorCode.GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED.name),
-            (grafana_client.check_data_source_permission(), GrafanaStatusCheckItem.DATA_SOURCE_PERMISSION, ErrorCode.GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED.name),
-            (grafana_client.check_folder_permission(), GrafanaStatusCheckItem.FOLDER_PERMISSION, ErrorCode.GRAFANA_FOLDER_PERMISSION_CHECK_FAILED.name),
-            (grafana_client.check_dashboards_permission(), GrafanaStatusCheckItem.DASHBOARDS_PERMISSION, ErrorCode.GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED.name)
+            (
+                grafana_client.check_token_validity(),
+                GrafanaStatusCheckItem.TOKEN_VALIDITY,
+                ErrorCode.GRAFANA_TOKEN_VALIDATION_FAILED.name,
+            ),
+            (
+                grafana_client.has_installed_athena_plugin(),
+                GrafanaStatusCheckItem.HAS_INSTALLED_ATHENA_PLUGIN,
+                ErrorCode.GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED.name,
+            ),
+            (
+                grafana_client.check_data_source_permission(),
+                GrafanaStatusCheckItem.DATA_SOURCE_PERMISSION,
+                ErrorCode.GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED.name,
+            ),
+            (
+                grafana_client.check_folder_permission(),
+                GrafanaStatusCheckItem.FOLDER_PERMISSION,
+                ErrorCode.GRAFANA_FOLDER_PERMISSION_CHECK_FAILED.name,
+            ),
+            (
+                grafana_client.check_dashboards_permission(),
+                GrafanaStatusCheckItem.DASHBOARDS_PERMISSION,
+                ErrorCode.GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED.name,
+            ),
         ]
 
         global_status = DomainStatusCheckType.PASSED
@@ -139,11 +201,31 @@ def check_grafana(**args):
     else:
         # In the event of a URL connection failure, fail early
         checks = [
-            (False, GrafanaStatusCheckItem.TOKEN_VALIDITY, ErrorCode.GRAFANA_TOKEN_VALIDATION_FAILED.name),
-            (False, GrafanaStatusCheckItem.HAS_INSTALLED_ATHENA_PLUGIN, ErrorCode.GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED.name),
-            (False, GrafanaStatusCheckItem.DATA_SOURCE_PERMISSION, ErrorCode.GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED.name),
-            (False, GrafanaStatusCheckItem.FOLDER_PERMISSION, ErrorCode.GRAFANA_FOLDER_PERMISSION_CHECK_FAILED.name),
-            (False, GrafanaStatusCheckItem.DASHBOARDS_PERMISSION, ErrorCode.GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED.name)
+            (
+                False,
+                GrafanaStatusCheckItem.TOKEN_VALIDITY,
+                ErrorCode.GRAFANA_TOKEN_VALIDATION_FAILED.name,
+            ),
+            (
+                False,
+                GrafanaStatusCheckItem.HAS_INSTALLED_ATHENA_PLUGIN,
+                ErrorCode.GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED.name,
+            ),
+            (
+                False,
+                GrafanaStatusCheckItem.DATA_SOURCE_PERMISSION,
+                ErrorCode.GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED.name,
+            ),
+            (
+                False,
+                GrafanaStatusCheckItem.FOLDER_PERMISSION,
+                ErrorCode.GRAFANA_FOLDER_PERMISSION_CHECK_FAILED.name,
+            ),
+            (
+                False,
+                GrafanaStatusCheckItem.DASHBOARDS_PERMISSION,
+                ErrorCode.GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED.name,
+            ),
         ]
         for check_result, check_item, error_code in checks:
             record_check_detail(check_detail_list, check_result, check_item, error_code)
@@ -154,17 +236,17 @@ def check_grafana(**args):
     }
 
 
-def record_check_detail(
-    details: list, check_result: bool, name: str, error_code
-):
+def record_check_detail(details: list, check_result: bool, name: str, error_code):
     """Record the check detail"""
     details.append(
         {
             "name": name,
             "values": [],  # dummy value, compatibility for AOS check
             "errorCode": error_code if not check_result else None,
-            "status": DomainStatusCheckType.PASSED
-            if check_result
-            else DomainStatusCheckType.FAILED,
+            "status": (
+                DomainStatusCheckType.PASSED
+                if check_result
+                else DomainStatusCheckType.FAILED
+            ),
         }
     )

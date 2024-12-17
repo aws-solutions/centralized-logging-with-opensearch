@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from "path";
+import * as path from 'path';
 import {
   Aws,
   CfnResource,
@@ -36,14 +36,14 @@ import {
   aws_logs as logs,
   CfnParameter,
   Stack,
-} from "aws-cdk-lib";
-import { NagSuppressions } from "cdk-nag";
-import { CfnRole } from "aws-cdk-lib/aws-iam";
-import { Table } from "aws-cdk-lib/aws-dynamodb";
-import { Construct, IConstruct } from "constructs";
-import { SharedPythonLayer } from "../../layer/layer";
-import { S3toOpenSearchStackProps } from "../service/s3-to-opensearch-common-stack";
-import { UseS3BucketNotificationsWithRetryAspects } from "../../util/stack-helper";
+} from 'aws-cdk-lib';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
+import { NagSuppressions } from 'cdk-nag';
+import { Construct, IConstruct } from 'constructs';
+import { SharedPythonLayer } from '../../layer/layer';
+import { UseS3BucketNotificationsWithRetryAspects } from '../../util/stack-helper';
+import { S3toOpenSearchStackProps } from '../service/s3-to-opensearch-common-stack';
 
 export interface S3toOpenSearchOSIStackProps extends S3toOpenSearchStackProps {
   /**
@@ -104,7 +104,7 @@ export function addCfnNagSuppressRules(
   resource: CfnResource,
   rules: CfnNagSuppressRule[]
 ) {
-  resource.addMetadata("cfn_nag", {
+  resource.addMetadata('cfn_nag', {
     rules_to_suppress: rules,
   });
 }
@@ -118,55 +118,55 @@ export class S3toOpenSearchOSIStack extends Construct {
   private newKMSKey = new kms.Key(this, `SQS-CMK`, {
     removalPolicy: RemovalPolicy.DESTROY,
     pendingWindow: Duration.days(7),
-    description: "KMS-CMK for encrypting the objects in SQS",
+    description: 'KMS-CMK for encrypting the objects in SQS',
     enableKeyRotation: true,
     policy: new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           actions: [
-            "kms:CreateKey",
-            "kms:CreateAlias",
-            "kms:CreateCustomKeyStore",
-            "kms:DescribeKey",
-            "kms:DescribeCustomKeyStores",
-            "kms:EnableKey",
-            "kms:EnableKeyRotation",
-            "kms:ListAliases",
-            "kms:ListKeys",
-            "kms:ListGrants",
-            "kms:ListKeyPolicies",
-            "kms:ListResourceTags",
-            "kms:PutKeyPolicy",
-            "kms:UpdateAlias",
-            "kms:UpdateCustomKeyStore",
-            "kms:UpdateKeyDescription",
-            "kms:UpdatePrimaryRegion",
-            "kms:RevokeGrant",
-            "kms:GetKeyPolicy",
-            "kms:GetParametersForImport",
-            "kms:GetKeyRotationStatus",
-            "kms:GetPublicKey",
-            "kms:ScheduleKeyDeletion",
-            "kms:GenerateDataKey",
-            "kms:TagResource",
-            "kms:UntagResource",
-            "kms:Decrypt",
-            "kms:Encrypt",
+            'kms:CreateKey',
+            'kms:CreateAlias',
+            'kms:CreateCustomKeyStore',
+            'kms:DescribeKey',
+            'kms:DescribeCustomKeyStores',
+            'kms:EnableKey',
+            'kms:EnableKeyRotation',
+            'kms:ListAliases',
+            'kms:ListKeys',
+            'kms:ListGrants',
+            'kms:ListKeyPolicies',
+            'kms:ListResourceTags',
+            'kms:PutKeyPolicy',
+            'kms:UpdateAlias',
+            'kms:UpdateCustomKeyStore',
+            'kms:UpdateKeyDescription',
+            'kms:UpdatePrimaryRegion',
+            'kms:RevokeGrant',
+            'kms:GetKeyPolicy',
+            'kms:GetParametersForImport',
+            'kms:GetKeyRotationStatus',
+            'kms:GetPublicKey',
+            'kms:ScheduleKeyDeletion',
+            'kms:GenerateDataKey',
+            'kms:TagResource',
+            'kms:UntagResource',
+            'kms:Decrypt',
+            'kms:Encrypt',
           ],
-          resources: ["*"],
+          resources: ['*'],
           effect: iam.Effect.ALLOW,
           principals: [new iam.AccountRootPrincipal()],
         }),
         new iam.PolicyStatement({
-          actions: ["kms:GenerateDataKey*", "kms:Decrypt", "kms:Encrypt"],
-          resources: ["*"], // support app log from s3 by not limiting the resource
+          actions: ['kms:GenerateDataKey*', 'kms:Decrypt', 'kms:Encrypt'],
+          resources: ['*'], // support app log from s3 by not limiting the resource
           principals: [
-            new iam.ServicePrincipal("s3.amazonaws.com"),
-            new iam.ServicePrincipal("lambda.amazonaws.com"),
-            new iam.ServicePrincipal("ec2.amazonaws.com"),
-            new iam.ServicePrincipal("sqs.amazonaws.com"),
-            new iam.ServicePrincipal("cloudwatch.amazonaws.com"),
-            new iam.ServicePrincipal("osis-pipelines.amazonaws.com"),
+            new iam.ServicePrincipal('s3.amazonaws.com'),
+            new iam.ServicePrincipal('lambda.amazonaws.com'),
+            new iam.ServicePrincipal('ec2.amazonaws.com'),
+            new iam.ServicePrincipal('sqs.amazonaws.com'),
+            new iam.ServicePrincipal('cloudwatch.amazonaws.com'),
+            new iam.ServicePrincipal('osis-pipelines.amazonaws.com'),
           ],
         }),
       ],
@@ -183,17 +183,17 @@ export class S3toOpenSearchOSIStack extends Construct {
     // Get the logBucket
     const logBucket = s3.Bucket.fromBucketName(
       this,
-      "logBucket",
+      'logBucket',
       props.logBucketName
     );
 
-    const isCreateNewKMS = new CfnCondition(this, "isCreateNew", {
-      expression: Fn.conditionEquals(props.defaultCmkArn, ""),
+    const isCreateNewKMS = new CfnCondition(this, 'isCreateNew', {
+      expression: Fn.conditionEquals(props.defaultCmkArn, ''),
     });
     this.enable({ construct: this.newKMSKey, if: isCreateNewKMS });
 
     // Create the policy and role for processor Lambda
-    const logProcessorPolicy = new iam.Policy(this, "logProcessorPolicy", {
+    const logProcessorPolicy = new iam.Policy(this, 'logProcessorPolicy', {
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -205,69 +205,69 @@ export class S3toOpenSearchOSIStack extends Construct {
             ).toString(),
           ],
           actions: [
-            "kms:Decrypt",
-            "kms:Encrypt",
-            "kms:ReEncrypt*",
-            "kms:GenerateDataKey*",
-            "kms:DescribeKey",
+            'kms:Decrypt',
+            'kms:Encrypt',
+            'kms:ReEncrypt*',
+            'kms:GenerateDataKey*',
+            'kms:DescribeKey',
           ],
         }),
       ],
     });
     NagSuppressions.addResourceSuppressions(logProcessorPolicy, [
       {
-        id: "AwsSolutions-IAM5",
-        reason: "The managed policy needs to use any resources.",
+        id: 'AwsSolutions-IAM5',
+        reason: 'The managed policy needs to use any resources.',
       },
     ]);
 
     const pipelineTable = Table.fromTableArn(
       this,
-      "IngestionTable",
+      'IngestionTable',
       props.pipelineTableArn!
     );
 
     // Grant permissions to the lambda
     const osiProcessorFlowFnPolicy = new iam.Policy(
       this,
-      "OSIProcessorFlowFnPolicy",
+      'OSIProcessorFlowFnPolicy',
       {
         statements: [
           new iam.PolicyStatement({
-            actions: ["dynamodb:UpdateItem"],
+            actions: ['dynamodb:UpdateItem'],
             resources: [pipelineTable.tableArn],
           }),
           new iam.PolicyStatement({
             actions: [
-              "osis:StartPipeline",
-              "osis:CreatePipeline",
-              "osis:DeletePipeline",
-              "osis:GetPipeline",
-              "osis:ListPipelines",
-              "osis:ListPipelineBlueprints",
-              "osis:ValidatePipeline",
-              "osis:GetPipelineBlueprint",
-              "osis:StopPipeline",
-              "osis:GetPipelineChangeProgress",
-              "osis:ListTagsForResource",
-              "osis:UpdatePipeline",
-              "osis:TagResource"
+              'osis:StartPipeline',
+              'osis:CreatePipeline',
+              'osis:DeletePipeline',
+              'osis:GetPipeline',
+              'osis:ListPipelines',
+              'osis:ListPipelineBlueprints',
+              'osis:ValidatePipeline',
+              'osis:GetPipelineBlueprint',
+              'osis:StopPipeline',
+              'osis:GetPipelineChangeProgress',
+              'osis:ListTagsForResource',
+              'osis:UpdatePipeline',
+              'osis:TagResource',
             ],
-            resources: ["*"],
+            resources: ['*'],
           }),
           new iam.PolicyStatement({
             actions: [
-              "logs:GetLogEvents",
-              "logs:PutLogEvents",
-              "logs:CreateLogDelivery",
-              "logs:PutResourcePolicy",
-              "logs:DescribeResourcePolicies",
-              "logs:GetLogDelivery",
-              "logs:ListLogDeliveries",
-              "logs:UpdateLogDelivery",
-              "logs:DeleteLogDelivery",
+              'logs:GetLogEvents',
+              'logs:PutLogEvents',
+              'logs:CreateLogDelivery',
+              'logs:PutResourcePolicy',
+              'logs:DescribeResourcePolicies',
+              'logs:GetLogDelivery',
+              'logs:ListLogDeliveries',
+              'logs:UpdateLogDelivery',
+              'logs:DeleteLogDelivery',
             ],
-            resources: ["*"],
+            resources: ['*'],
           }),
         ],
       }
@@ -275,14 +275,14 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     NagSuppressions.addResourceSuppressions(osiProcessorFlowFnPolicy, [
       {
-        id: "AwsSolutions-IAM5",
+        id: 'AwsSolutions-IAM5',
         reason:
-          "This policy needs to be able to start/delete other cloudformation stacks of the plugin with unknown resources names",
+          'This policy needs to be able to start/delete other cloudformation stacks of the plugin with unknown resources names',
       },
     ]);
 
     // Create the Log Group for the Lambda function
-    const logGroup = new logs.LogGroup(this, "LogProcessorFnLogGroup", {
+    const logGroup = new logs.LogGroup(this, 'LogProcessorFnLogGroup', {
       logGroupName: `/aws/vendedlogs/OSI/${props.osiPipelineName}/audit-logs`,
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -290,22 +290,22 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     const logProcessorRoleName = new CfnParameter(
       this,
-      "LogProcessorRoleName",
+      'LogProcessorRoleName',
       {
-        type: "String",
-        default: "",
+        type: 'String',
+        default: '',
         description:
-          "Specify a role name for the log processor. The name should NOT duplicate an existing role name. If no name is specified, a random name is generated. (Optional)",
+          'Specify a role name for the log processor. The name should NOT duplicate an existing role name. If no name is specified, a random name is generated. (Optional)',
       }
     );
-    logProcessorRoleName.overrideLogicalId("LogProcessorRoleName");
+    logProcessorRoleName.overrideLogicalId('LogProcessorRoleName');
 
     const hasLogProcessorRoleName = new CfnCondition(
       this,
-      "HasLogProcessorRoleName",
+      'HasLogProcessorRoleName',
       {
         expression: Fn.conditionNot(
-          Fn.conditionEquals(logProcessorRoleName.valueAsString, "")
+          Fn.conditionEquals(logProcessorRoleName.valueAsString, '')
         ),
       }
     );
@@ -328,30 +328,30 @@ export class S3toOpenSearchOSIStack extends Construct {
     );
 
     // Setup SQS and DLQ
-    const logEventDLQ = new sqs.Queue(this, "LogEventDLQ", {
+    const logEventDLQ = new sqs.Queue(this, 'LogEventDLQ', {
       visibilityTimeout: Duration.minutes(15),
       retentionPeriod: Duration.days(7),
       encryption: sqs.QueueEncryption.KMS_MANAGED,
     });
     logEventDLQ.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:*"],
+        actions: ['sqs:*'],
         effect: iam.Effect.DENY,
         resources: [logEventDLQ.queueArn],
         conditions: {
-          ["Bool"]: {
-            "aws:SecureTransport": "false",
+          ['Bool']: {
+            'aws:SecureTransport': 'false',
           },
         },
         principals: [new iam.AnyPrincipal()],
       })
     );
     NagSuppressions.addResourceSuppressions(logEventDLQ, [
-      { id: "AwsSolutions-SQS3", reason: "it is a DLQ" },
+      { id: 'AwsSolutions-SQS3', reason: 'it is a DLQ' },
     ]);
 
     const cfnLogEventDLQ = logEventDLQ.node.defaultChild as sqs.CfnQueue;
-    cfnLogEventDLQ.overrideLogicalId("LogEventDLQ");
+    cfnLogEventDLQ.overrideLogicalId('LogEventDLQ');
 
     // Generate the sqsKMSKey from the new generated KMS Key or the default KMS Key
     const sqsKMSKeyArn = Fn.conditionIf(
@@ -365,7 +365,7 @@ export class S3toOpenSearchOSIStack extends Construct {
       sqsKMSKeyArn
     );
 
-    const logEventQueue = new sqs.Queue(this, "LogEventQueue", {
+    const logEventQueue = new sqs.Queue(this, 'LogEventQueue', {
       visibilityTimeout: Duration.seconds(910),
       retentionPeriod: Duration.days(14),
       deadLetterQueue: {
@@ -380,11 +380,11 @@ export class S3toOpenSearchOSIStack extends Construct {
     this.logEventQueueName = logEventQueue.queueName;
 
     const cfnLogEventQueue = logEventQueue.node.defaultChild as sqs.CfnQueue;
-    cfnLogEventQueue.overrideLogicalId("LogEventQueue");
+    cfnLogEventQueue.overrideLogicalId('LogEventQueue');
     addCfnNagSuppressRules(cfnLogEventQueue, [
       {
-        id: "W48",
-        reason: "No need to use encryption",
+        id: 'W48',
+        reason: 'No need to use encryption',
       },
     ]);
 
@@ -394,7 +394,7 @@ export class S3toOpenSearchOSIStack extends Construct {
     //osi pipeline es role policy
     osiProcessorRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["es:DescribeDomain"],
+        actions: ['es:DescribeDomain'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:es:${Aws.REGION}:${Aws.ACCOUNT_ID}:domain/${props.domainName}`,
@@ -405,7 +405,7 @@ export class S3toOpenSearchOSIStack extends Construct {
     //osi pipeline s3 role policy
     osiProcessorRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["s3:GetObject"],
+        actions: ['s3:GetObject'],
         effect: iam.Effect.ALLOW,
         resources: [`arn:aws:s3:::${logBucket.bucketName}/*`],
       })
@@ -414,7 +414,7 @@ export class S3toOpenSearchOSIStack extends Construct {
     //osi pipeline s3 dlq role policy
     osiProcessorRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["s3:PutObject"],
+        actions: ['s3:PutObject'],
         effect: iam.Effect.ALLOW,
         resources: [`arn:aws:s3:::${props.backupBucketName}/*`],
       })
@@ -423,7 +423,7 @@ export class S3toOpenSearchOSIStack extends Construct {
     //osi pipeline sqs role policy
     osiProcessorRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:DeleteMessage", "sqs:ReceiveMessage"],
+        actions: ['sqs:DeleteMessage', 'sqs:ReceiveMessage'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:aws:sqs:${Aws.REGION}:${Aws.ACCOUNT_ID}:${logEventQueue.queueName}`,
@@ -442,11 +442,11 @@ export class S3toOpenSearchOSIStack extends Construct {
           ).toString(),
         ],
         actions: [
-          "kms:Decrypt",
-          "kms:Encrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:DescribeKey",
+          'kms:Decrypt',
+          'kms:Encrypt',
+          'kms:ReEncrypt*',
+          'kms:GenerateDataKey*',
+          'kms:DescribeKey',
         ],
       })
     );
@@ -460,7 +460,7 @@ export class S3toOpenSearchOSIStack extends Construct {
           path.join(__dirname, '../../../lambda/api/pipeline_ingestion_flow'),
           {
             bundling: {
-              platform: "linux/amd64",
+              platform: 'linux/amd64',
               image: lambda.Runtime.PYTHON_3_11.bundlingImage,
               command: [
                 'bash',
@@ -471,17 +471,17 @@ export class S3toOpenSearchOSIStack extends Construct {
           }
         ),
         compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
-        description: "Default Lambda layer for OSIProcessorIngestionFlowFn",
+        description: 'Default Lambda layer for OSIProcessorIngestionFlowFn',
       }
     );
 
     // Create a Lambda to handle the status update to backend table.
-    const osiProcessorFlowFn = new lambda.Function(this, "OSIProcessorFlowFn", {
+    const osiProcessorFlowFn = new lambda.Function(this, 'OSIProcessorFlowFn', {
       code: lambda.AssetCode.fromAsset(
-        path.join(__dirname, "../../../lambda/api/pipeline_ingestion_flow")
+        path.join(__dirname, '../../../lambda/api/pipeline_ingestion_flow')
       ),
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: "osi_processor_flow.lambda_handler",
+      handler: 'osi_processor_flow.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 128,
       layers: [SharedPythonLayer.getInstance(this), osiProcessorFlowFnLayer],
@@ -491,17 +491,17 @@ export class S3toOpenSearchOSIStack extends Construct {
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
         LOG_SOURCE_ACCOUNT_ASSUME_ROLE: props.logSourceAccountAssumeRole,
-        BACKUP_BUCKET_NAME: props.backupBucketName || "",
+        BACKUP_BUCKET_NAME: props.backupBucketName || '',
         PIPELINE_TABLE_NAME: pipelineTable.tableName,
-        MAX_CAPACITY: props.maxCapacity || "4",
-        MIN_CAPACITY: props.minCapacity || "1",
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        MAX_CAPACITY: props.maxCapacity || '4',
+        MIN_CAPACITY: props.minCapacity || '1',
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         LOG_PROCESSOR_GROUP_NAME: this.logProcessorLogGroupName,
-        OSI_PIPELINE_NAME: props.osiPipelineName || "default_pipeline_name",
+        OSI_PIPELINE_NAME: props.osiPipelineName || 'default_pipeline_name',
         SQS_QUEUE_URL: logEventQueue.queueUrl,
         OSI_PROCESSOR_ROLE_NAME: osiProcessorRole.roleName,
-        AOS_ENDPOINT: props.endpoint || "",
-        AOS_INDEX: props.indexPrefix || "",
+        AOS_ENDPOINT: props.endpoint || '',
+        AOS_INDEX: props.indexPrefix || '',
       },
       description: `${Aws.STACK_NAME} - Helper function to update pipeline status and create & delete OSI pipeline`,
     });
@@ -511,11 +511,11 @@ export class S3toOpenSearchOSIStack extends Construct {
     // Grant permissions to the lambda
     const passRolePolicy = new iam.Policy(
       this,
-      "OSIProcessorFlowPassRolePolicy",
+      'OSIProcessorFlowPassRolePolicy',
       {
         statements: [
           new iam.PolicyStatement({
-            actions: ["iam:PassRole"],
+            actions: ['iam:PassRole'],
             resources: [osiProcessorRole.roleArn],
           }),
         ],
@@ -535,10 +535,14 @@ export class S3toOpenSearchOSIStack extends Construct {
       }
     );
 
-    // TODO: Workaround since cdk>=v2.116.0 builtin custom resource lambda has an issue that will lead to remove all existing s3 bucket notifications. Remove this once the cdk issue is fixed.
-    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    // Workaround since cdk>=v2.116.0 builtin custom resource lambda has an issue that will lead to remove all existing s3 bucket notifications. Remove this once the cdk issue is fixed.
+    const notificationHandler = Stack.of(this).node.tryFindChild(
+      'BucketNotificationsHandler050a0587b7544547bf325f094a3db834'
+    );
     if (notificationHandler) {
-      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+      Aspects.of(notificationHandler).add(
+        new UseS3BucketNotificationsWithRetryAspects()
+      );
     }
 
     logEventQueue.addToResourcePolicy(
@@ -546,27 +550,27 @@ export class S3toOpenSearchOSIStack extends Construct {
         effect: iam.Effect.ALLOW,
         conditions: {
           ArnLike: {
-            "aws:SourceArn": logBucket.bucketArn,
+            'aws:SourceArn': logBucket.bucketArn,
           },
         },
-        principals: [new iam.ServicePrincipal("s3.amazonaws.com")],
+        principals: [new iam.ServicePrincipal('s3.amazonaws.com')],
         resources: [logEventQueue.queueArn],
         actions: [
-          "sqs:SendMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl",
+          'sqs:SendMessage',
+          'sqs:GetQueueAttributes',
+          'sqs:GetQueueUrl',
         ],
       })
     );
 
     logEventQueue.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:*"],
+        actions: ['sqs:*'],
         effect: iam.Effect.DENY,
         resources: [logEventQueue.queueArn],
         conditions: {
-          ["Bool"]: {
-            "aws:SecureTransport": "false",
+          ['Bool']: {
+            'aws:SecureTransport': 'false',
           },
         },
         principals: [new iam.AnyPrincipal()],
@@ -574,24 +578,24 @@ export class S3toOpenSearchOSIStack extends Construct {
     );
 
     // Role for state machine
-    const pipelineFlowSMRole = new iam.Role(this, "SMRole", {
-      assumedBy: new iam.ServicePrincipal("states.amazonaws.com"),
+    const pipelineFlowSMRole = new iam.Role(this, 'SMRole', {
+      assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
     });
     // Least Privilage to enable logging for state machine
     pipelineFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
-          "logs:PutResourcePolicy",
-          "logs:DescribeLogGroups",
-          "logs:UpdateLogDelivery",
-          "logs:AssociateKmsKey",
-          "logs:GetLogGroupFields",
-          "logs:PutRetentionPolicy",
-          "logs:CreateLogGroup",
-          "logs:PutDestination",
-          "logs:DescribeResourcePolicies",
-          "logs:GetLogDelivery",
-          "logs:ListLogDeliveries",
+          'logs:PutResourcePolicy',
+          'logs:DescribeLogGroups',
+          'logs:UpdateLogDelivery',
+          'logs:AssociateKmsKey',
+          'logs:GetLogGroupFields',
+          'logs:PutRetentionPolicy',
+          'logs:CreateLogGroup',
+          'logs:PutDestination',
+          'logs:DescribeResourcePolicies',
+          'logs:GetLogDelivery',
+          'logs:ListLogDeliveries',
         ],
         effect: iam.Effect.ALLOW,
         resources: [logGroup.logGroupArn],
@@ -599,7 +603,7 @@ export class S3toOpenSearchOSIStack extends Construct {
     );
     pipelineFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction"],
+        actions: ['lambda:InvokeFunction'],
         effect: iam.Effect.ALLOW,
         resources: [
           osiProcessorFlowFn.functionArn,
@@ -608,45 +612,45 @@ export class S3toOpenSearchOSIStack extends Construct {
       })
     );
 
-    const wait = new sfn.Wait(this, "Wait for 15 seconds", {
+    const wait = new sfn.Wait(this, 'Wait for 15 seconds', {
       time: sfn.WaitTime.duration(Duration.seconds(15)),
     });
 
     const osiStatusQueryFnTask = new tasks.LambdaInvoke(
       this,
-      "Query Pipeline Status",
+      'Query Pipeline Status',
       {
         lambdaFunction: osiProcessorFlowFn,
-        outputPath: "$.Payload",
-        inputPath: "$",
+        outputPath: '$.Payload',
+        inputPath: '$',
       }
     );
 
     const osiStatusUpdateFnTask = new tasks.LambdaInvoke(
       this,
-      "Update Pipeline Status",
+      'Update Pipeline Status',
       {
         lambdaFunction: osiProcessorFlowFn,
-        outputPath: "$.Payload",
-        inputPath: "$",
+        outputPath: '$.Payload',
+        inputPath: '$',
       }
     );
 
-    const pipelineCompleted = new sfn.Choice(this, "In progress?")
+    const pipelineCompleted = new sfn.Choice(this, 'In progress?')
       .when(
         sfn.Condition.stringMatches(
-          "$.result.osiPipelineStatus",
-          "*_IN_PROGRESS"
+          '$.result.osiPipelineStatus',
+          '*_IN_PROGRESS'
         ),
         wait
       )
       .otherwise(osiStatusUpdateFnTask);
 
-    const pipelineCreationFailed = new sfn.Choice(this, "Failed?")
+    const pipelineCreationFailed = new sfn.Choice(this, 'Failed?')
       .when(
         sfn.Condition.stringMatches(
-          "$.result.osiPipelineStatus",
-          "*_IN_PROGRESS"
+          '$.result.osiPipelineStatus',
+          '*_IN_PROGRESS'
         ),
         wait.next(osiStatusQueryFnTask.next(pipelineCompleted))
       )
@@ -654,37 +658,37 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     const osiCreationFnTask = new tasks.LambdaInvoke(
       this,
-      "Create or Delete OSI Pipeline",
+      'Create or Delete OSI Pipeline',
       {
         lambdaFunction: osiProcessorFlowFn,
-        outputPath: "$.Payload",
-        inputPath: "$",
+        outputPath: '$.Payload',
+        inputPath: '$',
       }
     );
     osiCreationFnTask.next(pipelineCreationFailed);
 
-    const waitCheck = new sfn.Wait(this, "Wait for 30 seconds", {
+    const waitCheck = new sfn.Wait(this, 'Wait for 30 seconds', {
       time: sfn.WaitTime.duration(Duration.seconds(30)),
     });
 
     // This Lambda is to call logProcessorFn
     const logProcessorHelperFn = new lambda.Function(
       this,
-      "LogProcessorHelperFn",
+      'LogProcessorHelperFn',
       {
         runtime: lambda.Runtime.PYTHON_3_11,
         code: lambda.Code.fromAsset(
-          path.join(__dirname, "../../../lambda/api/pipeline_ingestion_flow")
+          path.join(__dirname, '../../../lambda/api/pipeline_ingestion_flow')
         ),
         layers: [SharedPythonLayer.getInstance(this)],
-        handler: "osi_log_processor_helper.lambda_handler",
+        handler: 'osi_log_processor_helper.lambda_handler',
         timeout: Duration.seconds(60),
         memorySize: 128,
         environment: {
           LOG_TYPE: props.logType,
           LOG_PROCESSOR_NAME: props.logProcessorFn.functionName,
           PIPELINE_TABLE_NAME: pipelineTable.tableName,
-          OSI_PIPELINE_NAME: props.osiPipelineName || "default_pipeline_name",
+          OSI_PIPELINE_NAME: props.osiPipelineName || 'default_pipeline_name',
         },
         description: `${Aws.STACK_NAME} - Call logProcessorHelperFn inside state machine`,
       }
@@ -694,11 +698,11 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     const logProcessorHelperFnPolicy = new iam.Policy(
       this,
-      "logProcessorHelperFnPolicy",
+      'logProcessorHelperFnPolicy',
       {
         statements: [
           new iam.PolicyStatement({
-            actions: ["lambda:InvokeFunction"],
+            actions: ['lambda:InvokeFunction'],
             resources: [
               props.logProcessorFn.functionArn,
               `${props.logProcessorFn.functionArn}:*`,
@@ -712,7 +716,7 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     pipelineFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction"],
+        actions: ['lambda:InvokeFunction'],
         effect: iam.Effect.ALLOW,
         resources: [
           logProcessorHelperFn.functionArn,
@@ -723,18 +727,18 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     const checkProcessorDone = new tasks.LambdaInvoke(
       this,
-      "Trigger processsor",
+      'Trigger processsor',
       {
         lambdaFunction: logProcessorHelperFn,
-        outputPath: "$.Payload",
-        inputPath: "$",
+        outputPath: '$.Payload',
+        inputPath: '$',
       }
     );
 
-    const isProcessorDone = new sfn.Choice(this, "Is processor done?")
-      .when(sfn.Condition.stringMatches("$.result", "OK"), osiCreationFnTask)
+    const isProcessorDone = new sfn.Choice(this, 'Is processor done?')
+      .when(sfn.Condition.stringMatches('$.result', 'OK'), osiCreationFnTask)
       .when(
-        sfn.Condition.stringMatches("$.retryTime", "10"),
+        sfn.Condition.stringMatches('$.retryTime', '10'),
         osiStatusUpdateFnTask
       )
       .otherwise(waitCheck.next(checkProcessorDone));
@@ -743,17 +747,17 @@ export class S3toOpenSearchOSIStack extends Construct {
 
     const startOrDeleteOrCheck = new sfn.Choice(
       this,
-      "START or DELETE or CHECK?"
+      'START or DELETE or CHECK?'
     )
       .when(
-        sfn.Condition.stringMatches("$.action", "CHECK"),
+        sfn.Condition.stringMatches('$.action', 'CHECK'),
         checkProcessorDone
       )
       .otherwise(osiCreationFnTask);
 
     const chain = startOrDeleteOrCheck;
 
-    const pipeSM = new sfn.StateMachine(this, "osiPipelineFlowSM", {
+    const pipeSM = new sfn.StateMachine(this, 'osiPipelineFlowSM', {
       // NOSONAR
       definitionBody: sfn.DefinitionBody.fromChainable(chain),
       role: pipelineFlowSMRole,
@@ -765,13 +769,13 @@ export class S3toOpenSearchOSIStack extends Construct {
     });
 
     // This Lambda is to perform necessary actions during stack creation or update
-    const initOSIPipeSMFn = new lambda.Function(this, "InitOSIPipeSMFn", {
+    const initOSIPipeSMFn = new lambda.Function(this, 'InitOSIPipeSMFn', {
       runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../../lambda/pipeline/common/custom-resource")
+        path.join(__dirname, '../../../lambda/pipeline/common/custom-resource')
       ),
       layers: [SharedPythonLayer.getInstance(this)],
-      handler: "osi_init_sub_stack_sfn.lambda_handler",
+      handler: 'osi_init_sub_stack_sfn.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 128,
       environment: {
@@ -785,26 +789,26 @@ export class S3toOpenSearchOSIStack extends Construct {
     initOSIPipeSMFn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ["states:StartExecution"],
+        actions: ['states:StartExecution'],
         resources: [pipeSM.stateMachineArn],
       })
     );
 
-    const crInitLambda = new cr.AwsCustomResource(this, "CRInitLambda", {
+    const crInitLambda = new cr.AwsCustomResource(this, 'CRInitLambda', {
       policy: cr.AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
-          actions: ["lambda:InvokeFunction"],
+          actions: ['lambda:InvokeFunction'],
           effect: iam.Effect.ALLOW,
           resources: [initOSIPipeSMFn.functionArn],
         }),
       ]),
       timeout: Duration.minutes(15),
       onCreate: {
-        service: "Lambda",
-        action: "invoke",
+        service: 'Lambda',
+        action: 'invoke',
         parameters: {
           FunctionName: initOSIPipeSMFn.functionName,
-          InvocationType: "Event",
+          InvocationType: 'Event',
         },
         physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
@@ -812,13 +816,13 @@ export class S3toOpenSearchOSIStack extends Construct {
     crInitLambda.node.addDependency(initOSIPipeSMFn);
 
     // This Lambda is to perform necessary actions during stack deletion
-    const deleteOSIPipeSMFn = new lambda.Function(this, "DeleteOSIPipeSMFn", {
+    const deleteOSIPipeSMFn = new lambda.Function(this, 'DeleteOSIPipeSMFn', {
       runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../../lambda/pipeline/common/custom-resource")
+        path.join(__dirname, '../../../lambda/pipeline/common/custom-resource')
       ),
       layers: [SharedPythonLayer.getInstance(this)],
-      handler: "osi_delete_sub_stack_sfn.lambda_handler",
+      handler: 'osi_delete_sub_stack_sfn.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 128,
       environment: {
@@ -832,26 +836,26 @@ export class S3toOpenSearchOSIStack extends Construct {
     deleteOSIPipeSMFn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ["states:StartExecution"],
+        actions: ['states:StartExecution'],
         resources: [pipeSM.stateMachineArn],
       })
     );
 
-    const crDeleteLambda = new cr.AwsCustomResource(this, "CRDeleteLambda", {
+    const crDeleteLambda = new cr.AwsCustomResource(this, 'CRDeleteLambda', {
       policy: cr.AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
-          actions: ["lambda:InvokeFunction"],
+          actions: ['lambda:InvokeFunction'],
           effect: iam.Effect.ALLOW,
           resources: [deleteOSIPipeSMFn.functionArn],
         }),
       ]),
       timeout: Duration.minutes(15),
       onDelete: {
-        service: "Lambda",
-        action: "invoke",
+        service: 'Lambda',
+        action: 'invoke',
         parameters: {
           FunctionName: deleteOSIPipeSMFn.functionName,
-          InvocationType: "Event",
+          InvocationType: 'Event',
         },
         physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
@@ -870,7 +874,7 @@ export class S3toOpenSearchOSIStack extends Construct {
 }
 
 class InjectCondition implements IAspect {
-  public constructor(private condition: CfnCondition) { }
+  public constructor(private condition: CfnCondition) {}
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
@@ -880,7 +884,7 @@ class InjectCondition implements IAspect {
 }
 
 class SetRoleName implements IAspect {
-  public constructor(private roleName: string) { }
+  public constructor(private roleName: string) {}
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnRole) {

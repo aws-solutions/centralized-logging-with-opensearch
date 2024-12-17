@@ -6,13 +6,13 @@ from source.base import AbstractSource
 
 
 class Status(CommonEnum):
-    RUNNING = 'Running'
-    SUCCEEDED = 'Succeeded'
-    FAILED = 'Failed'
+    RUNNING = "Running"
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
 
 
 class AbstractSink:
-    
+
     def __init__(self, context: dict) -> None:
         """_summary_
 
@@ -20,7 +20,7 @@ class AbstractSink:
             context (dict): _description_
         """
         pass
-    
+
     def process(self, source: AbstractSource) -> Status:
         """_summary_
 
@@ -39,4 +39,3 @@ class AbstractSink:
             dict: _description_
         """
         return {}
-

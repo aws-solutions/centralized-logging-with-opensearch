@@ -17,27 +17,30 @@ import React, { useState, useEffect } from "react";
 
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import Tiles from "components/Tiles";
 import { CreateLogMethod } from "assets/js/const";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
-import { Resource, ResourceType, DestinationType } from "API";
+import { Resource, ResourceType, DestinationType, ServiceType } from "API";
 import { getResourceLogConfigs, listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
 import { WAFTaskProps } from "../CreateWAF";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
-import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
-import { buildWAFLink, splitStringToBucketAndPrefix } from "assets/js/utils";
-import { AmplifyConfigType, AnalyticEngineTypes } from "types";
+import {
+  buildWAFLink,
+  defaultStr,
+  splitStringToBucketAndPrefix,
+} from "assets/js/utils";
+import { AmplifyConfigType, WAFIngestOption } from "types";
 import { useSelector } from "react-redux";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-import IngestOptionSelect, { IngestOption } from "./IngestOptionSelect";
 import SampleSchedule from "./SampleSchedule";
 import { RootState } from "reducer/reducers";
+import LogSourceEnable from "../../common/LogSourceEnable";
+import LogLocation from "../../common/LogLocation";
 
 export enum WAF_TYPE {
   CLOUDFRONT = "CLOUDFRONT",
@@ -60,10 +63,8 @@ interface SpecifySettingsProps {
   setISChanging: (changing: boolean) => void;
   changeNeedEnableLogging: (need: boolean) => void;
   changeCrossAccount: (id: string) => void;
-  changeIngestionOption: (option: string) => void;
   changeScheduleInterval: (interval: string) => void;
   changeLogSource: (source: string) => void;
-  engineType: AnalyticEngineTypes;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -85,10 +86,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeNeedEnableLogging,
     setISChanging,
     changeCrossAccount,
-    changeIngestionOption,
     changeScheduleInterval,
     changeLogSource,
-    engineType,
   } = props;
   const { t } = useTranslation();
 
@@ -121,7 +120,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
         tmpOptionList.push({
           name: `${element.name}`,
           value: element.id,
-          description: element.description || "",
+          description: defaultStr(element.description),
         });
       });
       setWAFOptionList(tmpOptionList);
@@ -131,11 +130,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   };
 
-  const getBucketPrefix = async (aclArn: string) => {
+  const getBucketPrefix = async (aclArn: string, ingestOption: string) => {
     setLoadingBucket(true);
     setISChanging(true);
     const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
-      type: ResourceType.WAF,
+      type:
+        ingestOption === WAFIngestOption.SampledRequest
+          ? ServiceType.WAFSampled
+          : ServiceType.WAF,
       resourceName: aclArn,
       accountId: wafTask.logSourceAccountId,
     });
@@ -166,12 +168,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setShowSuccessText(false);
     setShowInfoText(false);
     setNextStepDisableStatus(false);
-    if (
-      wafTask.params.wafObj &&
-      wafTask.params.wafObj.value &&
-      wafTask.params.ingestOption === IngestOption.FullRequest
-    ) {
-      getBucketPrefix(wafTask.params.wafObj.value);
+    if (wafTask.params.wafObj?.value) {
+      getBucketPrefix(wafTask.params.wafObj.value, wafTask.params.ingestOption);
     }
   }, [wafTask.params.wafObj, wafTask.params.ingestOption]);
 
@@ -185,44 +183,54 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeNeedEnableLogging(showInfoText);
   }, [showInfoText]);
 
+  const buildErrorText = () => {
+    if (autoWAFEmptyError) {
+      setNextStepDisableStatus(true);
+      return t("servicelog:waf.aclEmptyError");
+    }
+    if (
+      showSuccessText &&
+      previewS3Path &&
+      wafTask.params.logSource === "S3_DIFF"
+    ) {
+      setNextStepDisableStatus(true);
+      return t("servicelog:waf.diffRegion", {
+        bucket: previewS3Path,
+        logRegion: logRegion,
+        homeRegion: amplifyConfig.aws_project_region,
+      });
+    }
+    setNextStepDisableStatus(false);
+    return "";
+  };
+
+  useEffect(() => {
+    console.info("wafTask.params.logSource:", wafTask.params.logSource);
+    console.info("showSuccessText:", showSuccessText);
+    console.info("previewS3Path:", previewS3Path);
+  }, [wafTask.params.logSource, showSuccessText, previewS3Path]);
+
   return (
     <div>
-      <PagePanel title={t("servicelog:create.step.specifySetting")}>
+      <PagePanel title={t("step.logSource")}>
         <div>
-          <HeaderPanel title={t("servicelog:waf.logCreation")}>
-            <div>
-              <FormItem
-                optionTitle={t("servicelog:waf.creationMethod")}
-                optionDesc=""
-                infoType={InfoBarTypes.INGESTION_CREATION_METHOD}
-              >
-                <Tiles
-                  value={wafTask.params.taskType}
-                  onChange={(event) => {
-                    changeTaskType(event.target.value);
-                    changeWAFObj(null);
-                    if (event.target.value === CreateLogMethod.Automatic) {
-                      changeLogPath("");
-                    }
-                  }}
-                  items={[
-                    {
-                      label: t("servicelog:waf.auto"),
-                      description: t("servicelog:waf.autoDesc"),
-                      value: CreateLogMethod.Automatic,
-                    },
-                    {
-                      label: t("servicelog:waf.manual"),
-                      description: t("servicelog:waf.manualDesc"),
-                      value: CreateLogMethod.Manual,
-                    },
-                  ]}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel title={t("servicelog:waf.title")}>
+          <LogSourceEnable
+            value={wafTask.params.taskType}
+            onChange={(value) => {
+              changeTaskType(value);
+              changeWAFObj(null);
+              if (value === CreateLogMethod.Automatic) {
+                changeLogPath("");
+              }
+            }}
+            disabledManual={
+              wafTask.params.ingestOption === WAFIngestOption.SampledRequest
+            }
+          />
+          <HeaderPanel
+            title={t("servicelog:create.awsServiceLogSettings")}
+            desc={t("servicelog:create.awsServiceLogSettingsDesc")}
+          >
             <div>
               <CrossAccountSelect
                 disabled={loadingWAFList}
@@ -240,9 +248,26 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   <FormItem
                     optionTitle={t("servicelog:waf.acl")}
                     optionDesc={<div>{t("servicelog:waf.aclDesc")}</div>}
-                    errorText={
-                      autoWAFEmptyError ? t("servicelog:waf.aclEmptyError") : ""
+                    warningText={
+                      wafTask.params.ingestOption ===
+                        WAFIngestOption.FullRequest &&
+                      showSuccessText &&
+                      wafTask.params.logSource === "S3" ? (
+                        <div>{t("servicelog:waf.sourceWAFTip")}</div>
+                      ) : (
+                        ""
+                      )
                     }
+                    successText={
+                      wafTask.params.ingestOption ===
+                        WAFIngestOption.FullRequest &&
+                      showSuccessText &&
+                      previewS3Path &&
+                      wafTask.params.logSource === "KDF-to-S3"
+                        ? t("servicelog:create.savedTips") + previewS3Path
+                        : ""
+                    }
+                    errorText={buildErrorText()}
                   >
                     <AutoComplete
                       outerLoading
@@ -260,40 +285,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  <IngestOptionSelect
-                    ingestOption={wafTask.params.ingestOption}
-                    onlyFullRequest={
-                      engineType === AnalyticEngineTypes.LIGHT_ENGINE
-                    }
-                    changeIngestOption={(option) => {
-                      changeIngestionOption(option);
-                    }}
-                    warningText={
-                      showSuccessText && wafTask.params.logSource === "S3" ? (
-                        <div>{t("servicelog:waf.sourceWAFTip")}</div>
-                      ) : (
-                        ""
-                      )
-                    }
-                    successText={
-                      showSuccessText &&
-                      previewS3Path &&
-                      wafTask.params.logSource === "KDF-to-S3"
-                        ? t("servicelog:waf.savedTips") + previewS3Path
-                        : ""
-                    }
-                    errorText={
-                      showSuccessText &&
-                      previewS3Path &&
-                      wafTask.params.logSource === "S3_DIFF"
-                        ? t("servicelog:waf.diffRegion", {
-                            bucket: previewS3Path,
-                            logRegion: logRegion,
-                            homeRegion: amplifyConfig.aws_project_region,
-                          })
-                        : ""
-                    }
-                  />
+
                   {showInfoText && (
                     <AutoEnableLogging
                       title={t("servicelog:waf.noLogOutput")}
@@ -310,9 +302,15 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       changeLogSource={(source) => {
                         changeLogSource(source);
                       }}
-                      changeLogBucketAndPrefix={(bucket, prefix, enabled) => {
-                        changeWAFBucket(bucket || "");
-                        changeLogPath(prefix || "");
+                      changeLogBucketAndPrefix={(
+                        bucket,
+                        prefix,
+                        enabled,
+                        type
+                      ) => {
+                        changeWAFBucket(defaultStr(bucket));
+                        changeLogPath(defaultStr(prefix));
+                        changeLogSource(defaultStr(type));
                         if (enabled) {
                           setPreviewS3Path(` s3://${bucket}/${prefix}`);
                           setShowSuccessText(true);
@@ -325,7 +323,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     />
                   )}
                   {wafTask.params.ingestOption ===
-                    IngestOption.SampledRequest && (
+                    WAFIngestOption.SampledRequest && (
                     <SampleSchedule
                       interval={wafTask.params.interval}
                       changeScheduleInterval={(interval) => {
@@ -360,41 +358,20 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  <IngestOptionSelect
-                    onlyFullRequest={
-                      engineType === AnalyticEngineTypes.LIGHT_ENGINE
-                    }
-                    ingestOption={wafTask.params.ingestOption}
-                    changeIngestOption={(option) => {
-                      changeIngestionOption(option);
-                    }}
-                  />
-                  {wafTask.params.ingestOption === IngestOption.FullRequest && (
-                    <FormItem
-                      optionTitle={t("servicelog:waf.logLocation")}
-                      optionDesc={t("servicelog:waf.logLocationDesc")}
-                      errorText={
-                        (manualWAFEmptyError
-                          ? t("servicelog:waf.logLocationError")
-                          : "") ||
-                        (manualS3PathInvalid
-                          ? t("servicelog:s3InvalidError")
-                          : "")
-                      }
-                    >
-                      <TextInput
-                        className="m-w-75p"
-                        value={wafTask.params.manualBucketWAFPath}
-                        placeholder="s3://bucket/prefix"
-                        onChange={(event) => {
-                          changeLogPath(event.target.value);
-                        }}
-                      />
-                    </FormItem>
+                  {wafTask.params.ingestOption ===
+                    WAFIngestOption.FullRequest && (
+                    <LogLocation
+                      manualS3EmptyError={manualWAFEmptyError}
+                      manualS3PathInvalid={manualS3PathInvalid}
+                      logLocation={wafTask.params.manualBucketWAFPath}
+                      changeLogPath={(value) => {
+                        changeLogPath(value);
+                      }}
+                    />
                   )}
 
                   {wafTask.params.ingestOption ===
-                    IngestOption.SampledRequest && (
+                    WAFIngestOption.SampledRequest && (
                     <SampleSchedule
                       interval={wafTask.params.interval}
                       changeScheduleInterval={(interval) => {

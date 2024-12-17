@@ -14,22 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import * as path from 'path';
-import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Aws,
   Fn,
   Duration,
   RemovalPolicy,
+  aws_appsync as appsync,
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_lambda as lambda,
+  aws_kms as kms,
 } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
+import { ClusterFlowStack } from './cluster-flow';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
-import { ClusterFlowStack } from './cluster-flow';
 
 export interface ClusterStackProps {
   /**
@@ -79,6 +80,7 @@ export interface ClusterStackProps {
   readonly solutionId: string;
   readonly stackPrefix: string;
   readonly aosMasterRole: iam.Role;
+  readonly encryptionKey: kms.IKey;
 }
 export class ClusterStack extends Construct {
   readonly clusterTable: ddb.Table;
@@ -94,7 +96,8 @@ export class ClusterStack extends Construct {
       },
       billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: ddb.TableEncryption.DEFAULT,
+      encryption: ddb.TableEncryption.CUSTOMER_MANAGED,
+      encryptionKey: props.encryptionKey,
       pointInTimeRecovery: true,
     });
 
@@ -114,7 +117,7 @@ export class ClusterStack extends Construct {
 
     // Create a Step Functions to orchestrate cluster flow
     const clusterFlow = new ClusterFlowStack(this, 'ClusterFlowSM', {
-      tableArn: this.clusterTable.tableArn,
+      table: this.clusterTable,
       cfnFlowSMArn: props.cfnFlowSMArn,
     });
 
@@ -125,7 +128,7 @@ export class ClusterStack extends Construct {
         {
           bundling: {
             image: lambda.Runtime.PYTHON_3_11.bundlingImage,
-            platform: "linux/amd64",
+            platform: 'linux/amd64',
             command: [
               'bash',
               '-c',
@@ -236,10 +239,7 @@ export class ClusterStack extends Construct {
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           resources: ['*'],
-          actions: [
-            'kms:DescribeCustomKeyStores',
-            'kms:DescribeKey',
-          ],
+          actions: ['kms:DescribeCustomKeyStores', 'kms:DescribeKey'],
         }),
       ],
     });

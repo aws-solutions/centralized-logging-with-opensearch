@@ -36,13 +36,13 @@ const SelectType: React.FC<SelectTypeProps> = (props: SelectTypeProps) => {
         }}
         items={[
           {
-            label: t("resource:group.instances"),
-            description: t("resource:group.instancesDesc"),
+            label: t("resource:group.manual"),
+            description: t("resource:group.manualsDesc"),
             value: EC2GroupType.EC2,
           },
           {
-            label: t("resource:group.asgs"),
-            description: t("resource:group.asgsDesc"),
+            label: t("resource:group.asg"),
+            description: t("resource:group.asgDesc"),
             value: EC2GroupType.ASG,
           },
         ]}

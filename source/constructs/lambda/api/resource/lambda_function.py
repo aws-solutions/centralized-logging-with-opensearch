@@ -925,6 +925,7 @@ class RDS(Resource):
     def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
         self._client = conn.get_client("rds", sts_role_arn=self._sts_role)
+        self._default_logging_bucket = default_logging_bucket
 
     def _get_db_instances(self):
         result = []
@@ -1516,3 +1517,36 @@ def default_logging_policy(log_group_arn):
             ],
         }
     )
+
+
+class WAFSampled(WAF):
+    def __init__(self, account_id: str = "", region: str = ""):
+        super().__init__(account_id, region)
+
+        account = account_helper.get_link_account(account_id="", region="")
+        self._account_id = account_id or account_helper.default_account_id
+        self._region = region or account_helper.default_region
+        self._partition = get_partition(self._region)
+        self._default_logging_bucket = default_logging_bucket
+        self._sts_role = account.get("subAccountRoleArn", "")
+
+        self._s3_client = conn.get_client("s3", sts_role_arn=self._sts_role)
+        self._iam_client = conn.get_client("iam", sts_role_arn=self._sts_role)
+
+    def _get_default_prefix(self, acl_arn):
+        web_acl_name = re.search("/webacl/([^/]*)", acl_arn).group(1)
+        region = "cloudfront" if ":global/" in acl_arn else self._region
+        return f"AWSLogs/{self._account_id}/WAFSamplingLogs/{region}/{web_acl_name}/"
+
+    def get_resource_log_config(self, acl_arn):
+        bucket_loc = get_bucket_location(self._s3_client, self._default_logging_bucket)
+        default_prefix = self._get_default_prefix(acl_arn)
+        return [
+            {
+                "destinationType": "S3",
+                "destinationName": f"s3://{self._default_logging_bucket}/{default_prefix}",
+                "logFormat": "",
+                "name": "S3",
+                "region": bucket_loc,
+            }
+        ]

@@ -30,6 +30,7 @@ const ServiceLogProcessor: React.FC<SvcDetailProps> = (
         defaultStr(pipelineInfo?.id)
       )}
       processorLambda={pipelineInfo?.processorLambda}
+      logProcessorConcurrency={pipelineInfo?.logProcessorConcurrency}
     />
   );
 };

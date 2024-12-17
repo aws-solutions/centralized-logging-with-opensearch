@@ -16,7 +16,6 @@ class FluentBitDataPipeline(object):
         output_name: str,
         ingestion_id: str,
         time_key: str = "time",
-        mem_buf_limit="30M",
     ):
         self._env = env
         self._log_type = log_type
@@ -27,7 +26,6 @@ class FluentBitDataPipeline(object):
         self._output_name = output_name
         self._ingestion_id = ingestion_id
         self._time_key = time_key
-        self._mem_buf_limit = mem_buf_limit
 
     @property
     def env(self):
@@ -196,11 +194,3 @@ class FluentBitDataPipeline(object):
     @aos.setter
     def aos(self, aos):
         self._aos = aos
-
-    @property
-    def mem_buf_limit(self):
-        return self._mem_buf_limit
-
-    @mem_buf_limit.setter
-    def mem_buf_limit(self, mem_buf_limit: str):
-        self._mem_buf_limit = mem_buf_limit

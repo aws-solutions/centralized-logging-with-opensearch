@@ -13,47 +13,53 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo } from "react";
-import ExtLink from "components/ExtLink";
-import RDSArch from "assets/images/desc/rdsArch.webp";
-import RDSLightEngineArch from "assets/images/desc/rdsArchLightEngine.webp";
-import { RDS_LOG_LINK } from "assets/js/const";
+import { FormControlLabel, RadioGroup } from "@material-ui/core";
+import FormItem from "components/FormItem";
+import Radio from "components/Radio";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "types";
+import { RDSIngestOption } from "types";
 
 export interface RDSDescProps {
-  engineType: AnalyticEngineTypes;
+  ingestLogType: string;
+  changeIngestLogType: (ingestLogType: string) => void;
 }
 
-const RDSDesc: React.FC<RDSDescProps> = ({ engineType }: RDSDescProps) => {
+const RDSDesc: React.FC<RDSDescProps> = (props: RDSDescProps) => {
   const { t } = useTranslation();
-  const isLightEngine = useMemo(
-    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
-    [engineType]
-  );
+  const { ingestLogType, changeIngestLogType } = props;
   return (
     <div>
       <div className="ingest-desc-title">
         {t("servicelog:create.service.rds")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:rds.desc.ingest")}
-        <ExtLink to={RDS_LOG_LINK}>{t("servicelog:rds.desc.rdsLog")}</ExtLink>
-        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
-      </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:rds.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">
-        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("servicelog:rds.desc.ingest")}</div>
       <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={isLightEngine ? RDSLightEngineArch : RDSArch}
-        />
+        <FormItem
+          optionTitle={t("servicelog:create.ingestLogType")}
+          optionDesc={t("servicelog:create.ingestLogTypeDesc")}
+        >
+          <RadioGroup
+            className="radio-group"
+            value={ingestLogType}
+            onChange={(e) => {
+              changeIngestLogType(e.target.value);
+            }}
+          >
+            <FormControlLabel
+              value={RDSIngestOption.MySQL}
+              control={<Radio />}
+              label={t(`servicelog:create.ingestType${RDSIngestOption.MySQL}`)}
+            />
+            <FormControlLabel
+              value={RDSIngestOption.PostgreSQL}
+              control={<Radio />}
+              label={t(
+                `servicelog:create.ingestType${RDSIngestOption.PostgreSQL}`
+              )}
+            />
+          </RadioGroup>
+        </FormItem>
       </div>
     </div>
   );

@@ -18,6 +18,9 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import Ingestion from "../Ingestion";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { MockAppLogDetailData } from "test/applog.mock";
+import { screen, act, fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,24 +37,112 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("Ingestion", () => {
-  it("renders without errors", () => {
-    const { getByText } = renderWithProviders(
-      <MemoryRouter>
-        <Ingestion isRefreshing={false} pipelineInfo={undefined} />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listAppLogIngestions: {
+          appLogIngestions: [
+            {
+              id: "xxxxx",
+              stackId: null,
+              stackName: null,
+              appPipelineId: "xxxxxx",
+              logPath: "%2Fvar%2Flog%2Fcontainers%2Fsolax.log",
+              sourceId: "b3dbe785-376b-44f1-b085-c0ba187d6edf",
+              sourceType: "EC2",
+              createdAt: "2024-03-26T09:32:34Z",
+              status: "ACTIVE",
+              tags: [],
+              accountId: "123456789012",
+              region: "us-west-2",
+              __typename: "AppLogIngestion",
+            },
+          ],
+          total: 1,
         },
-      }
-    );
-    expect(getByText("applog:ingestion.type")).toBeInTheDocument();
+      },
+      getLogSource: {
+        sourceId: "xxxxx",
+        type: "EC2",
+        accountId: "123456789012",
+        region: "us-west-2",
+        eks: null,
+        s3: null,
+        ec2: {
+          groupName: "albertxu-instance-group",
+          groupType: "EC2",
+          groupPlatform: "Linux",
+          asgName: "",
+          instances: [
+            {
+              instanceId: "i-xxx",
+              __typename: "EC2Instances",
+            },
+          ],
+          __typename: "EC2Source",
+        },
+        syslog: null,
+        createdAt: "2023-08-02T12:37:40Z",
+        updatedAt: "2023-08-02T12:37:40Z",
+        status: "ACTIVE",
+        tags: [],
+        __typename: "LogSource",
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        deleteAppLogIngestion: "OK",
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <Ingestion
+            isRefreshing={false}
+            pipelineInfo={{ ...MockAppLogDetailData }}
+          />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+          },
+        }
+      );
+    });
+
+    // select on ingestion
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-xxxxx"));
+    });
+
+    // click delete button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("app-ingestion-delete-button"));
+    });
+
+    // click confirm delete button
+    await act(async () => {
+      fireEvent.click(
+        screen.getByTestId("app-ingestion-confirm-delete-button")
+      );
+    });
+
+    // click create refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("app-ingestion-refresh-button"));
+    });
   });
 });

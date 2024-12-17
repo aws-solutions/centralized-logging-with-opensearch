@@ -35,7 +35,7 @@ class TestOpenSearch:
         req_put = requests_mock
         url = (
             f"https://{self.endpoint}/_plugins/_ism/"
-            f"policies/{self.index_prefix}-{self.log_type.lower()}-ism-policy"
+            f"policies/{self.index_prefix}-ism-policy"
         )
         req_get.get(url,text='resp',status_code=404)
         req_put.put(url, text="resp", status_code=201)
@@ -45,7 +45,7 @@ class TestOpenSearch:
     def test_create_index(self, requests_mock):
         req = requests_mock
         index_alias = (
-            f"{self.index_prefix.lower()}-{self.log_type.lower()}"
+            f"{self.index_prefix.lower()}"
             if self.log_type
             else self.index_prefix.lower()
         )
@@ -56,12 +56,22 @@ class TestOpenSearch:
         req.put(url, text="resp", status_code=201)
         resp = self.aos.create_index(format)
         assert resp.status_code == 201
+    
+    def test_put_index_pattern(self, requests_mock):
+        req = requests_mock
+        
+        req.get(f"https://{self.endpoint}/_dashboards/api/index_patterns/_fields_for_wildcard", text='{"fields": []}', status_code=200)
+        req.get(f"https://{self.endpoint}/_dashboards/api/saved_objects/index-pattern/{self.index_prefix}", text='{"version": "1"}', status_code=200)
+        req.put(f"https://{self.endpoint}/_dashboards/api/saved_objects/index-pattern/{self.index_prefix}", text='{}', status_code=200)
+        
+        resp = self.aos.put_index_pattern()
+        assert resp.status_code == 200
 
     def test_exist_index_template(self, requests_mock):
         req = requests_mock
         url = (
             f"https://{self.endpoint}/_index_template"
-            f"/{self.index_prefix}-{self.log_type.lower()}-template"
+            f"/{self.index_prefix}-template"
         )
         print(">>>>")
         print(url)

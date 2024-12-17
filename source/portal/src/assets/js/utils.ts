@@ -76,19 +76,22 @@ export const splitStringToBucketAndPrefix = (
 };
 
 export const bucketNameIsValid = (bucketName: string): boolean => {
-  const REG1 = bucketName && /^[a-z\d.-]*$/.test(bucketName);
-  const REG2 = bucketName && /^[a-z\d]/.test(bucketName);
-  const REG3 = bucketName && !/-$/.test(bucketName);
-  const REG4 = bucketName && !/\.+\./.test(bucketName);
-  const REG5 = bucketName && !/-+\.$/.test(bucketName);
-  const REG6 =
-    bucketName &&
-    !/^(?:(?:^|\.)(?:2(?:5[0-5]|[0-4]\d)|1?\d?\d)){4}$/.test(bucketName);
-  const REG7 = bucketName && bucketName.length >= 3 && bucketName.length <= 63;
-  if (REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7) {
-    return true;
+  if (!bucketName) {
+    return false;
   }
-  return false;
+
+  const REG1 = new RegExp(`${"^[a-z\\d.-]*$"}`).test(bucketName);
+  const REG2 = new RegExp(`${"^[a-z\\d]"}`).test(bucketName);
+  const REG3 = bucketName.endsWith("-") === false;
+  const REG4 = new RegExp(`${"\\.\\.+"}`).test(bucketName) === false;
+  const REG5 = new RegExp(`${"-+\\.$"}`).test(bucketName) === false;
+  const REG6 =
+    new RegExp(
+      `${"^(?:(?:^|\\.)(?:2(?:5[0-5]|[0-4]\\d)|1?\\d?\\d)){4}$"}`
+    ).test(bucketName) === false;
+  const REG7 = bucketName.length >= 3 && bucketName.length <= 63;
+
+  return REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7;
 };
 
 // check index name is valid
@@ -145,7 +148,7 @@ export const formatTimeStamp = (timestamp: number): string => {
 
 // format date
 export const formatLocalTime = (time: string): string => {
-  if (time.trim() !== "") {
+  if (time && time.trim() !== "" && time !== "-") {
     return format(new Date(parseISO(time)), "yyyy-MM-dd HH:mm:ss");
   }
   return "-";
@@ -187,35 +190,35 @@ export const emailIsValid = (email: string): boolean => {
 };
 
 export const buildACMLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/acm/home?region=${region}#/`;
   }
   return `https://${region}.console.aws.amazon.com/acm/home?region=${region}#/`;
 };
 
 export const buildEC2LInk = (region: string, instanceId: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#Instances:instanceId=${instanceId}`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Instances:v=3;instanceId=${instanceId}`;
 };
 
 export const buildKDSLink = (region: string, kdsName: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/kinesis/home?region=${region}#/streams/details/${kdsName}/monitoring`;
   }
   return `https://${region}.console.aws.amazon.com/kinesis/home?region=${region}#/streams/details/${kdsName}/monitoring`;
 };
 
 export const buildKDFLink = (region: string, kdfName: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/firehose/home?region=${region}#/details/${kdfName}/monitoring`;
   }
   return `https://${region}.console.aws.amazon.com/firehose/home?region=${region}#/details/${kdfName}/monitoring`;
 };
 
 export const buildCfnLink = (region: string, stackArn: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudformation/home?region=${region}#/stacks/stackinfo?stackId=${encodeURIComponent(
       stackArn
     )}`;
@@ -226,7 +229,7 @@ export const buildCfnLink = (region: string, stackArn: string): string => {
 };
 
 export const buildESLink = (region: string, domainName: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/aos/home?region=${region}#opensearch/domains/${domainName}`;
   }
   return `https://${region}.console.aws.amazon.com/aos/home?region=${region}#opensearch/domains/${domainName}`;
@@ -236,21 +239,21 @@ export const buildESCloudWatchLink = (
   region: string,
   domainName: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#dashboards:name=${domainName}`;
   }
   return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#dashboards:name=${domainName}`;
 };
 
 export const buildVPCLink = (region: string, vpcId: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`;
 };
 
 export const buildSubnetLink = (region: string, subnetId: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
@@ -260,14 +263,14 @@ export const buildVPCPeeringLink = (
   region: string,
   vpcPeeringId: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
 };
 
 export const buildNaclLink = (region: string, naclId: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
@@ -277,14 +280,14 @@ export const buildRouteTableLink = (
   region: string,
   routeTableId: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
 };
 
 export const buildSGLink = (region: string, sgId: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`;
@@ -310,7 +313,7 @@ export const buildS3Link = (
   bucketName: string,
   prefix?: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     if (prefix) {
       const resPrefix = getDirPrefixByPrefixStr(prefix);
       if (resPrefix.endsWith("/")) {
@@ -336,21 +339,21 @@ export const buildS3LinkFromS3URI = (region: string, uri?: string): string => {
   const bucketName = bucketAndPrefix.split("/")[0];
   const prefix = bucketAndPrefix.substring(bucketName.length + 1);
   const postfix = prefix.endsWith("/") ? "" : "/";
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://console.amazonaws.cn/s3/buckets/${bucketName}?region=${region}&prefix=${prefix}${postfix}`;
   }
   return `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}?region=${region}&prefix=${prefix}${postfix}`;
 };
 
 export const buildTrailLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudtrail/home?region=${region}#/trails`;
   }
   return `https://${region}.console.aws.amazon.com/cloudtrail/home?region=${region}#/trails`;
 };
 
 export const buildConfigLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/config/home?region=${region}#/dashboard`;
   }
   return `https://${region}.console.aws.amazon.com/config/home?region=${region}#/dashboard`;
@@ -360,7 +363,7 @@ export const buildCloudFrontLink = (
   region: string,
   cloudFrontId: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://console.amazonaws.cn/cloudfront/v3/home?region=${region}#/distributions/${cloudFrontId}`;
   }
   return `https://console.aws.amazon.com/cloudfront/v3/home?region=${region}#/distributions/${cloudFrontId}`;
@@ -370,7 +373,7 @@ export const buildLambdaLink = (
   region: string,
   functionName: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/lambda/home?region=${region}#/functions/${functionName}?tab=code`;
   }
   return `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${functionName}?tab=code`;
@@ -383,35 +386,35 @@ export const buildLambdaLogStreamLink = (
 ): string => {
   const funcUri = functionName;
   const logStreamUri = logStreamName;
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${funcUri}/log-events/${logStreamUri}`;
   }
   return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${funcUri}/log-events/${logStreamUri}`;
 };
 
 export const buildRDSLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/rds/home?region=${region}#databases:`;
   }
   return `https://${region}.console.aws.amazon.com/rds/home?region=${region}#databases:`;
 };
 
 export const buildRoleLink = (roleId: string, region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://console.amazonaws.cn/iam/home?#/roles/${roleId}`;
   }
   return `https://console.aws.amazon.com/iam/home?#/roles/${roleId}`;
 };
 
 export const buildAlarmLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://console.amazonaws.cn/cloudwatch/home?region=${region}#alarmsV2:`;
   }
   return `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarmsV2:`;
 };
 
 export const buildWAFLink = (region: string, webACLScope?: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://console.amazonaws.cn/wafv2/homev2/web-acls?region=${region}`;
   } else {
     if (webACLScope === "CLOUDFRONT") {
@@ -423,14 +426,14 @@ export const buildWAFLink = (region: string, webACLScope?: string): string => {
 };
 
 export const buildELBLink = (region: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#LoadBalancers`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#LoadBalancers`;
 };
 
 export const buildKeyPairsLink = (region: string) => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#KeyPairs:`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#KeyPairs:`;
@@ -440,7 +443,7 @@ export const buildEKSLink = (
   region: string,
   clusterName?: string | null | undefined
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/eks/home?region=${region}#/clusters${
       clusterName ? "/" + clusterName : ""
     }`;
@@ -451,7 +454,7 @@ export const buildEKSLink = (
 };
 
 export const buildASGLink = (region: string, groupName: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#AutoScalingGroupDetails:id=${groupName}`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#AutoScalingGroupDetails:id=${groupName}`;
@@ -468,7 +471,7 @@ export const buildCrossAccountTemplateLink = (
 
 export const buildSQSLink = (region: string, queueName: string): string => {
   const uri = `https://sqs.${region}.amazonaws.com.cn/`;
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/sqs/v3/home?region=${region}#/queues/${encodeURIComponent(
       uri
     )}${queueName}`;
@@ -478,8 +481,18 @@ export const buildSQSLink = (region: string, queueName: string): string => {
   )}${queueName}`;
 };
 
+export const buildEventRuleLink = (
+  region: string,
+  ruleName: string
+): string => {
+  if (region?.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/events/home?region=${region}#/eventbus/default/rules/${ruleName}`;
+  }
+  return `https://${region}.console.aws.amazon.com/events/home?region=${region}#/eventbus/default/rules/${ruleName}`;
+};
+
 export const buildNLBLinkByDNS = (region: string, dnsName: string): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`;
   }
   return `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`;
@@ -489,7 +502,7 @@ export const buildLambdaCWLGroupLink = (
   region: string,
   groupName: string
 ): string => {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${groupName.replace(
       /\//g,
       decodeURIComponent("%24252F")
@@ -508,7 +521,7 @@ export const buildGlueTableLink = (
   table = ""
 ): string => {
   return `https://${region}.${
-    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+    region?.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/glue/home?region=${region}#/v2/data-catalog/tables/view/${table}?database=${database}`;
 };
 
@@ -517,13 +530,13 @@ export const buildGlueDatabaseLink = (
   database = ""
 ): string => {
   return `https://${region}.${
-    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+    region?.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/glue/home?region=${region}#/v2/data-catalog/databases/view/${database}`;
 };
 
 export const buildStepFunctionLink = (region: string, arn = ""): string => {
   return `https://${region}.${
-    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+    region?.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/states/home?region=${region}#/statemachines/view/${arn}`;
 };
 
@@ -533,7 +546,7 @@ export const buildSchedulerLink = (
   group?: string,
   name?: string
 ): string => {
-  const host = region.startsWith("cn")
+  const host = region?.startsWith("cn")
     ? "console.amazonaws.cn"
     : "console.aws.amazon.com";
   return type === SchedulerType.EventBridgeScheduler
@@ -546,13 +559,13 @@ export const buildStepFunctionExecutionLink = (
   arn = ""
 ): string => {
   return `https://${region}.${
-    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+    region?.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/states/home?region=${region}#/v2/executions/details/${arn}`;
 };
 
 export const buildOSILink = (region: string, osiName: string) => {
   return `https://${region}.${
-    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+    region?.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/aos/home?region=${region}#opensearch/ingestion-pipelines/${osiName}`;
 };
 
@@ -617,7 +630,7 @@ export function generateEc2Permissions(
 }
 
 export const getAWSPartition = (region: string) => {
-  return region.startsWith("cn") ? "aws-cn" : "aws";
+  return region?.startsWith("cn") ? "aws-cn" : "aws";
 };
 
 export type FieldValidator<T> = (param: T) => string;
@@ -784,4 +797,21 @@ export const linkAccountMissingFields = (account: SubAccountLink | null) => {
     !account?.windowsAgentInstallDoc ||
     !account?.agentStatusCheckDoc
   );
+};
+
+export function downloadFileByLink(url: string) {
+  const link = document.createElement("a");
+  link.style.display = "none";
+  link.href = url;
+
+  document.body.appendChild(link);
+  link.click();
+
+  setTimeout(() => {
+    link?.parentNode?.removeChild(link);
+  }, 0);
+}
+
+export const formatNumber = (num: string | number) => {
+  return Number(num).toLocaleString();
 };

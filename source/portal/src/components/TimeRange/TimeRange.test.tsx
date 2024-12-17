@@ -62,4 +62,102 @@ describe("TimeRange Component", () => {
     fireEvent.click(getByText("1d"));
     expect(mockFn2).toHaveBeenCalled();
   });
+
+  it("should call changeRangeType function when a specify time is 3h", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="3h"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is 12h", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="12h"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is 1d", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="1d"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is 3d", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="3d"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is 1w", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="1w"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is custom", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType="Custom"
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
+
+  it("should call changeRangeType function when a specify time is empty", () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    render(
+      <TimeRange
+        curTimeRangeType=""
+        startTime="00:00:00"
+        endTime="23:59:59"
+        changeTimeRange={mockFn1}
+        changeRangeType={mockFn2}
+      />
+    );
+  });
 });

@@ -1,7 +1,4 @@
 pydantic==1.10.14 --no-binary=pydantic
 aws-lambda-powertools
-urllib3
 requests
 requests-aws4auth
-boto3
-botocore

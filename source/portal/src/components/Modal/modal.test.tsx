@@ -16,7 +16,11 @@ limitations under the License.
 
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import Modal from "./modal"; // 更新为你的组件路径
+import Modal from "./modal";
+
+beforeEach(() => {
+  jest.spyOn(console, "error").mockImplementation(jest.fn());
+});
 
 describe("Modal", () => {
   const closeModalMock = jest.fn();

@@ -19,6 +19,8 @@ import EksLogDetail from "../EksLogDetail";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
+import { appSyncRequestQuery } from "assets/js/request";
+import { MockEKSData } from "test/applog.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -35,12 +37,22 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("EksLogDetail", () => {
   it("renders without errors", () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogSource: MockEKSData,
+      },
+    });
     renderWithProviders(
       <MemoryRouter>
         <EksLogDetail />

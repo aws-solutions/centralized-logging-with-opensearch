@@ -124,7 +124,7 @@ const CrossAccountList: React.FC = () => {
       <div className="table-data">
         <TablePanel
           trackId="subAccountId"
-          title={t("resource:crossAccount.list.accounts")}
+          title={t("resource:crossAccount.name")}
           changeSelected={(item) => {
             setSelectedAccount(item);
           }}
@@ -164,6 +164,7 @@ const CrossAccountList: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
                 onClick={() => {
@@ -178,6 +179,7 @@ const CrossAccountList: React.FC = () => {
               </Button>
 
               <Button
+                data-testid="remove-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeCrossAccount();
@@ -187,6 +189,7 @@ const CrossAccountList: React.FC = () => {
               </Button>
 
               <Button
+                data-testid="link-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/resources/cross-account/link");
@@ -216,6 +219,7 @@ const CrossAccountList: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-remove-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -225,6 +229,7 @@ const CrossAccountList: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-remove-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

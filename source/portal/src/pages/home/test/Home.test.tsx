@@ -18,6 +18,7 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import Home from "../Home";
+import { screen, fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -38,7 +39,7 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
-describe("InstanceGroupList", () => {
+describe("Home", () => {
   it("renders without errors", () => {
     const { getByText } = renderWithProviders(
       <MemoryRouter initialEntries={["/"]}>
@@ -53,5 +54,74 @@ describe("InstanceGroupList", () => {
       }
     );
     expect(getByText(/home:analytics/i)).toBeInTheDocument();
+  });
+
+  it("renders with click domain", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/"]}>
+        <Home />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+
+    const domain = screen.getByTestId("type-item-Domain");
+    expect(domain).toBeInTheDocument();
+    fireEvent.click(domain);
+
+    const importDomain = screen.getByTestId("import-domain-button");
+    expect(importDomain).toBeInTheDocument();
+    fireEvent.click(importDomain);
+  });
+
+  it("renders with click service pipeline", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/"]}>
+        <Home />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+
+    const domain = screen.getByTestId("type-item-ServicePipeline");
+    expect(domain).toBeInTheDocument();
+    fireEvent.click(domain);
+
+    const importDomain = screen.getByTestId("service-pipeline-button");
+    expect(importDomain).toBeInTheDocument();
+    fireEvent.click(importDomain);
+  });
+
+  it("renders with click app pipeline", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/"]}>
+        <Home />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+
+    const domain = screen.getByTestId("type-item-AppPipeline");
+    expect(domain).toBeInTheDocument();
+    fireEvent.click(domain);
+
+    const importDomain = screen.getByTestId("app-pipeline-button");
+    expect(importDomain).toBeInTheDocument();
+    fireEvent.click(importDomain);
   });
 });

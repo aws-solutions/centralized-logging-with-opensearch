@@ -43,16 +43,22 @@ const IGNORE_ERROR_CODE: string[] = [
 // Remove Error Code From Error Message
 export const refineErrorMessage = (message: string) => {
   let errorCode = "";
+
+  // Regular expression to match square brackets content
+  const squareBracketRegex = new RegExp(`${"\\[(\\S+)\\]"}`);
+  const messageRegex = new RegExp(`${"\\[\\S+\\]"}`);
   if (message.trim().startsWith("[")) {
-    const groups = message.match(/\[(\S+)\]/);
-    console.info("groups:", groups);
+    const groups = message.match(squareBracketRegex);
     errorCode = groups && groups.length >= 2 ? groups[1] : "";
-    message = message.replace(/\[\S+\]/, "");
+    message = message.replace(messageRegex, "");
   }
 
-  message = message.replace(/\$\{(\S+)\}/g, (m, placeholder) => {
+  // Regular expression to match placeholders
+  const placeholderRegex = new RegExp(`${"\\$\\{(\\S+)\\}"}`, "g");
+  message = message.replace(placeholderRegex, (m, placeholder) => {
     return i18n.t(placeholder);
   });
+
   return {
     errorCode,
     message,
@@ -121,7 +127,7 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
     } catch (error) {
       const showError: any = error;
       const headerElement = document.getElementById("cloSignedHeader");
-      // escape GetMetricHistoryData for 401 error
+      // exclude GetMetricHistoryData for 401 error
       const r = /query\s(\w+)\s*\(/g;
       const res: any = r.exec(query);
       if (

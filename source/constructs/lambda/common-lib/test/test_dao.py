@@ -16,6 +16,8 @@ from boto3.dynamodb.conditions import Attr
 from commonlib.exception import APIException
 from commonlib.model import (
     AOSParams,
+    DomainImportStatusEnum,
+    DomainImportType,
     LogStructure,
     LogTypeEnum,
     AppPipeline,
@@ -32,7 +34,10 @@ from commonlib.model import (
     PipelineAlarmStatus,
     GroupPlatformEnum,
     GroupTypeEnum,
+    ProxyInput,
+    ProxyVpc,
     RegularSpec,
+    Resource,
     StatusEnum,
 )
 
@@ -79,6 +84,7 @@ def ddb_client():
                 "proxyALB": "",
                 "proxyError": "",
                 "proxyInput": {},
+                "importMethod": DomainImportType.AUTOMATIC,
                 "proxyStackId": f"arn:aws:cloudformation:us-west-2:{ACCOUNT_ID}:stack/CL-Proxy-f862f9f5/9bd7c7c0-fb87-11ed-912f-0aac039a8cd1",
                 "proxyStatus": "DISABLED",
                 "region": "us-west-2",
@@ -119,9 +125,57 @@ def ddb_client():
                 "alarmStatus": "DISABLED",
                 "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may23",
                 "domainName": "may23",
+                "domainInfo": {
+                    "DomainStatus": {
+                        "VPCOptions": {
+                            "AvailabilityZones": ["us-west-2b"],
+                            "SecurityGroupIds": ["sg-0fc8398d4dc270f01"],
+                            "SubnetIds": ["subnet-0eb38879d66848a99"],
+                            "VPCId": "vpc-09d983bed6954836e",
+                        }
+                    }
+                },
                 "endpoint": "vpc-may23.us-west-2.es.amazonaws.com",
                 "status": "INACTIVE",
+                "proxyStatus": "DISABLED",
+                "importMethod": DomainImportType.AUTOMATIC,
                 "tags": [],
+                "engine": "OpenSearch",
+                "importedDt": "2023-05-24T08:47:11Z",
+                "version": "2.5",
+                "region": "us-west-2",
+                "resources": [],
+                "vpc": {
+                    "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
+                    "securityGroupId": "sg-0d6567095a7667f7f",
+                    "vpcId": "vpc-03089a5f415c2be27",
+                },
+            },
+            {
+                "id": "opensearch-3",
+                "accountId": ACCOUNT_ID,
+                "alarmStatus": "DISABLED",
+                "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may23",
+                "domainName": "may25",
+                "domainInfo": {
+                    "DomainStatus": {
+                        "VPCOptions": {
+                            "AvailabilityZones": ["us-west-2b"],
+                            "SecurityGroupIds": ["sg-0fc8398d4dc270f01"],
+                            "SubnetIds": ["subnet-0eb38879d66848a99"],
+                            "VPCId": "vpc-09d983bed6954836e",
+                        }
+                    }
+                },
+                "endpoint": "vpc-may23.us-west-2.es.amazonaws.com",
+                "status": "ACTIVE",
+                "proxyStatus": "DISABLED",
+                "importMethod": DomainImportType.AUTOMATIC,
+                "importedDt": "2023-05-24T08:47:11Z",
+                "tags": [],
+                "engine": "OpenSearch",
+                "region": "us-west-2",
+                "resources": [],
                 "version": "2.5",
                 "vpc": {
                     "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
@@ -462,6 +516,7 @@ def ddb_client():
             },
             {
                 "sourceId": "7bc7770269714d4a8563f8b6305adc65",
+                "accountId": "123456789012",
                 "createdAt": "2023-03-01T03:25:02Z",
                 "type": "EKSCluster",
                 "eks": {
@@ -973,6 +1028,105 @@ def test_regular_spec():
         RegularSpec(key="time", type="date")
 
 
+def test_opensearch_domain_update_status(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    assert dao.get_domain_by_id("opensearch-1").status == DomainImportStatusEnum.ACTIVE
+    dao.update_status("opensearch-1", DomainImportStatusEnum.IN_PROGRESS)
+    assert (
+        dao.get_domain_by_id("opensearch-1").status
+        == DomainImportStatusEnum.IN_PROGRESS
+    )
+
+
+def test_opensearch_domain_update_resources_status(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    assert dao.get_domain_by_id("opensearch-1").error == ""
+    dao.update_resources_status(
+        "opensearch-1",
+        DomainImportStatusEnum.IMPORTED,
+        [
+            Resource(
+                **{
+                    "name": "OpenSearchSecurityGroup",
+                    "status": "UPDATED",
+                    "values": ["sg-0fc8398d4dc270f01"],
+                }
+            )
+        ],
+        error="this is a fake error",
+    )
+    assert dao.get_domain_by_id("opensearch-1").error == "this is a fake error"
+    assert dao.get_domain_by_id("opensearch-1").resources == [
+        Resource(
+            **{
+                "name": "OpenSearchSecurityGroup",
+                "status": "UPDATED",
+                "values": ["sg-0fc8398d4dc270f01"],
+            }
+        )
+    ]
+
+
+def test_opensearch_domain_update_alarm(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    assert dao.get_domain_by_id("opensearch-1").alarmInput is None
+    dao.update_alarm(
+        "opensearch-1",
+        "CREATING",
+        {"a": 1},
+    )
+    assert dao.get_domain_by_id("opensearch-1").alarmStatus == "CREATING"
+    assert dao.get_domain_by_id("opensearch-1").alarmInput == {"a": 1}
+
+
+def test_opensearch_domain_update_proxy(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    assert dao.get_domain_by_id("opensearch-1").proxyInput is None
+    dao.update_proxy(
+        "opensearch-1",
+        "CREATING",
+        ProxyInput(
+            certificateArn="",
+            cognitoEndpoint="",
+            customEndpoint="",
+            elbAccessLogBucketName="",
+            keyName="",
+            proxyInstanceNumber="",
+            proxyInstanceType="",
+            vpc=ProxyVpc(
+                privateSubnetIds="",
+                publicSubnetIds="",
+                securityGroupId="",
+                vpcId="",
+            ),
+        ),
+    )
+    assert dao.get_domain_by_id("opensearch-1").proxyStatus == "CREATING"
+    assert dao.get_domain_by_id("opensearch-1").proxyInput == ProxyInput(
+        certificateArn="",
+        cognitoEndpoint="",
+        customEndpoint="",
+        elbAccessLogBucketName="",
+        keyName="",
+        proxyInstanceNumber="",
+        proxyInstanceType="",
+        vpc=ProxyVpc(
+            privateSubnetIds="",
+            publicSubnetIds="",
+            securityGroupId="",
+            vpcId="",
+        ),
+    )
+
+
 def test_opensearch_domain_set_master_role_arn(ddb_client):
     from commonlib.dao import OpenSearchDomainDao
 
@@ -980,10 +1134,25 @@ def test_opensearch_domain_set_master_role_arn(ddb_client):
     dao.set_master_role_arn("opensearch-1", "master-role")
     lst = dao.list_domains()
 
-    assert len(lst) == 1
+    assert len(lst) == 2
     assert lst[0].id == "opensearch-1"
     assert lst[0].masterRoleArn == "master-role"
 
+
+def test_opensearch_domain_get_domain_by_name(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+
+    domain = dao.get_domain_by_name(domain_name="may24")
+    assert domain.id == "opensearch-1"
+    assert domain.masterRoleArn == None
+
+    domain = dao.get_domain_by_name(domain_name="may")
+    assert domain is None
+
+    domain = dao.get_domain_by_name(domain_name="do-not-exists")
+    assert domain is None
 
 
 def test_opensearch_domain_list_domains(ddb_client):
@@ -992,7 +1161,7 @@ def test_opensearch_domain_list_domains(ddb_client):
     dao = OpenSearchDomainDao(get_opensearch_table_name())
     lst = dao.list_domains()
 
-    assert len(lst) == 1
+    assert len(lst) == 2
     assert lst[0].id == "opensearch-1"
     assert lst[0].masterRoleArn == None
 
@@ -1024,7 +1193,7 @@ def test_log_source_save(ddb_client):
     s = dao.get_log_source("84c6c37e-03db-4846-bb90-93e85bb1b27b")
     dao.save(s)
 
-
+    
 def test_log_source_enrich_log_source(ddb_client):
     from commonlib.dao import LogSourceDao
 
@@ -1085,8 +1254,25 @@ def test_log_source_list_log_sources(ddb_client):
     lst = dao.list_log_sources()
 
     assert len(lst) == 3
+    
 
+def test_get_log_source_by_name(ddb_client):
+    from commonlib.dao import LogSourceDao
 
+    dao = LogSourceDao(get_log_source_table_name())
+    lst = dao.get_log_source_by_name(name="eks-for-solution", type=LogSourceTypeEnum.EKSCluster, account_id="123456789012")
+    assert len(lst) == 1
+    
+    lst = dao.get_log_source_by_name(name="group1103", type=LogSourceTypeEnum.EC2, account_id="123456789012")
+    assert len(lst) == 1
+    
+    lst = dao.get_log_source_by_name(name="", type=LogSourceTypeEnum.S3, account_id="123456789012")
+    assert len(lst) == 0
+    
+    lst = dao.get_log_source_by_name(name="", type=LogSourceTypeEnum.Syslog, account_id="123456789012")
+    assert len(lst) == 1
+    
+    
 def get_log_config_table_name():
     return os.environ.get("APP_LOG_CONFIG_TABLE_NAME")
 
@@ -1317,17 +1503,33 @@ def test_validate_duplicated_index_prefix(ddb_client):
     )
 
     with pytest.raises(APIException, match=r"DUPLICATED_INDEX_PREFIX"):
-        dao.validate_duplicated_index_prefix(p, False)
+        dao.validate_duplicated_index_prefix(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+            force=False,
+        )
 
-    dao.validate_duplicated_index_prefix(p, True)
+    dao.validate_duplicated_index_prefix(
+        index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+        domain_name=p.aosParams.domainName,
+        force=True,
+    )
 
     p.indexPrefix = "syslog-dev-04"
     p.aosParams.indexPrefix = "syslog-dev-04"
 
     with pytest.raises(APIException, match=r"DUPLICATED_WITH_INACTIVE_INDEX_PREFIX"):
-        dao.validate_duplicated_index_prefix(p, False)
+        dao.validate_duplicated_index_prefix(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+            force=False,
+        )
 
-    dao.validate_duplicated_index_prefix(p, True)
+    dao.validate_duplicated_index_prefix(
+        index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+        domain_name=p.aosParams.domainName,
+        force=True,
+    )
 
 
 def test_validate_index_prefix_overlap(ddb_client):
@@ -1369,25 +1571,40 @@ def test_validate_index_prefix_overlap(ddb_client):
     )
 
     with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX"):
-        dao.validate_index_prefix_overlap(p)
+        dao.validate_index_prefix_overlap(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+        )
 
     with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX"):
-        dao.validate_index_prefix_overlap(p)
+        dao.validate_index_prefix_overlap(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+        )
 
     p.indexPrefix = "syslog-dev-04-overlap"
     p.aosParams.indexPrefix = "syslog-dev-04-overlap"
 
     with pytest.raises(APIException, match=r"OVERLAP_WITH_INACTIVE_INDEX_PREFIX"):
-        dao.validate_index_prefix_overlap(p)
+        dao.validate_index_prefix_overlap(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+        )
 
     with pytest.raises(APIException, match=r"OVERLAP_WITH_INACTIVE_INDEX_PREFIX"):
-        dao.validate_index_prefix_overlap(p)
+        dao.validate_index_prefix_overlap(
+            index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+            domain_name=p.aosParams.domainName,
+        )
 
     p.indexPrefix = "syslog-dev-04"
     p.aosParams.indexPrefix = "syslog-dev-04"
 
     # duplicate is not overlap
-    dao.validate_index_prefix_overlap(p)
+    dao.validate_index_prefix_overlap(
+        index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
+        domain_name=p.aosParams.domainName,
+    )
 
 
 def test_app_pipeline_dao_list_app_pipelines(ddb_client):
@@ -1457,9 +1674,11 @@ def test_get_buffer_params(ddb_client):
         bufferResourceArn="",
         bufferResourceName="",
         bufferParams=[
-            BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'),
-            BufferParam(paramKey='logBucketPrefix', paramValue='/LightEngine/AppLogs/test/'),
-            ],
+            BufferParam(paramKey="logBucketBucket", paramValue="centralized-bucket"),
+            BufferParam(
+                paramKey="logBucketPrefix", paramValue="/LightEngine/AppLogs/test/"
+            ),
+        ],
         lightEngineParams=LightEngineParams(
             stagingBucketPrefix="awslogs",
             centralizedBucketName="centralized-bucket",
@@ -1480,18 +1699,19 @@ def test_get_buffer_params(ddb_client):
         monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
         engineType=EngineType.LIGHT_ENGINE,
         logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
-        stackId="arn:aws:cloudformation:us-east-1:123456789012:stack/CL-AppPipe-c2d565b0/b2e8c620-8a8f-11ee-8d27-0e7ce14c05f5"
+        stackId="arn:aws:cloudformation:us-east-1:123456789012:stack/CL-AppPipe-c2d565b0/b2e8c620-8a8f-11ee-8d27-0e7ce14c05f5",
     )
-    
+
     dao = AppPipelineDao(app_pipeline.pipelineId)
-    params = dao.get_buffer_params(
-        app_pipeline=app_pipeline
-    )
+    params = dao.get_buffer_params(app_pipeline=app_pipeline)
     assert params == [
-        BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'), 
-        BufferParam(paramKey='logBucketPrefix', paramValue=f'LightEngine/AppLogs/test/year=%Y/month=%m/day=%d')
-        ]
-    
+        BufferParam(paramKey="logBucketBucket", paramValue="centralized-bucket"),
+        BufferParam(
+            paramKey="logBucketPrefix",
+            paramValue=f"LightEngine/AppLogs/test/year=%Y/month=%m/day=%d",
+        ),
+    ]
+
     app_pipeline = AppPipeline(
         bufferType=BufferTypeEnum.S3,
         bufferAccessRoleArn="",
@@ -1499,9 +1719,12 @@ def test_get_buffer_params(ddb_client):
         bufferResourceArn="",
         bufferResourceName="",
         bufferParams=[
-            BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'),
-            BufferParam(paramKey='logBucketPrefix', paramValue='AppLogs/test/year=%Y/month=%d/day=%d/'),
-            ],
+            BufferParam(paramKey="logBucketBucket", paramValue="centralized-bucket"),
+            BufferParam(
+                paramKey="logBucketPrefix",
+                paramValue="AppLogs/test/year=%Y/month=%d/day=%d/",
+            ),
+        ],
         lightEngineParams=LightEngineParams(
             stagingBucketPrefix="awslogs",
             centralizedBucketName="centralized-bucket",
@@ -1523,17 +1746,18 @@ def test_get_buffer_params(ddb_client):
         engineType=EngineType.OPEN_SEARCH,
         logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
     )
-    
-    dao = AppPipelineDao(app_pipeline.pipelineId)
-    params = dao.get_buffer_params(
-        app_pipeline=app_pipeline
-    )
-    assert params == [
-        BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'), 
-        BufferParam(paramKey='logBucketPrefix', paramValue='AppLogs/test/year=%Y/month=%d/day=%d/')
-        ]
 
-    
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_buffer_params(app_pipeline=app_pipeline)
+    assert params == [
+        BufferParam(paramKey="logBucketBucket", paramValue="centralized-bucket"),
+        BufferParam(
+            paramKey="logBucketPrefix",
+            paramValue="AppLogs/test/year=%Y/month=%d/day=%d/",
+        ),
+    ]
+
+
 def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
     from commonlib.dao import (
         AppPipelineDao,
@@ -1599,7 +1823,7 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         log_config=log_conf,
         grafana={"url": "http://127.0.0.1:3000", "token": "glsa_xxx"},
     )
-    
+
     assert params == [
         {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
         {
@@ -1643,7 +1867,7 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
         {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
     ]
-    
+
     log_conf = LogConfig(
         version=1,
         name="json",
@@ -1804,7 +2028,7 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
         {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
     ]
-    
+
     log_conf = LogConfig(
         version=1,
         name="singlelinetext",
@@ -1869,7 +2093,7 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         {"ParameterKey": "recipients", "ParameterValue": ""},
         {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
         {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
-        {'ParameterKey': 'sourceDataFormat', 'ParameterValue': 'Regex'},
+        {"ParameterKey": "sourceDataFormat", "ParameterValue": "Regex"},
         {
             "ParameterKey": "sourceTableProperties",
             "ParameterValue": '{"skip.header.line.count": "0"}',
@@ -1879,8 +2103,137 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
             "ParameterValue": '{"input.regex": "(?<time>\\\\d{4}-\\\\d{2}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3}) (?<level>\\\\s*[\\\\S]+\\\\s*) \\\\[(?<thread>\\\\S+)?\\\\] (?<logger>.+) : (?<message>[\\\\s\\\\S]+)"}',
         },
     ]
-    
-    json_schema = {'type': 'object', 'properties': {'pri': {'type': 'string'}, 'future_use_1': {'type': 'string'}, 'receive_time': {'type': 'timestamp', 'timeKey': True, 'format': "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ"}, 'serial': {'type': 'string'}, 'type': {'type': 'string'}, 'subtype': {'type': 'string'}, 'future_use_2': {'type': 'string'}, 'time_generated': {'type': 'string'}, 'src': {'type': 'string'}, 'dst': {'type': 'string'}, 'natsrc': {'type': 'string'}, 'natdst': {'type': 'string'}, 'rule': {'type': 'string'}, 'srcuser': {'type': 'string'}, 'dstuser': {'type': 'string'}, 'app': {'type': 'string'}, 'vsys': {'type': 'string'}, 'from': {'type': 'string'}, 'to': {'type': 'string'}, 'inbound_if': {'type': 'string'}, 'outbound_if': {'type': 'string'}, 'logset': {'type': 'string'}, 'future_use_3': {'type': 'string'}, 'sessionid': {'type': 'string'}, 'repeatcnt': {'type': 'string'}, 'sport': {'type': 'string'}, 'dport': {'type': 'string'}, 'natsport': {'type': 'string'}, 'natdport': {'type': 'string'}, 'flags': {'type': 'string'}, 'proto': {'type': 'string'}, 'action': {'type': 'string'}, 'misc': {'type': 'string'}, 'threatid': {'type': 'string'}, 'category': {'type': 'string'}, 'severity': {'type': 'string'}, 'direction': {'type': 'string'}, 'seqno': {'type': 'string'}, 'actionflags': {'type': 'string'}, 'srcloc': {'type': 'string'}, 'dstloc': {'type': 'string'}, 'future_use_4': {'type': 'string'}, 'contenttype': {'type': 'string'}, 'pcap_id': {'type': 'string'}, 'filedigest': {'type': 'string'}, 'cloud': {'type': 'string'}, 'url_idx': {'type': 'string'}, 'user_agent': {'type': 'string'}, 'filetype': {'type': 'string'}, 'xff': {'type': 'string'}, 'referer': {'type': 'string'}, 'sender': {'type': 'string'}, 'subject': {'type': 'string'}, 'recipient': {'type': 'string'}, 'reportid': {'type': 'string'}, 'dg_hier_level_1': {'type': 'string'}, 'dg_hier_level_2': {'type': 'string'}, 'dg_hier_level_3': {'type': 'string'}, 'dg_hier_level_4': {'type': 'string'}, 'vsys_name': {'type': 'string'}, 'device_name': {'type': 'string'}, 'future_use_5': {'type': 'string'}, 'src_uuid': {'type': 'string'}, 'dst_uuid': {'type': 'string'}, 'http_method': {'type': 'string'}, 'tunnelid_or_imsi': {'type': 'string'}, 'monitortag_or_imei': {'type': 'string'}, 'parent_session_id': {'type': 'string'}, 'parent_start_time': {'type': 'string'}, 'tunnel': {'type': 'string'}, 'thr_category': {'type': 'string'}, 'future_use_6': {'type': 'string'}, 'contentver': {'type': 'string'}, 'assoc_id': {'type': 'string'}, 'chunks': {'type': 'string'}, 'ppid': {'type': 'string'}, 'http_headers': {'type': 'string'}, 'url_category_list': {'type': 'string'}, 'rule_uuid': {'type': 'string'}, 'http2_connection': {'type': 'string'}, 'dynusergroup_name': {'type': 'string'}, 'xff_ip': {'type': 'string'}, 'src_category': {'type': 'string'}, 'src_profile': {'type': 'string'}, 'src_model': {'type': 'string'}, 'src_vendor': {'type': 'string'}, 'src_osfamily': {'type': 'string'}, 'src_osversion': {'type': 'string'}, 'src_host': {'type': 'string'}, 'src_mac': {'type': 'string'}, 'dst_category': {'type': 'string'}, 'dst_profile': {'type': 'string'}, 'dst_model': {'type': 'string'}, 'dst_vendor': {'type': 'string'}, 'dst_osfamily': {'type': 'string'}, 'dst_osversion': {'type': 'string'}, 'dst_host': {'type': 'string'}, 'dst_mac': {'type': 'string'}, 'container_id': {'type': 'string'}, 'pod_namespace': {'type': 'string'}, 'pod_name': {'type': 'string'}, 'src_edl': {'type': 'string'}, 'dst_edl': {'type': 'string'}, 'hostid': {'type': 'string'}, 'serialnumber': {'type': 'string'}, 'src_dag': {'type': 'string'}, 'dst_dag': {'type': 'string'}, 'partial_hash': {'type': 'string'}, 'high_res_timestamp': {'type': 'string'}, 'reason': {'type': 'string'}, 'justification': {'type': 'string'}, 'nssai_sst': {'type': 'string'}, 'subcategory_of_app': {'type': 'string'}, 'category_of_app': {'type': 'string'}, 'technology_of_app': {'type': 'string'}, 'risk_of_app': {'type': 'string'}, 'characteristic_of_app': {'type': 'string'}, 'container_of_app': {'type': 'string'}, 'tunneled_app': {'type': 'string'}, 'is_saas_of_app': {'type': 'string'}, 'sanctioned_state_of_app': {'type': 'string'}}}
+
+    json_schema = {
+        "type": "object",
+        "properties": {
+            "pri": {"type": "string"},
+            "future_use_1": {"type": "string"},
+            "receive_time": {
+                "type": "timestamp",
+                "timeKey": True,
+                "format": "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ",
+            },
+            "serial": {"type": "string"},
+            "type": {"type": "string"},
+            "subtype": {"type": "string"},
+            "future_use_2": {"type": "string"},
+            "time_generated": {"type": "string"},
+            "src": {"type": "string"},
+            "dst": {"type": "string"},
+            "natsrc": {"type": "string"},
+            "natdst": {"type": "string"},
+            "rule": {"type": "string"},
+            "srcuser": {"type": "string"},
+            "dstuser": {"type": "string"},
+            "app": {"type": "string"},
+            "vsys": {"type": "string"},
+            "from": {"type": "string"},
+            "to": {"type": "string"},
+            "inbound_if": {"type": "string"},
+            "outbound_if": {"type": "string"},
+            "logset": {"type": "string"},
+            "future_use_3": {"type": "string"},
+            "sessionid": {"type": "string"},
+            "repeatcnt": {"type": "string"},
+            "sport": {"type": "string"},
+            "dport": {"type": "string"},
+            "natsport": {"type": "string"},
+            "natdport": {"type": "string"},
+            "flags": {"type": "string"},
+            "proto": {"type": "string"},
+            "action": {"type": "string"},
+            "misc": {"type": "string"},
+            "threatid": {"type": "string"},
+            "category": {"type": "string"},
+            "severity": {"type": "string"},
+            "direction": {"type": "string"},
+            "seqno": {"type": "string"},
+            "actionflags": {"type": "string"},
+            "srcloc": {"type": "string"},
+            "dstloc": {"type": "string"},
+            "future_use_4": {"type": "string"},
+            "contenttype": {"type": "string"},
+            "pcap_id": {"type": "string"},
+            "filedigest": {"type": "string"},
+            "cloud": {"type": "string"},
+            "url_idx": {"type": "string"},
+            "user_agent": {"type": "string"},
+            "filetype": {"type": "string"},
+            "xff": {"type": "string"},
+            "referer": {"type": "string"},
+            "sender": {"type": "string"},
+            "subject": {"type": "string"},
+            "recipient": {"type": "string"},
+            "reportid": {"type": "string"},
+            "dg_hier_level_1": {"type": "string"},
+            "dg_hier_level_2": {"type": "string"},
+            "dg_hier_level_3": {"type": "string"},
+            "dg_hier_level_4": {"type": "string"},
+            "vsys_name": {"type": "string"},
+            "device_name": {"type": "string"},
+            "future_use_5": {"type": "string"},
+            "src_uuid": {"type": "string"},
+            "dst_uuid": {"type": "string"},
+            "http_method": {"type": "string"},
+            "tunnelid_or_imsi": {"type": "string"},
+            "monitortag_or_imei": {"type": "string"},
+            "parent_session_id": {"type": "string"},
+            "parent_start_time": {"type": "string"},
+            "tunnel": {"type": "string"},
+            "thr_category": {"type": "string"},
+            "future_use_6": {"type": "string"},
+            "contentver": {"type": "string"},
+            "assoc_id": {"type": "string"},
+            "chunks": {"type": "string"},
+            "ppid": {"type": "string"},
+            "http_headers": {"type": "string"},
+            "url_category_list": {"type": "string"},
+            "rule_uuid": {"type": "string"},
+            "http2_connection": {"type": "string"},
+            "dynusergroup_name": {"type": "string"},
+            "xff_ip": {"type": "string"},
+            "src_category": {"type": "string"},
+            "src_profile": {"type": "string"},
+            "src_model": {"type": "string"},
+            "src_vendor": {"type": "string"},
+            "src_osfamily": {"type": "string"},
+            "src_osversion": {"type": "string"},
+            "src_host": {"type": "string"},
+            "src_mac": {"type": "string"},
+            "dst_category": {"type": "string"},
+            "dst_profile": {"type": "string"},
+            "dst_model": {"type": "string"},
+            "dst_vendor": {"type": "string"},
+            "dst_osfamily": {"type": "string"},
+            "dst_osversion": {"type": "string"},
+            "dst_host": {"type": "string"},
+            "dst_mac": {"type": "string"},
+            "container_id": {"type": "string"},
+            "pod_namespace": {"type": "string"},
+            "pod_name": {"type": "string"},
+            "src_edl": {"type": "string"},
+            "dst_edl": {"type": "string"},
+            "hostid": {"type": "string"},
+            "serialnumber": {"type": "string"},
+            "src_dag": {"type": "string"},
+            "dst_dag": {"type": "string"},
+            "partial_hash": {"type": "string"},
+            "high_res_timestamp": {"type": "string"},
+            "reason": {"type": "string"},
+            "justification": {"type": "string"},
+            "nssai_sst": {"type": "string"},
+            "subcategory_of_app": {"type": "string"},
+            "category_of_app": {"type": "string"},
+            "technology_of_app": {"type": "string"},
+            "risk_of_app": {"type": "string"},
+            "characteristic_of_app": {"type": "string"},
+            "container_of_app": {"type": "string"},
+            "tunneled_app": {"type": "string"},
+            "is_saas_of_app": {"type": "string"},
+            "sanctioned_state_of_app": {"type": "string"},
+        },
+    }
     log_conf = LogConfig(
         version=1,
         name="singlelinetext",
@@ -1901,8 +2254,10 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         bufferResourceArn="",
         bufferResourceName="",
         bufferParams=[
-            BufferParam(paramKey='skip.header.line.count', paramValue=json.dumps(json_schema))
-            ],
+            BufferParam(
+                paramKey="skip.header.line.count", paramValue=json.dumps(json_schema)
+            )
+        ],
         lightEngineParams=LightEngineParams(
             stagingBucketPrefix="awslogs",
             centralizedBucketName="centralized-bucket",
@@ -1945,16 +2300,35 @@ def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
         {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
         {"ParameterKey": "importDashboards", "ParameterValue": "false"},
         {"ParameterKey": "recipients", "ParameterValue": ""},
-        {"ParameterKey": "sourceSchema", "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps(json_schema), encoding='utf-8'))).decode('utf-8')},
+        {
+            "ParameterKey": "sourceSchema",
+            "ParameterValue": base64.b64encode(
+                gzip.compress(bytes(json.dumps(json_schema), encoding="utf-8"))
+            ).decode("utf-8"),
+        },
         {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
-        {'ParameterKey': 'sourceDataFormat', 'ParameterValue': 'Regex'},
+        {"ParameterKey": "sourceDataFormat", "ParameterValue": "Regex"},
         {
             "ParameterKey": "sourceTableProperties",
-            "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps({"skip.header.line.count": json.dumps(json_schema)}), encoding='utf-8'))).decode('utf-8')
+            "ParameterValue": base64.b64encode(
+                gzip.compress(
+                    bytes(
+                        json.dumps({"skip.header.line.count": json.dumps(json_schema)}),
+                        encoding="utf-8",
+                    )
+                )
+            ).decode("utf-8"),
         },
         {
             "ParameterKey": "sourceSerializationProperties",
-            "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps({"input.regex": json.dumps(json_schema)}), encoding='utf-8'))).decode('utf-8'),
+            "ParameterValue": base64.b64encode(
+                gzip.compress(
+                    bytes(
+                        json.dumps({"input.regex": json.dumps(json_schema)}),
+                        encoding="utf-8",
+                    )
+                )
+            ).decode("utf-8"),
         },
     ]
 
@@ -2014,11 +2388,13 @@ def test_app_pipeline_dao_validate_buffer_params(ddb_client):
     dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
     p = dao.get_app_pipeline("3333")
     p.bufferType = BufferTypeEnum.KDS
-    dao.validate_buffer_params(p)
+    dao.validate_buffer_params(buffer_type=p.bufferType, buffer_params=p.bufferParams)
 
     with pytest.raises(APIException, match=r"Missing buffer parameters"):
         p.bufferType = BufferTypeEnum.S3
-        dao.validate_buffer_params(p)
+        dao.validate_buffer_params(
+            buffer_type=p.bufferType, buffer_params=p.bufferParams
+        )
 
 
 def test_app_pipeline_dao_validate(ddb_client):
@@ -2505,7 +2881,7 @@ def test_log_config():
 def test_s3_notification_prefix():
     from commonlib.dao import s3_notification_prefix
 
-    assert "AppLogs/s3src/year%3D" == s3_notification_prefix(
+    assert "AppLogs/s3src/year=" == s3_notification_prefix(
         "AppLogs/s3src/year=%Y/month=%m/day=%d"
     )
     assert "AppLogs/s3src/hello" == s3_notification_prefix("AppLogs/s3src/hello")
@@ -2524,7 +2900,7 @@ def test_s3_notification_prefix():
     assert "" == s3_notification_prefix("/")
     assert "" == s3_notification_prefix("")
     assert "asdasd" == s3_notification_prefix("asdasd")
-    assert "AppLogs/my-debug-0728/year%3D" == s3_notification_prefix(
+    assert "AppLogs/my-debug-0728/year=" == s3_notification_prefix(
         "AppLogs/my-debug-0728/year="
     )
 
@@ -2965,13 +3341,24 @@ def test_svc_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
 def test_set_kv_to_buffer_param():
     from commonlib.utils import set_kv_to_buffer_param
     from commonlib.model import BufferParam
-    
-    buffer_params = [BufferParam(paramKey='logBucketPrefix', paramValue='prefix')]
-    
-    new_buffer_params = set_kv_to_buffer_param(key='logBucketPrefix', value='new_prefix', buffer_param=buffer_params)
-    assert buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='new_prefix')]
-    assert new_buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='new_prefix')]
-    
-    buffer_params = [BufferParam(paramKey='logBucketPrefix', paramValue='prefix')]
-    new_buffer_params = set_kv_to_buffer_param(key='new', value='value', buffer_param=buffer_params)
-    assert new_buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='prefix'), BufferParam(paramKey='new', paramValue='value')]
+
+    buffer_params = [BufferParam(paramKey="logBucketPrefix", paramValue="prefix")]
+
+    new_buffer_params = set_kv_to_buffer_param(
+        key="logBucketPrefix", value="new_prefix", buffer_param=buffer_params
+    )
+    assert buffer_params == [
+        BufferParam(paramKey="logBucketPrefix", paramValue="new_prefix")
+    ]
+    assert new_buffer_params == [
+        BufferParam(paramKey="logBucketPrefix", paramValue="new_prefix")
+    ]
+
+    buffer_params = [BufferParam(paramKey="logBucketPrefix", paramValue="prefix")]
+    new_buffer_params = set_kv_to_buffer_param(
+        key="new", value="value", buffer_param=buffer_params
+    )
+    assert new_buffer_params == [
+        BufferParam(paramKey="logBucketPrefix", paramValue="prefix"),
+        BufferParam(paramKey="new", paramValue="value"),
+    ]

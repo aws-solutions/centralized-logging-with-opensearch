@@ -67,7 +67,7 @@ const AccountName: React.FC<AccountNameProps> = (props: AccountNameProps) => {
               {curAccount?.subAccountName}
             </Link>
           ) : (
-            "-"
+            "Current"
           )}
         </>
       )}

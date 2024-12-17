@@ -39,6 +39,7 @@ import {
 import Alert from "components/Alert";
 import { useTranslation } from "react-i18next";
 import { RootState } from "reducer/reducers";
+import { AlertType } from "components/Alert/alert";
 interface ConfigNetworkProps {
   importedCluster: ImportedDomainType;
   changeVpc: (domain: string) => void;
@@ -111,7 +112,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
         type: type,
         parentId: parentId,
       });
-      console.info("domainNames:", resData.data);
       const dataList = resData.data.listResources;
       const list = convertResourceToOptionList(dataList, type);
       if (type === ResourceType.VPC) {
@@ -152,26 +152,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("cluster:import.configNetwork.clusterSG")}>
-              <div>
-                {esVPCInfo?.securityGroupIds?.map((element) => {
-                  return (
-                    <div key={element}>
-                      <ExtLink
-                        to={buildSGLink(
-                          amplifyConfig.aws_project_region,
-                          defaultStr(element)
-                        )}
-                      >
-                        {element}
-                      </ExtLink>
-                    </div>
-                  );
-                })}
-              </div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("cluster:import.configNetwork.clusterAZ")}>
               <div>
                 {esVPCInfo?.subnetIds?.map((element, index) => {
@@ -191,15 +171,34 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
               </div>
             </ValueWithLabel>
           </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("cluster:import.configNetwork.clusterSG")}>
+              <div>
+                {esVPCInfo?.securityGroupIds?.map((element) => {
+                  return (
+                    <div key={element}>
+                      <ExtLink
+                        to={buildSGLink(
+                          amplifyConfig.aws_project_region,
+                          defaultStr(element)
+                        )}
+                      >
+                        {element}
+                      </ExtLink>
+                    </div>
+                  );
+                })}
+              </div>
+            </ValueWithLabel>
+          </div>
         </div>
       </HeaderPanel>
-      <HeaderPanel title={t("cluster:import.configNetwork.creation")}>
+      <HeaderPanel
+        infoType={InfoBarTypes.CREATION_METHOD_NETWORK}
+        title={t("cluster:import.configNetwork.method")}
+      >
         <div>
-          <FormItem
-            optionTitle={t("cluster:import.configNetwork.method")}
-            optionDesc=""
-            infoType={InfoBarTypes.CREATION_METHOD_NETWORK}
-          >
+          <FormItem optionTitle="" optionDesc="">
             <Tiles
               value={importedCluster.creationMethod}
               onChange={(event) => {
@@ -232,6 +231,7 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
             {importedCluster.showVPCAlert && (
               <div className="m-w-75p">
                 <Alert
+                  type={AlertType.Warning}
                   title={t("cluster:import.configNetwork.configTip")}
                   content={t("cluster:import.configNetwork.configTipDesc")}
                 />
@@ -278,7 +278,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                     : []
                 }
                 onChange={(subnetIds) => {
-                  console.info(subnetIds);
                   if (subnetIds) {
                     changeSubnet(subnetIds.join(","));
                   }

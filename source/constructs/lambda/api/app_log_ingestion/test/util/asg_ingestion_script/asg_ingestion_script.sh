@@ -175,7 +175,7 @@ install_fluent_bit() {
         suffix="-arm64"
     fi
     mkdir -p /opt
-    download "https://${FLB_PKG_DOMAIN}/clo/${SOLUTION_VERSION}/aws-for-fluent-bit/fluent-bit${suffix}.tar.gz" /opt/fluent-bit.tar.gz
+    download "https://${FLB_PKG_DOMAIN}/clo/aws-for-fluent-bit%3A2.31.12/fluent-bit${suffix}.tar.gz" /opt/fluent-bit.tar.gz
     cd /opt
     tar -xvzf fluent-bit.tar.gz
     cat << EOF | tee /etc/systemd/system/fluent-bit.service

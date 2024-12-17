@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { AnalyticsEngine, AppPipeline, ServicePipeline } from "API";
+import { AnalyticsEngine, AppPipeline, PipelineType } from "API";
 import ExtLink from "components/ExtLink";
 import React from "react";
 import { useSelector } from "react-redux";
@@ -21,151 +21,130 @@ import { useTranslation } from "react-i18next";
 import { AmplifyConfigType } from "types";
 import { RootState } from "reducer/reducers";
 import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
-import {
-  buildGlueDatabaseLink,
-  buildGlueTableLink,
-  buildS3LinkFromS3URI,
-} from "assets/js/utils";
+import { buildGlueDatabaseLink, buildGlueTableLink } from "assets/js/utils";
+import { ServiceLogDetailProps } from "../serviceLog/ServiceLogDetail";
+import LifecycleLightEngine from "./details/LifecycleLightEngine";
 interface OverviewProps {
-  pipelineInfo?: AppPipeline | ServicePipeline;
+  pipelineType: PipelineType;
+  servicePipeline?: ServiceLogDetailProps;
+  appPipeline?: AppPipeline;
   analyticsEngine?: AnalyticsEngine;
 }
 
 export const LightEngineAnalyticsEngineDetails: React.FC<OverviewProps> = (
   props: OverviewProps
 ) => {
-  const { analyticsEngine } = props;
+  const { analyticsEngine, pipelineType, servicePipeline, appPipeline } = props;
   const { t } = useTranslation();
-  const curPipeline = props.pipelineInfo;
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
   return (
     <div>
-      <HeaderWithValueLabel
-        numberOfColumns={3}
-        headerTitle={t("applog:detail.analyticsEngine")}
-        dataList={[
-          {
-            label: t("servicelog:detail.type"),
-            data: analyticsEngine?.engineType ?? "-",
-          },
-          {
-            label: t("applog:detail.grafanaDashboardDetail"),
-            data: (
-              <ExtLink to={analyticsEngine?.table?.dashboardLink ?? ""}>
-                {analyticsEngine?.table?.dashboardName ?? "-"}
-              </ExtLink>
-            ),
-          },
-          {
-            label: t("applog:detail.sampleDashboard"),
-            data: curPipeline?.lightEngineParams?.importDashboards ?? "-",
-          },
-        ]}
-      />
-      <HeaderWithValueLabel
-        numberOfColumns={3}
-        headerTitle={t("applog:detail.tableSettings")}
-        dataList={[
-          {
-            label: t("servicelog:detail.lightEngine.tableName"),
-            data: (
-              <ExtLink
-                to={buildGlueTableLink(
-                  amplifyConfig.aws_project_region,
-                  analyticsEngine?.table?.databaseName,
-                  analyticsEngine?.table?.tableName
-                )}
-              >
-                {analyticsEngine?.table?.tableName}
-              </ExtLink>
-            ),
-          },
-          {
-            label: t("servicelog:detail.lightEngine.database"),
-            data: (
-              <ExtLink
-                to={buildGlueDatabaseLink(
-                  amplifyConfig.aws_project_region,
-                  analyticsEngine?.table?.databaseName
-                )}
-              >
-                {analyticsEngine?.table?.databaseName}
-              </ExtLink>
-            ),
-          },
-          {
-            label: t("servicelog:detail.lightEngine.classification"),
-            data: analyticsEngine?.table?.classification ?? "-",
-          },
-          {
-            label: t("servicelog:overview.logLocation"),
-            data: (
-              <ExtLink
-                to={buildS3LinkFromS3URI(
-                  amplifyConfig.aws_project_region,
-                  analyticsEngine?.table?.location,
-                )}
-              >
-                {analyticsEngine?.table?.location ?? "-"}
-              </ExtLink>
-            ),
-          },
-        ]}
-      />
       {analyticsEngine?.metric && (
         <HeaderWithValueLabel
           numberOfColumns={3}
-          headerTitle={t("applog:detail.metricTableSettings")}
+          headerTitle={t("pipeline.detail.tableOverview")}
           dataList={[
             {
-              label: t("servicelog:detail.lightEngine.tableName"),
+              label: t("applog:detail.grafanaDashboardDetail"),
+              data: analyticsEngine?.metric?.dashboardLink ? (
+                <ExtLink to={analyticsEngine?.metric?.dashboardLink ?? ""}>
+                  {analyticsEngine?.metric?.dashboardName ?? "-"}
+                </ExtLink>
+              ) : (
+                "-"
+              ),
+            },
+            {
+              label: t("pipeline.detail.table"),
               data: (
                 <ExtLink
                   to={buildGlueTableLink(
                     amplifyConfig.aws_project_region,
-                    analyticsEngine?.metric.databaseName,
-                    analyticsEngine?.metric.tableName
+                    analyticsEngine?.metric?.databaseName,
+                    analyticsEngine?.metric?.tableName
                   )}
                 >
-                  {analyticsEngine?.metric.tableName}
+                  {analyticsEngine?.metric?.tableName}
                 </ExtLink>
               ),
             },
             {
-              label: t("servicelog:detail.lightEngine.database"),
+              label: t("pipeline.detail.database"),
               data: (
                 <ExtLink
                   to={buildGlueDatabaseLink(
                     amplifyConfig.aws_project_region,
-                    analyticsEngine?.metric.databaseName
+                    analyticsEngine?.metric?.databaseName
                   )}
                 >
-                  {analyticsEngine?.metric.databaseName}
+                  {analyticsEngine?.metric?.databaseName}
                 </ExtLink>
               ),
-            },
-            {
-              label: t("servicelog:detail.lightEngine.classification"),
-              data: analyticsEngine?.metric.classification ?? "-",
             },
             {
               label: t("servicelog:overview.logLocation"),
-              data: (
-                <ExtLink
-                  to={buildS3LinkFromS3URI(
-                    amplifyConfig.aws_project_region,
-                    analyticsEngine?.metric.location,
-                  )}
-                >
-                  {analyticsEngine?.metric.location ?? "-"}
-                </ExtLink>
-              ),
+              data: analyticsEngine?.metric?.location,
             },
           ]}
         />
       )}
+
+      {analyticsEngine?.table && (
+        <HeaderWithValueLabel
+          numberOfColumns={3}
+          headerTitle={t("pipeline.detail.tableDetails")}
+          dataList={[
+            {
+              label: t("applog:detail.grafanaDashboard"),
+              data: analyticsEngine?.table?.dashboardLink ? (
+                <ExtLink to={analyticsEngine?.table?.dashboardLink ?? ""}>
+                  {analyticsEngine?.table?.dashboardName ?? "-"}
+                </ExtLink>
+              ) : (
+                "-"
+              ),
+            },
+            {
+              label: t("pipeline.detail.table"),
+              data: (
+                <ExtLink
+                  to={buildGlueTableLink(
+                    amplifyConfig.aws_project_region,
+                    analyticsEngine?.table?.databaseName,
+                    analyticsEngine?.table?.tableName
+                  )}
+                >
+                  {analyticsEngine?.table?.tableName}
+                </ExtLink>
+              ),
+            },
+            {
+              label: t("pipeline.detail.database"),
+              data: (
+                <ExtLink
+                  to={buildGlueDatabaseLink(
+                    amplifyConfig.aws_project_region,
+                    analyticsEngine?.table?.databaseName
+                  )}
+                >
+                  {analyticsEngine?.table?.databaseName}
+                </ExtLink>
+              ),
+            },
+            {
+              label: t("servicelog:overview.logLocation"),
+              data: analyticsEngine?.table?.location ?? "-",
+            },
+          ]}
+        />
+      )}
+      <LifecycleLightEngine
+        pipelineType={pipelineType}
+        servicePipeline={servicePipeline}
+        appPipeline={appPipeline}
+      />
     </div>
   );
 };

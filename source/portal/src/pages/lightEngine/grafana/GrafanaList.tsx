@@ -19,7 +19,7 @@ import Button from "components/Button";
 import { SelectType, TablePanel } from "components/TablePanel";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAsyncData } from "assets/js/useAsyncData";
 import {
   ApiResponse,
@@ -28,10 +28,11 @@ import {
 } from "assets/js/request";
 import { listGrafanas } from "graphql/queries";
 import { Grafana, ListGrafanasResponse } from "API";
-import moment from "moment";
 import Modal from "components/Modal";
 import { deleteGrafana } from "graphql/mutations";
 import CommonLayout from "pages/layout/CommonLayout";
+import { formatLocalTime } from "assets/js/utils";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -89,6 +90,10 @@ export const GrafanaList: React.FC = () => {
     );
   };
 
+  const renderName = (id: string, name: string) => {
+    return <Link to={`/grafana/edit/${id}`}>{name}</Link>;
+  };
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="table-data">
@@ -100,20 +105,20 @@ export const GrafanaList: React.FC = () => {
           actions={
             <div>
               <Button
-                disabled={selectedGrafana === null}
+                data-testid="refresh-button"
+                btnType="icon"
+                disabled={isLoadingData}
                 onClick={() => {
-                  if (selectedGrafana) {
-                    const { id, url, name } = selectedGrafana;
-                    navigate(
-                      `/grafana/edit/${id}?url=${encodeURIComponent(
-                        url
-                      )}&name=${encodeURIComponent(name)}`
-                    );
+                  if (currentPage === 1) {
+                    reloadData();
+                  } else {
+                    setCurrentPage(1);
                   }
                 }}
               >
-                {t("button.edit")}
+                <ButtonRefresh loading={isLoadingData} fontSize="small" />
               </Button>
+
               <Button
                 disabled={selectedGrafana === null}
                 onClick={() => setRemoveModelOpened(true)}
@@ -147,18 +152,18 @@ export const GrafanaList: React.FC = () => {
             {
               id: "name",
               header: t("lightengine:grafana.serverName"),
-              cell: ({ name }: Grafana) => name,
-            },
-            {
-              id: "createdDate",
-              header: t("lightengine:grafana.dateImported"),
-              cell: ({ createdAt }: Grafana) =>
-                moment(createdAt).format("YYYY-MM-DD"),
+              cell: ({ id, name }: Grafana) => renderName(id, name),
             },
             {
               id: "url",
               header: t("lightengine:grafana.url"),
               cell: ({ url }: Grafana) => renderLink(url),
+            },
+            {
+              id: "createdDate",
+              header: t("lightengine:grafana.dateImported"),
+              cell: ({ createdAt }: Grafana) =>
+                formatLocalTime(createdAt ?? ""),
             },
           ]}
         />

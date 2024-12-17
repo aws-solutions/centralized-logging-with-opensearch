@@ -42,7 +42,7 @@ export const initState: AlarmStateType = {
   snsEmailError: "",
   monitor: {
     status: PipelineMonitorStatus.ENABLED,
-    pipelineAlarmStatus: PipelineAlarmStatus.DISABLED,
+    pipelineAlarmStatus: PipelineAlarmStatus.ENABLED,
     snsTopicName: "",
     snsTopicArn: "",
     emails: "",
@@ -212,7 +212,13 @@ export const createAlarmReducer = (
         monitor: { ...action.alarm },
       };
     case CreateAlarmActionTypes.CLEAR_ALARM:
-      return initState;
+      return {
+        ...initState,
+        monitor: {
+          ...initState.monitor,
+          pipelineAlarmStatus: PipelineAlarmStatus.DISABLED,
+        },
+      };
     case CreateAlarmActionTypes.VALIDATE_ALARM_INPUT:
       return {
         ...state,

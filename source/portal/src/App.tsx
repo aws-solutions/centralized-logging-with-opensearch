@@ -17,7 +17,7 @@ import React, { useEffect, useState } from "react";
 import Axios from "axios";
 import { Amplify, I18n } from "aws-amplify";
 
-import { AMPLIFY_CONFIG_JSON, AMPLIFY_ZH_DICT } from "assets/js/const";
+import { AMPLIFY_CONFIG_JSON } from "assets/js/const";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import LoadingText from "components/LoadingText";
@@ -38,8 +38,19 @@ const App: React.FC = () => {
   );
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  I18n.putVocabularies(AMPLIFY_ZH_DICT);
-  I18n.setLanguage(i18n.language);
+
+  const setAmplifyDict = async () => {
+    await Axios.get(`/amplify-zh.json`)
+      .then((res) => {
+        I18n.putVocabularies({
+          zh: res.data,
+        });
+        I18n.setLanguage(i18n.language);
+      })
+      .catch((error) => {
+        console.info(error);
+      });
+  };
 
   const initAuthentication = (configData: AmplifyConfigType) => {
     dispatch({
@@ -64,7 +75,25 @@ const App: React.FC = () => {
     }
   };
 
-  const setLocalStorageAfterLoad = () => {
+  const getConfigData = async () => {
+    // Get config
+    const timeStamp = new Date().getTime();
+    const res = await Axios.get(`/aws-exports.json?timestamp=${timeStamp}`);
+    const configData: AmplifyConfigType = res.data;
+    if (authType === AppSyncAuthType.OPEN_ID && !configData.oidc_logout_url) {
+      // Get oidc logout url from openid configuration
+      await Axios.get(
+        `${configData.aws_oidc_provider}/.well-known/openid-configuration`
+      ).then((oidcRes) => {
+        configData.oidc_logout_url = oidcRes.data.end_session_endpoint;
+      });
+    }
+    localStorage.setItem(AMPLIFY_CONFIG_JSON, JSON.stringify(res.data));
+    initAuthentication(configData);
+    setLoadingConfig(false);
+  };
+
+  const setLocalStorageAfterLoad = async () => {
     if (localStorage.getItem(AMPLIFY_CONFIG_JSON)) {
       const configData = JSON.parse(
         defaultStr(localStorage.getItem(AMPLIFY_CONFIG_JSON))
@@ -72,14 +101,9 @@ const App: React.FC = () => {
       initAuthentication(configData);
       setLoadingConfig(false);
     } else {
-      const timeStamp = new Date().getTime();
       setLoadingConfig(true);
-      Axios.get(`/aws-exports.json?timestamp=${timeStamp}`).then((res) => {
-        const configData: AmplifyConfigType = res.data;
-        localStorage.setItem(AMPLIFY_CONFIG_JSON, JSON.stringify(res.data));
-        initAuthentication(configData);
-        setLoadingConfig(false);
-      });
+      setAmplifyDict();
+      await getConfigData();
     }
   };
 
@@ -87,14 +111,9 @@ const App: React.FC = () => {
     document.title = t("title");
     if (window.performance) {
       if (performance.getEntriesByType("navigation")?.[0]?.type === "reload") {
-        const timeStamp = new Date().getTime();
         setLoadingConfig(true);
-        Axios.get(`/aws-exports.json?timestamp=${timeStamp}`).then((res) => {
-          const configData: AmplifyConfigType = res.data;
-          localStorage.setItem(AMPLIFY_CONFIG_JSON, JSON.stringify(res.data));
-          initAuthentication(configData);
-          setLoadingConfig(false);
-        });
+        setAmplifyDict();
+        getConfigData();
       } else {
         setLocalStorageAfterLoad();
       }

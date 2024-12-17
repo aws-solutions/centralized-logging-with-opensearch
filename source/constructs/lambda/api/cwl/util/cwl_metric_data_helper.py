@@ -302,6 +302,7 @@ class MetricData:
             )
 
         stack_name = "StackName"
+        evt_namespace = "AWS/Events"
         sqs_namespace = "AWS/SQS"
         lambda_namespace = "AWS/Lambda"
         kdf_namespace = "AWS/Firehose"
@@ -396,6 +397,51 @@ class MetricData:
                 "dimensions": [
                     {
                         "Name": "QueueName",
+                        "Value": self._metric_resource_infos.get("logEventQueueName"),
+                    },
+                ],
+            },
+            # EventBridge
+            "EvtMatchedEvents": {
+                "cwl_metric_name": "MatchedEvents",
+                "namespace": evt_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "RuleName",
+                        "Value": self._metric_resource_infos.get("logEventQueueName"),
+                    },
+                ],
+            },
+            "EvtInvocations": {
+                "cwl_metric_name": "Invocations",
+                "namespace": evt_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "RuleName",
+                        "Value": self._metric_resource_infos.get("logEventQueueName"),
+                    },
+                ],
+            },
+            "EvtTriggeredRules": {
+                "cwl_metric_name": "TriggeredRules",
+                "namespace": evt_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "RuleName",
+                        "Value": self._metric_resource_infos.get("logEventQueueName"),
+                    },
+                ],
+            },
+            "EvtFailedInvocations": {
+                "cwl_metric_name": "FailedInvocations",
+                "namespace": evt_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "RuleName",
                         "Value": self._metric_resource_infos.get("logEventQueueName"),
                     },
                 ],

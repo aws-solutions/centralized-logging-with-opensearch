@@ -18,6 +18,12 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import InstanceGroupList from "../InstanceGroupList";
+import { screen, act, fireEvent } from "@testing-library/react";
+import {
+  instanceGroupMockData,
+  MockInstanceLogSources,
+} from "test/instance.mock";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -39,8 +45,17 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
 });
 
 describe("InstanceGroupList", () => {
@@ -58,5 +73,70 @@ describe("InstanceGroupList", () => {
       }
     );
     expect(getByText(/resource:group.groups/i)).toBeInTheDocument();
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogSources: { logSources: MockInstanceLogSources, total: 2 },
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <InstanceGroupList />
+        </MemoryRouter>
+      );
+    });
+
+    // click refresh button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
+  });
+
+  it("should test confirm remove instance group", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogSources: {
+          logSources: [{ ...instanceGroupMockData }],
+          total: 2,
+        },
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: { deleteLogSource: "OK" },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <InstanceGroupList />
+        </MemoryRouter>
+      );
+    });
+
+    // click instance item
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-xxxx"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("create-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("cancel-delete-button"));
+    });
   });
 });

@@ -352,6 +352,9 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           if (pipelineInfo?.status === PipelineStatus.CREATING) {
             return StatusType.Creating;
           }
+          if (pipelineInfo?.status === PipelineStatus.UPDATING) {
+            return StatusType.Updating;
+          }
           return data.ingestion.status?.toLocaleLowerCase() ===
             StatusType.Active.toLocaleLowerCase()
             ? StatusType.Created
@@ -370,7 +373,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       )}
       <TablePanel
         trackId="id"
-        title={t("applog:detail.tab.sources")}
+        title={t("applog:detail.tab.logSources")}
         changeSelected={(item) => {
           console.info("item:", item);
           setSelectedIngestion(item);
@@ -409,12 +412,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             },
           },
           {
-            width: 120,
-            id: "status",
-            header: t("applog:list.status"),
-            cell: (e: AppIngestionItem) => renderStatus(e),
-          },
-          {
             width: 170,
             id: "created",
             header: t("applog:detail.ingestion.created"),
@@ -422,11 +419,18 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
               return formatLocalTime(defaultStr(e?.ingestion.createdAt));
             },
           },
+          {
+            width: 120,
+            id: "status",
+            header: t("applog:list.status"),
+            cell: (e: AppIngestionItem) => renderStatus(e),
+          },
         ]}
         items={ingestionList}
         actions={
           <div>
             <Button
+              data-testid="app-ingestion-refresh-button"
               btnType="icon"
               disabled={loadingData}
               onClick={() => {
@@ -436,6 +440,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
               <ButtonRefresh loading={loadingData} fontSize="medium" />
             </Button>
             <Button
+              data-testid="app-ingestion-delete-button"
               disabled={disableDelete}
               onClick={() => {
                 setOpenDeleteModel(true);
@@ -504,6 +509,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="app-ingestion-cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -513,6 +519,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="app-ingestion-confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

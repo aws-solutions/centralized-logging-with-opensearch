@@ -64,6 +64,8 @@ describe("ChooseBufferLayer", () => {
             solution_version: "",
             solution_name: "",
             template_bucket: "",
+            sns_email_topic_arn: "",
+            oidc_logout_url: "",
           })}
           setApplicationLog={jest.fn()}
         />

@@ -18,6 +18,34 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import CreateSyslog from "../CreateSyslog";
+import { screen, act, fireEvent, within } from "@testing-library/react";
+import { mockOpenSearchStateData } from "test/domain.mock";
+import {
+  MockGrafanaData,
+  MockLightEngineData,
+  MockSelectProcessorState,
+} from "test/servicelog.mock";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import { mockConfigListResource } from "test/config.mock";
+
+// Mock SelectLogProcessor
+jest.mock("pages/comps/processor/SelectLogProcessor", () => {
+  return {
+    __esModule: true,
+    default: () => <div>SelectLogProcessor</div>,
+  };
+});
+
+jest.mock(
+  "pages/dataInjection/serviceLog/create/common/ConfigLightEngine",
+  () => {
+    return {
+      __esModule: true,
+      default: () => <div>ConfigLightEngine</div>,
+      covertSvcTaskToLightEngine: jest.fn(),
+    };
+  }
+);
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -34,24 +62,289 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+  refineErrorMessage: jest
+    .fn()
+    .mockReturnValue({ errorCode: "mockCode", message: "mockMessage" }),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
+  jest.spyOn(console, "warn").mockImplementation(jest.fn());
 });
 
 describe("CreateSyslog", () => {
-  it("renders without errors", () => {
-    const { getByTestId } = renderWithProviders(
-      <MemoryRouter>
-        <CreateSyslog />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
+  it("renders without errors with opensearch", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        checkCustomPort: {
+          isAllowedPort: true,
+          msg: "",
+          recommendedPort: 509,
+          __typename: "checkCustomPortResponse",
         },
-      }
+        listLogConfigs: { logConfigs: mockConfigListResource, total: 1 },
+        listLogConfigVersions: mockConfigListResource,
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        checkCustomPort: {
+          isAllowedPort: true,
+          msg: "",
+          recommendedPort: 509,
+          __typename: "checkCustomPortResponse",
+        },
+        createLogSource: "xxxxxx",
+        createAppLogIngestion: "OK",
+        createLightEngineAppPipeline: "OK",
+      },
+    });
+
+    await act(async () =>
+      renderWithProviders(
+        <MemoryRouter>
+          <CreateSyslog />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            openSearch: {
+              ...mockOpenSearchStateData,
+            },
+            selectProcessor: {
+              ...MockSelectProcessorState,
+            },
+          },
+        }
+      )
     );
-    expect(getByTestId("test-create-app-syslog")).toBeInTheDocument();
+
+    // select protocol
+    const protocol = screen.getByRole("button", {
+      name: "applog:ingestion.syslog.chooseProtocol",
+    });
+    fireEvent.mouseDown(protocol);
+
+    // select UDP
+    const listProtocol = within(document.body).getByRole("listbox");
+    const udpItem = await within(listProtocol).findByText(/UDP/i);
+    await act(async () => {
+      fireEvent.click(udpItem);
+    });
+
+    // click edit button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-port-edit"));
+    });
+
+    // input syslog port
+    const syslogPort = screen.getByPlaceholderText("500 ~ 20000");
+    fireEvent.change(syslogPort, { target: { value: "514" } });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // Select log config
+    const selectLogConfig = screen.getByPlaceholderText(
+      "applog:logSourceDesc.s3.step2.chooseALogConfig"
+    );
+
+    const divElement = selectLogConfig.previousElementSibling;
+
+    await act(async () => {
+      divElement && fireEvent.mouseDown(divElement);
+    });
+    const listLogConfig = within(document.body).getByRole("listbox");
+    const logConfig = await within(listLogConfig).findByText(
+      /test-json-config/i
+    );
+
+    await act(async () => {
+      fireEvent.click(logConfig);
+    });
+
+    const revisionSelect = screen.getByTestId("log-conf-revision-select");
+    const revision = await within(revisionSelect).findByText(
+      /ekslog:ingest.detail.configTab.revision 1/i
+    );
+    await act(async () => {
+      fireEvent.click(revision);
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // input index name
+    const indexName = screen.getByPlaceholderText("log-example");
+    fireEvent.change(indexName, { target: { value: "app-logs" } });
+
+    // input shard number
+    const shardNum = screen.getByPlaceholderText(
+      "servicelog:cluster.inputShardNum"
+    );
+    fireEvent.change(shardNum, { target: { value: 1 } });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-create-button"));
+    });
+  });
+
+  it("renders without errors with light engine", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        checkCustomPort: {
+          isAllowedPort: true,
+          msg: "",
+          recommendedPort: 509,
+          __typename: "checkCustomPortResponse",
+        },
+        listLogConfigs: { logConfigs: mockConfigListResource, total: 1 },
+        listLogConfigVersions: mockConfigListResource,
+      },
+    });
+
+    (appSyncRequestMutation as any).mockResolvedValue({
+      data: {
+        checkCustomPort: {
+          isAllowedPort: true,
+          msg: "",
+          recommendedPort: 509,
+          __typename: "checkCustomPortResponse",
+        },
+        createLogSource: "xxxxxx",
+        createAppLogIngestion: "OK",
+        createLightEngineAppPipeline: "OK",
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter
+          initialEntries={[
+            "/log-pipeline/application-log/create/syslog?engineType=LIGHT_ENGINE",
+          ]}
+        >
+          <CreateSyslog />
+        </MemoryRouter>,
+        {
+          preloadedState: {
+            app: {
+              ...AppStoreMockData,
+            },
+            openSearch: {
+              ...mockOpenSearchStateData,
+            },
+            selectProcessor: {
+              ...MockSelectProcessorState,
+            },
+            grafana: {
+              ...MockGrafanaData,
+            },
+            createLightEngine: {
+              ...MockLightEngineData,
+            },
+          },
+        }
+      );
+    });
+
+    // select protocol
+    const protocol = screen.getByRole("button", {
+      name: "applog:ingestion.syslog.chooseProtocol",
+    });
+    fireEvent.mouseDown(protocol);
+
+    // select UDP
+    const listProtocol = within(document.body).getByRole("listbox");
+    const udpItem = await within(listProtocol).findByText(/UDP/i);
+    await act(async () => {
+      fireEvent.click(udpItem);
+    });
+
+    // click edit button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-port-edit"));
+    });
+
+    // input syslog port
+    const syslogPort = screen.getByPlaceholderText("500 ~ 20000");
+    fireEvent.change(syslogPort, { target: { value: "514" } });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    const selectLogConfig = screen.getByPlaceholderText(
+      "applog:logSourceDesc.s3.step2.chooseALogConfig"
+    );
+
+    const divElement = selectLogConfig.previousElementSibling;
+
+    await act(async () => {
+      divElement && fireEvent.mouseDown(divElement);
+    });
+    const listLogConfig = within(document.body).getByRole("listbox");
+    const logConfig = await within(listLogConfig).findByText(
+      /test-json-config/i
+    );
+
+    await act(async () => {
+      fireEvent.click(logConfig);
+    });
+
+    const revisionSelect = screen.getByTestId("log-conf-revision-select");
+    const revision = await within(revisionSelect).findByText(
+      /ekslog:ingest.detail.configTab.revision 1/i
+    );
+    await act(async () => {
+      fireEvent.click(revision);
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog next button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-next-button"));
+    });
+
+    // click syslog create button
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("syslog-create-button"));
+    });
   });
 });

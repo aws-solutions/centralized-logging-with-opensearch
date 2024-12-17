@@ -13,31 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useMemo, useState } from "react";
-import { CLOUDTRAIL_LOG_LINK } from "assets/js/const";
-import ExtLink from "components/ExtLink";
-import CloudTrailArch from "assets/images/desc/cloudtrailArch.webp";
-import CloudTrailLightEngineArch from "assets/images/desc/cloudtrailLightEngineArch.webp";
-import CloudTrailArchCWL from "assets/images/desc/cloudtrailArch_CWL.webp";
+import { FormControlLabel, RadioGroup } from "@material-ui/core";
+import { DestinationType } from "API";
+import FormItem from "components/FormItem";
+import Radio from "components/Radio";
+import React from "react";
 
 import { useTranslation } from "react-i18next";
-import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes, CWLSourceType } from "types";
 
 interface CloudTrailDescProps {
-  engineType: AnalyticEngineTypes;
+  ingestLogType: string;
+  changeIngestLogType: (type: string) => void;
+  region: string;
 }
 
 const CloudTrailDesc: React.FC<CloudTrailDescProps> = (
   props: CloudTrailDescProps
 ) => {
   const { t } = useTranslation();
-  const { engineType } = props;
-  const [activeTab, setActiveTab] = useState(CWLSourceType.S3);
-  const isLightEngine = useMemo(
-    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
-    [engineType]
-  );
+  const { ingestLogType, changeIngestLogType, region } = props;
 
   return (
     <div>
@@ -46,57 +40,36 @@ const CloudTrailDesc: React.FC<CloudTrailDescProps> = (
       </div>
       <div className="ingest-desc-desc mb-20">
         {t("servicelog:trail.desc.ingest")}
-        <ExtLink to={CLOUDTRAIL_LOG_LINK}>
-          {t("servicelog:trail.desc.trailLog")}
-        </ExtLink>{" "}
-        {t("intoDomain")}
       </div>
-      <div className="ingest-desc-title">
-        {t("servicelog:trail.desc.archName")}
-      </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
-      {!isLightEngine ? (
-        <>
-          <AntTabs
-            value={activeTab}
-            onChange={(event, newTab) => {
-              setActiveTab(newTab);
+      <div className="mt-10">
+        <FormItem
+          optionTitle={t("servicelog:create.source")}
+          optionDesc={t("servicelog:create.sourceDesc")}
+        >
+          <RadioGroup
+            className="radio-group"
+            value={ingestLogType}
+            onChange={(e) => {
+              changeIngestLogType(e.target.value);
             }}
           >
-            <AntTab label={CWLSourceType.S3} value={CWLSourceType.S3} />
-            <AntTab label={CWLSourceType.CWL} value={CWLSourceType.CWL} />
-          </AntTabs>
-          <TabPanel value={activeTab} index={CWLSourceType.S3}>
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={CloudTrailArch}
+            <FormControlLabel
+              value={DestinationType.S3}
+              control={<Radio />}
+              label={t(`servicelog:create.ingestTypeAmazonS3`)}
+            />
+            {!region.startsWith("cn") && (
+              <FormControlLabel
+                value={DestinationType.CloudWatch}
+                control={<Radio />}
+                label={t(
+                  `servicelog:create.ingestType${DestinationType.CloudWatch}`
+                )}
               />
-            </div>
-          </TabPanel>
-          <TabPanel value={activeTab} index={CWLSourceType.CWL}>
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={CloudTrailArchCWL}
-              />
-            </div>
-          </TabPanel>
-        </>
-      ) : (
-        <div className="mt-10">
-          <img
-            className="img-border"
-            alt="architecture"
-            width="80%"
-            src={CloudTrailLightEngineArch}
-          />
-        </div>
-      )}
+            )}
+          </RadioGroup>
+        </FormItem>
+      </div>
     </div>
   );
 };

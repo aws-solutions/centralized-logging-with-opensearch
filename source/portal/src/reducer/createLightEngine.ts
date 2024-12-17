@@ -42,7 +42,7 @@ export const initState = {
   logMergerSchedule: "cron(0 1 * * ? *)",
   logMergerScheduleError: "",
   logProcessorScheduleError: "",
-  logArchiveAge: 30 as number | undefined,
+  logArchiveAge: 180 as number | undefined,
   logArchiveAgeError: "",
   logMergerAge: 7 as number | undefined,
   logMergerAgeError: "",
@@ -159,15 +159,9 @@ const validateGteOne = createFieldValidator(
 const CRON_REGEX_STR =
   "^cron\\(((\\d{1,2}|\\*),?\\/?)+\\s((\\d{1,2}|\\*),?)+\\s((\\d{1,2}|\\*|\\?),?)+\\s((\\d{1,2}|\\*|\\?|(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)),?)+\\s((\\d{1,2}[FL]?|\\*|\\?|(SAT|SUN|MON|TUE|WED|THU|FRI)#?\\d?),?-?)+\\s((\\d{1,4}|\\*),?-?)+\\)$";
 
-const TABLE_NAME_REGEX_STR = "^[a-zA-Z0-9_]{1,255}$";
-
 const validateCronExpression = validateWithRegex(
   new RegExp(`${CRON_REGEX_STR}`)
 )(() => i18n.t("lightengine:engine.create.errorCronExpression"));
-
-const validateTableNameFormat = validateWithRegex(
-  new RegExp(`${TABLE_NAME_REGEX_STR}`)
-)(() => i18n.t("lightengine:engine.create.errorTableName"));
 
 const validateGrafanaId = withI18nErrorMessage(
   validateRequiredText("lightengine:engine.create.errorGrafanaIdMissing")
@@ -188,32 +182,19 @@ const validateLogMergerSchedule = pipFieldValidator(
   ),
   validateCronExpression
 );
-const validateCentralizedTableName = pipFieldValidator(
-  validateRequiredText(() =>
-    i18n.t("lightengine:engine.create.errorCentralizedTableNameMissing")
-  ),
-  validateTableNameFormat
+const validateCentralizedTableName = withI18nErrorMessage(
+  validateRequiredText(
+    "lightengine:engine.create.errorCentralizedTableNameMissing"
+  )
 );
 const validateLogArchiveAge = withI18nErrorMessage(
   pipFieldValidator(
-    validateGteOne("lightengine:engine.create.errorLogArchiveAgeGteOne"),
-    createFieldValidator(
-      ([archiveAge, mergeAge]: [number?, number?]) =>
-        archiveAge !== undefined &&
-        mergeAge !== undefined &&
-        archiveAge > mergeAge
-    )("lightengine:engine.create.errorLogArchiveAgeGteLogMergerAge")
+    validateGteOne("lightengine:engine.create.errorLogArchiveAgeGteOne")
   )
 );
 const validateLogMergerAge = withI18nErrorMessage(
   pipFieldValidator(
-    validateGteOne("lightengine:engine.create.errorLogMergerAgeGteOne"),
-    createFieldValidator(
-      ([mergeAge, archiveAge]: [number?, number?]) =>
-        archiveAge !== undefined &&
-        mergeAge !== undefined &&
-        archiveAge > mergeAge
-    )("lightengine:engine.create.errorLogArchiveAgeGteLogMergerAge")
+    validateGteOne("lightengine:engine.create.errorLogMergerAgeGteOne")
   )
 );
 

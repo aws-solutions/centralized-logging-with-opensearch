@@ -18,6 +18,7 @@ import { Alert } from "assets/js/alert";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { appSyncRequestMutation } from "assets/js/request";
@@ -41,7 +42,6 @@ import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -50,6 +50,7 @@ import {
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -135,7 +136,7 @@ const CreateConfig: React.FC = () => {
   const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const openSearch = useOpenSearch();
 
@@ -247,6 +248,9 @@ const CreateConfig: React.FC = () => {
     // update index prefix as default
     appDispatch(indexPrefixChanged("default"));
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   return (
@@ -254,24 +258,17 @@ const CreateConfig: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-config">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: t("servicelog:create.step.specifyDomain"),
-              },
-              {
-                name: t("processor.logProcessorSettings"),
-              },
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               configTask={configPipelineTask}
@@ -370,6 +367,7 @@ const CreateConfig: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="config-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -379,6 +377,7 @@ const CreateConfig: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="config-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -391,6 +390,7 @@ const CreateConfig: React.FC = () => {
 
             {curStep < 3 && (
               <Button
+                data-testid="config-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -421,6 +421,7 @@ const CreateConfig: React.FC = () => {
             )}
             {curStep === 3 && (
               <Button
+                data-testid="config-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

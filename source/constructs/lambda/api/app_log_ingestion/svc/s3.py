@@ -75,6 +75,9 @@ class S3SourceHandler:
 
         log_source.s3.keyPrefix = log_source.s3.keyPrefix.lstrip("/")
 
+        processor_lambda_name = app_pipeline.processorLogGroupName[len("/aws/lambda/"):]
+        processor_lambda_arn = f"arn:{aws_partition}:lambda:{os.environ.get('AWS_REGION', '')}:{log_source.accountId}:function:{processor_lambda_name}"
+
         if log_source.s3.mode == S3IngestionMode.ONE_TIME:
             app_log_ingestion = self._ingestion_dao.save(app_log_ingestion)
             sfn_args = {
@@ -90,6 +93,7 @@ class S3SourceHandler:
                         "SourceBucketArn": f"arn:{aws_partition}:s3:::{log_source.s3.bucketName}",
                         "DestinationQueueArn": app_pipeline.queueArn,
                         "ProcessorRoleArn": app_pipeline.logProcessorRoleArn,
+                        "ProcessorLambdaArn": processor_lambda_arn,
                         "SourceBucketKeyPrefix": log_source.s3.keyPrefix,
                         "SourceBucketKeySuffix": log_source.s3.keySuffix,
                         "ECSClusterName": str(ecs_cluster_name),
@@ -134,6 +138,7 @@ class S3SourceHandler:
                             "SourceBucketArn": f"arn:{aws_partition}:s3:::{log_source.s3.bucketName}",
                             "DestinationQueueArn": app_pipeline.queueArn,
                             "ProcessorRoleArn": app_pipeline.logProcessorRoleArn,
+                            "ProcessorLambdaArn": processor_lambda_arn,
                             "SourceBucketKeyPrefix": log_source.s3.keyPrefix,
                             "SourceBucketKeySuffix": log_source.s3.keySuffix,
                             "ECSClusterName": "",

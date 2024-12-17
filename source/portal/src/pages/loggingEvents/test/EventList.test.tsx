@@ -19,6 +19,8 @@ import EventList from "../EventList";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
+import { appSyncRequestQuery } from "assets/js/request";
+import { fireEvent } from "@testing-library/react";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -39,9 +41,22 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useParams: () => ({
+    type: "SERVICE",
+  }),
+  useNavigate: () => jest.fn(),
+}));
+
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 describe("EventList", () => {
   it("renders without errors", async () => {
-    renderWithProviders(
+    const { getByTestId } = renderWithProviders(
       <MemoryRouter>
         <EventList />
       </MemoryRouter>,
@@ -53,5 +68,46 @@ describe("EventList", () => {
         },
       }
     );
+    expect(getByTestId("refresh-button")).toBeInTheDocument();
+    fireEvent.click(getByTestId("refresh-button"));
+  });
+
+  it("renders wit event data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getLogEvents: {
+          logEvents: [
+            {
+              timestamp: "1711419798025",
+              message: "logs content\n",
+              ingestionTime: "1711419801732",
+              __typename: "LogEvent",
+            },
+          ],
+          nextForwardToken: "nextToken",
+          nextBackwardToken: null,
+          __typename: "GetLogEventsResponse",
+        },
+      },
+    });
+
+    const { getByTestId } = renderWithProviders(
+      <MemoryRouter>
+        <EventList />
+      </MemoryRouter>,
+      {
+        preloadedState: {
+          app: {
+            ...AppStoreMockData,
+          },
+        },
+      }
+    );
+
+    expect(getByTestId("load-more-forward")).toBeInTheDocument();
+    fireEvent.click(getByTestId("load-more-forward"));
+
+    expect(getByTestId("load-more-history")).toBeInTheDocument();
+    fireEvent.click(getByTestId("load-more-history"));
   });
 });

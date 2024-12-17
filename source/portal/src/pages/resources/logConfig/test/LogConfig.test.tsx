@@ -18,6 +18,9 @@ import { renderWithProviders } from "test-utils";
 import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import LogConfig from "../LogConfig";
+import { appSyncRequestQuery } from "assets/js/request";
+import { screen, act, waitFor, fireEvent } from "@testing-library/react";
+import { mockConfigListResource } from "test/config.mock";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -32,6 +35,11 @@ jest.mock("react-i18next", () => ({
     type: "3rdParty",
     init: jest.fn(),
   },
+}));
+
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
 }));
 
 beforeEach(() => {
@@ -52,6 +60,64 @@ describe("LogConfig", () => {
         },
       }
     );
-    expect(getByText(/resource:config.name/i)).toBeInTheDocument();
+    expect(getByText(/button.createLogConfig/i)).toBeInTheDocument();
+  });
+
+  it("renders with data", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogConfigs: { logConfigs: mockConfigListResource, total: 1 },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/log-config"]}>
+          <LogConfig />
+        </MemoryRouter>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh-button"));
+    });
+  });
+
+  it("should test confirm remove log config", async () => {
+    (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        listLogConfigs: { logConfigs: mockConfigListResource, total: 1 },
+      },
+    });
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/resources/log-config"]}>
+          <LogConfig />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("gsui-loading")).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("table-item-xxxx"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("create-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-delete-button"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("cancel-delete-button"));
+    });
   });
 });

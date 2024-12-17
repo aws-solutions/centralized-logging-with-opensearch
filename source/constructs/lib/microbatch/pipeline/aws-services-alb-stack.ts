@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { Stack, StackProps } from "aws-cdk-lib";
-import { InitLogPipelineCfnParameters } from "./init-pipeline-parameters";
-import { InitLogPipelineResourcesStack } from "./init-pipeline-resource";
+import { Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { InitLogPipelineCfnParameters } from './init-pipeline-parameters';
+import { InitLogPipelineResourcesStack } from './init-pipeline-resource';
 
 const { VERSION } = process.env;
 
@@ -39,11 +39,11 @@ export class MicroBatchAwsServicesAlbPipelineStack extends Stack {
     let solutionDesc = props.solutionDesc;
     this.templateOptions.description = `(${solutionId}-ela) - ${solutionDesc} - ALB Access Logs pipeline for Light Engine - Version ${VERSION}`;
 
-    const sourceType = "alb";
+    const sourceType = 'alb';
 
     const parameters = new InitLogPipelineCfnParameters(
       this,
-      "PipelineParameter",
+      'PipelineParameter',
       {
         sourceType: sourceType,
         templateOptions: this.templateOptions,
@@ -51,7 +51,7 @@ export class MicroBatchAwsServicesAlbPipelineStack extends Stack {
       }
     );
 
-    new InitLogPipelineResourcesStack(this, "PipelineResource", { // NOSONAR
+    /* NOSONAR */ new InitLogPipelineResourcesStack(this, 'PipelineResource', {
       ...props,
       ...parameters,
     });

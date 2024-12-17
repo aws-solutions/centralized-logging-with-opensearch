@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import { AppLogIngestion, LogSource } from "API";
-import { formatLocalTime } from "assets/js/utils";
 
 interface Props {
   sourceInfo: LogSource;
@@ -13,7 +12,7 @@ interface Props {
 export function S3SourceDetail(props: Props) {
   const { t } = useTranslation();
   return (
-    <HeaderPanel title={t("details")}>
+    <HeaderPanel title={t("applog:logSourceDesc.s3.config")}>
       <div className="flex value-label-span">
         <div className="flex-1">
           <ValueWithLabel label={t("applog:detail.ingestion.prefixFilter")}>
@@ -27,12 +26,9 @@ export function S3SourceDetail(props: Props) {
         </div>
         <div className="flex-1 border-left-c">
           <ValueWithLabel label={t("applog:detail.ingestion.compression")}>
-            <>{props.sourceInfo.s3?.compressionType}</>
-          </ValueWithLabel>
-        </div>
-        <div className="flex-1 border-left-c">
-          <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
-            <div>{formatLocalTime(props.appIngestionData.createdAt || "")}</div>
+            <div style={{ textTransform: "capitalize" }}>
+              {props.sourceInfo.s3?.compressionType?.toLocaleLowerCase()}
+            </div>
           </ValueWithLabel>
         </div>
       </div>

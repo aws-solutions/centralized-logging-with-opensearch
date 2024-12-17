@@ -17,7 +17,6 @@ import React from "react";
 import ValueWithLabel from "components/ValueWithLabel";
 import HeaderPanel from "components/HeaderPanel";
 import ExtLink from "components/ExtLink";
-import CopyText from "components/CopyText";
 import { DomainDetails, EngineType, StorageType } from "API";
 import { useTranslation } from "react-i18next";
 import { defaultStr } from "assets/js/utils";
@@ -34,59 +33,42 @@ const Overview: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.overview.domainARN")}>
-              <div>
-                <CopyText text={defaultStr(domainInfo?.domainArn)}>
-                  {defaultStr(domainInfo?.domainArn)}
-                </CopyText>
-              </div>
+              {defaultStr(domainInfo?.domainArn)}
             </ValueWithLabel>
             <ValueWithLabel label={t("cluster:detail.overview.vpcEndpoint")}>
-              <div>
-                <CopyText text={`https://${domainInfo?.endpoint}`}>
-                  <ExtLink to={`https://${domainInfo?.endpoint}`}>
-                    {t("cluster:detail.overview.clickOpen")}
-                  </ExtLink>
-                </CopyText>
-              </div>
+              <ExtLink to={`https://${domainInfo?.endpoint}`}>
+                {t("cluster:detail.overview.clickOpen")}
+              </ExtLink>
             </ValueWithLabel>
             {domainInfo?.engine === EngineType.Elasticsearch && (
               <ValueWithLabel label={t("cluster:detail.overview.kibana")}>
-                <div>
-                  <CopyText
-                    text={`https://${domainInfo?.endpoint}/_plugin/kibana/`}
-                  >
-                    <ExtLink
-                      to={`https://${domainInfo?.endpoint}/_plugin/kibana/`}
-                    >
-                      {t("cluster:detail.overview.clickOpen")}
-                    </ExtLink>
-                  </CopyText>
-                </div>
+                <ExtLink to={`https://${domainInfo?.endpoint}/_plugin/kibana/`}>
+                  {t("cluster:detail.overview.clickOpen")}
+                </ExtLink>
               </ValueWithLabel>
             )}
             {domainInfo?.engine === EngineType.OpenSearch && (
               <ValueWithLabel label={t("cluster:detail.overview.osDashboard")}>
-                <div>
-                  <CopyText
-                    text={`https://${domainInfo?.endpoint}/_dashboards`}
-                  >
-                    <ExtLink to={`https://${domainInfo?.endpoint}/_dashboards`}>
-                      {t("cluster:detail.overview.clickOpen")}
-                    </ExtLink>
-                  </CopyText>
-                </div>
+                <ExtLink to={`https://${domainInfo?.endpoint}/_dashboards`}>
+                  {t("cluster:detail.overview.clickOpen")}
+                </ExtLink>
               </ValueWithLabel>
             )}
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("cluster:detail.overview.az")}>
-              <div>{domainInfo?.esVpc?.availabilityZones?.length ?? 0}</div>
-            </ValueWithLabel>
-            <ValueWithLabel label={t("cluster:detail.overview.instanceType")}>
-              <div>{domainInfo?.nodes?.instanceType}</div>
+              <div>
+                {defaultStr(
+                  domainInfo?.esVpc?.availabilityZones?.length.toString(),
+                  "0"
+                )}
+              </div>
             </ValueWithLabel>
             <ValueWithLabel label={t("cluster:detail.overview.numberNodes")}>
               <div>{domainInfo?.nodes?.instanceCount}</div>
+            </ValueWithLabel>
+            <ValueWithLabel label={t("cluster:detail.overview.instanceType")}>
+              <div>{domainInfo?.nodes?.instanceType}</div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">

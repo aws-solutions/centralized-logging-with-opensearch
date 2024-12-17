@@ -26,18 +26,28 @@ import {
   AnalyticEngineType,
   Parameter,
   PipelineStatus,
+  ResumePipelineMutationVariables,
   ServicePipeline,
 } from "API";
 import Modal from "components/Modal";
-import { deleteServicePipeline } from "graphql/mutations";
-import { AUTO_REFRESH_INT, ServiceTypeMap } from "assets/js/const";
+import { deleteServicePipeline, resumePipeline } from "graphql/mutations";
+import { AUTO_REFRESH_INT, ServiceTypeNameMap } from "assets/js/const";
 import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import PipelineStatusComp from "../common/PipelineStatus";
 import ButtonRefresh from "components/ButtonRefresh";
 import CommonLayout from "pages/layout/CommonLayout";
+import ButtonDropdown from "components/ButtonDropdown";
+import { makeStyles } from "@material-ui/core";
 
 const PAGE_SIZE = 10;
+
+const useStyles = makeStyles(() => ({
+  dropDown: {
+    width: "110px",
+    textAlign: "left",
+  },
+}));
 
 const ServiceLog: React.FC = () => {
   const { t } = useTranslation();
@@ -53,7 +63,6 @@ const ServiceLog: React.FC = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [curTipsServiceLog, setCurTipsServiceLog] = useState<ServicePipeline>();
   const [selectedServiceLog, setSelectedServiceLog] = useState<any[]>([]);
-  const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [curPage, setCurPage] = useState(1);
@@ -126,6 +135,8 @@ const ServiceLog: React.FC = () => {
     navigate(`/log-pipeline/service-log/detail/${selectedServiceLog[0]?.id}`);
   };
 
+  const classes = useStyles();
+
   // Get Service log list when page rendered.
   useEffect(() => {
     getServiceLogList();
@@ -133,12 +144,6 @@ const ServiceLog: React.FC = () => {
 
   // Disable delete button and view detail button when no row selected.
   useEffect(() => {
-    console.info("selectedServiceLog:", selectedServiceLog);
-    if (selectedServiceLog.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
     if (selectedServiceLog.length > 0) {
       if (
         selectedServiceLog[0].status === PipelineStatus.ACTIVE ||
@@ -178,6 +183,21 @@ const ServiceLog: React.FC = () => {
     );
   };
 
+  const refreshList = () => {
+    if (curPage === 1) {
+      getServiceLogList();
+    } else {
+      setCurPage(1);
+    }
+  };
+
+  const handleResumePipeline = async () => {
+    await appSyncRequestMutation(resumePipeline, {
+      id: selectedServiceLog[0].id,
+    } as ResumePipelineMutationVariables);
+    refreshList();
+  };
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="table-data">
@@ -198,11 +218,20 @@ const ServiceLog: React.FC = () => {
               cell: (e: ServicePipeline) => renderPipelineId(e),
             },
             {
+              id: "cluster",
+              header: t("servicelog:list.engineType"),
+              cell: ({ engineType }: ServicePipeline) => {
+                return engineType === AnalyticEngineType.LightEngine
+                  ? t("applog:list.lightEngine")
+                  : `${t("applog:list.os")}`;
+              },
+            },
+            {
               width: 110,
               id: "type",
               header: t("servicelog:list.type"),
               cell: (e: ServicePipeline) => {
-                return ServiceTypeMap[e.type];
+                return t(ServiceTypeNameMap[e.type]);
               },
             },
             {
@@ -224,12 +253,14 @@ const ServiceLog: React.FC = () => {
               },
             },
             {
-              id: "cluster",
-              header: t("applog:list.engineType"),
-              cell: ({ target, engineType }: ServicePipeline) => {
-                return engineType === AnalyticEngineType.LightEngine
-                  ? t("applog:list.lightEngine")
-                  : `${t("applog:list.os")}(${target})`;
+              id: "target",
+              header: t("servicelog:list.target"),
+              cell: (e: ServicePipeline) => {
+                return (
+                  e.lightEngineParams?.centralizedTableName ||
+                  getParamValueByKey(e.parameters, "indexPrefix") ||
+                  "-"
+                );
               },
             },
             {
@@ -251,27 +282,51 @@ const ServiceLog: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
-                onClick={() => {
-                  if (curPage === 1) {
-                    getServiceLogList();
-                  } else {
-                    setCurPage(1);
-                  }
-                }}
+                onClick={refreshList}
               >
                 <ButtonRefresh loading={loadingData} />
               </Button>
-              <Button
-                disabled={disabledDetail}
-                onClick={() => {
-                  clickToReviewDetail();
+              <ButtonDropdown
+                data-testid="svc-log-actions"
+                items={[
+                  {
+                    id: "resume",
+                    text: t("button.resume"),
+                    disabled: (() => {
+                      if (selectedServiceLog.length === 1) {
+                        return (
+                          selectedServiceLog[0].status !== PipelineStatus.PAUSED
+                        );
+                      }
+                      return true;
+                    })(),
+                  },
+                ]}
+                className={classes.dropDown}
+                btnType="default"
+                disabled={loadingData || selectedServiceLog.length === 0}
+                onItemClick={(item) => {
+                  switch (item.id) {
+                    case "detail":
+                      return clickToReviewDetail();
+                    case "delete":
+                      return removeServiceLog();
+                    case "resume":
+                      return handleResumePipeline();
+                    default:
+                      break;
+                  }
+                  console.log(item);
                 }}
               >
-                {t("button.viewDetail")}
-              </Button>
+                {t("button.actions")}
+              </ButtonDropdown>
               <Button
+                className="ml-10"
+                data-testid="delete-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeServiceLog();
@@ -280,6 +335,7 @@ const ServiceLog: React.FC = () => {
                 {t("button.delete")}
               </Button>
               <Button
+                data-testid="create-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/log-pipeline/service-log/create");
@@ -309,6 +365,7 @@ const ServiceLog: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -318,6 +375,7 @@ const ServiceLog: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

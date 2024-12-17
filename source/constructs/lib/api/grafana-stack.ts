@@ -13,21 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { GraphqlApi, MappingTemplate } from "@aws-cdk/aws-appsync-alpha";
+import * as path from 'path';
 import {
   Aws,
   Duration,
   RemovalPolicy,
   SymlinkFollowMode,
+  aws_appsync as appsync,
   aws_ec2 as ec2,
   aws_dynamodb as ddb,
   aws_lambda as lambda,
-} from "aws-cdk-lib";
-import { Construct } from "constructs";
-import path = require("path");
-import { SharedPythonLayer } from "../layer/layer";
-import { constructWithFixedLogicalId } from "../util/stack-helper";
+  aws_kms as kms,
+} from 'aws-cdk-lib';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import { NagSuppressions } from 'cdk-nag';
+import { Construct } from 'constructs';
+import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
+import { constructWithFixedLogicalId } from '../util/stack-helper';
 
 export interface GrafanaStackProps {
   /**
@@ -35,29 +38,52 @@ export interface GrafanaStackProps {
    *
    * @default - None.
    */
-  readonly graphqlApi: GraphqlApi;
+  readonly graphqlApi: appsync.GraphqlApi;
 
   readonly solutionId: string;
   readonly stackPrefix: string;
   readonly microBatchStack: MicroBatchStack;
+  readonly encryptionKey: kms.IKey;
 }
 
 export class GrafanaStack extends Construct {
   readonly grafanaTable: ddb.Table;
-
+  readonly grafanaSecret: Secret;
   constructor(
     scope: Construct,
     id: string,
-    { graphqlApi, solutionId, stackPrefix, microBatchStack }: GrafanaStackProps
+    {
+      graphqlApi,
+      solutionId,
+      stackPrefix,
+      microBatchStack,
+      encryptionKey,
+    }: GrafanaStackProps
   ) {
     super(scope, id);
+    this.grafanaSecret = new Secret(this, `grafana-secret`, {
+      encryptionKey: encryptionKey,
+      secretName: `grafana-secret`,
+      secretObjectValue: {},
+    });
+    NagSuppressions.addResourceSuppressions(
+      this.grafanaSecret,
+      [
+        {
+          id: 'AwsSolutions-SMG4',
+          reason:
+            'This secret does not need to have automatic rotation scheduled in that it is used to store grafana token',
+        },
+      ],
+      true
+    );
 
     this.grafanaTable = constructWithFixedLogicalId(ddb.Table)(
       this,
-      "Grafana",
+      'Grafana',
       {
         partitionKey: {
-          name: "id",
+          name: 'id',
           type: ddb.AttributeType.STRING,
         },
         billingMode: ddb.BillingMode.PAY_PER_REQUEST,
@@ -68,20 +94,21 @@ export class GrafanaStack extends Construct {
     );
 
     // Create a lambda to handle all grafana related APIs.
-    const grafanaHandler = new lambda.Function(this, "GrafanaHandler", {
+    const grafanaHandler = new lambda.Function(this, 'GrafanaHandler', {
       code: lambda.AssetCode.fromAsset(
-        path.join(__dirname, "../../lambda/api/grafana"),
+        path.join(__dirname, '../../lambda/api/grafana'),
         { followSymlinks: SymlinkFollowMode.ALWAYS }
       ),
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: "lambda_function.lambda_handler",
+      handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 1024,
       layers: [SharedPythonLayer.getInstance(this)],
       environment: {
         GRAFANA_TABLE: this.grafanaTable.tableName,
+        GRAFANA_SECRET_ARN: this.grafanaSecret.secretArn,
         STACK_PREFIX: stackPrefix,
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: solutionId,
       },
       description: `${Aws.STACK_NAME} - Grafana APIs Resolver`,
@@ -89,69 +116,70 @@ export class GrafanaStack extends Construct {
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [microBatchStack.microBatchVPCStack.privateSecurityGroup],
     });
-
+    this.grafanaSecret.grantRead(grafanaHandler);
+    this.grafanaSecret.grantWrite(grafanaHandler);
     // Grant permissions to the grafana lambda
     this.grafanaTable.grantReadWriteData(grafanaHandler);
 
     // Add grafana lambda as a Datasource
     const grafanaLambdaDS = graphqlApi.addLambdaDataSource(
-      "GrafanaLambdaDS",
+      'GrafanaLambdaDS',
       grafanaHandler,
       {
-        description: "Lambda Resolver Datasource",
+        description: 'Lambda Resolver Datasource',
       }
     );
 
-    grafanaLambdaDS.createResolver("createGrafana", {
-      typeName: "Mutation",
-      fieldName: "createGrafana",
-      requestMappingTemplate: MappingTemplate.fromFile(
-        path.join(__dirname, "../../graphql/vtl/grafana/CreateGrafana.vtl")
+    grafanaLambdaDS.createResolver('createGrafana', {
+      typeName: 'Mutation',
+      fieldName: 'createGrafana',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(__dirname, '../../graphql/vtl/grafana/CreateGrafana.vtl')
       ),
-      responseMappingTemplate: MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    grafanaLambdaDS.createResolver("listGrafanas", {
-      typeName: "Query",
-      fieldName: "listGrafanas",
-      requestMappingTemplate: MappingTemplate.fromFile(
-        path.join(__dirname, "../../graphql/vtl/grafana/ListGrafanas.vtl")
+    grafanaLambdaDS.createResolver('listGrafanas', {
+      typeName: 'Query',
+      fieldName: 'listGrafanas',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(__dirname, '../../graphql/vtl/grafana/ListGrafanas.vtl')
       ),
-      responseMappingTemplate: MappingTemplate.fromFile(
-        path.join(__dirname, "../../graphql/vtl/grafana/ListGrafanaResp.vtl")
-      ),
-    });
-
-    grafanaLambdaDS.createResolver("getGrafana", {
-      typeName: "Query",
-      fieldName: "getGrafana",
-      requestMappingTemplate: MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: MappingTemplate.fromFile(
-        path.join(__dirname, "../../graphql/vtl/grafana/GetGrafanaResp.vtl")
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(__dirname, '../../graphql/vtl/grafana/ListGrafanaResp.vtl')
       ),
     });
 
-    grafanaLambdaDS.createResolver("deleteGrafana", {
-      typeName: "Mutation",
-      fieldName: "deleteGrafana",
-      requestMappingTemplate: MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: MappingTemplate.lambdaResult(),
-    });
-
-    grafanaLambdaDS.createResolver("updateGrafana", {
-      typeName: "Mutation",
-      fieldName: "updateGrafana",
-      requestMappingTemplate: MappingTemplate.fromFile(
-        path.join(__dirname, "../../graphql/vtl/grafana/UpdateGrafana.vtl")
+    grafanaLambdaDS.createResolver('getGrafana', {
+      typeName: 'Query',
+      fieldName: 'getGrafana',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(__dirname, '../../graphql/vtl/grafana/GetGrafanaResp.vtl')
       ),
-      responseMappingTemplate: MappingTemplate.lambdaResult(),
     });
 
-    grafanaLambdaDS.createResolver("checkGrafana", {
-      typeName: "Query",
-      fieldName: "checkGrafana",
-      requestMappingTemplate: MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: MappingTemplate.lambdaResult(),
+    grafanaLambdaDS.createResolver('deleteGrafana', {
+      typeName: 'Mutation',
+      fieldName: 'deleteGrafana',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    grafanaLambdaDS.createResolver('updateGrafana', {
+      typeName: 'Mutation',
+      fieldName: 'updateGrafana',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(__dirname, '../../graphql/vtl/grafana/UpdateGrafana.vtl')
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    grafanaLambdaDS.createResolver('checkGrafana', {
+      typeName: 'Query',
+      fieldName: 'checkGrafana',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
   }
 }

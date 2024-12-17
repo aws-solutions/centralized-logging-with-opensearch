@@ -31,9 +31,7 @@ import { useTranslation } from "react-i18next";
 import { CreateLogMethod, DOMAIN_ALLOW_STATUS } from "assets/js/const";
 import ImportDomain from "./steps/ImportDomain";
 import { Actions, RootState } from "reducer/reducers";
-import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import { Dispatch } from "redux";
-import { useTags } from "assets/js/hooks/useTags";
 import CommonLayout from "pages/layout/CommonLayout";
 export interface ImportedDomainType {
   showVPCAlert: boolean;
@@ -56,7 +54,7 @@ const ImportOpenSearchCluster: React.FC = () => {
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
-      name: t("cluster:import.name"),
+      name: t("menu.importOS"),
     },
   ];
   const navigate = useNavigate();
@@ -65,7 +63,6 @@ const ImportOpenSearchCluster: React.FC = () => {
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
-  const tags = useTags();
   const [curStep, setCurStep] = useState(0);
   const [importedCluster, setImportedCluster] = useState<ImportedDomainType>({
     showVPCAlert: false,
@@ -115,13 +112,12 @@ const ImportOpenSearchCluster: React.FC = () => {
       delete dataImportCluster.creationMethod;
       const importRes = await appSyncRequestMutation(importDomain, {
         ...dataImportCluster,
-        tags,
       });
-      console.info("importRes:", importRes);
       setLoadingCreate(false);
       setDomainId(importRes.data.importDomain.id);
       setDomainRelatedResources(importRes.data.importDomain.resources);
       setDisableViewButton(false);
+      setCurStep(2);
     } catch (error) {
       setLoadingCreate(false);
       setDisableViewButton(true);
@@ -137,7 +133,6 @@ const ImportOpenSearchCluster: React.FC = () => {
         domainName: domainName,
         region: amplifyConfig.aws_project_region,
       });
-      console.info("resData:", resData);
       const dataVPCInfo: ESVPCInfo = resData.data.getDomainVpc;
       setEsVPCInfo(dataVPCInfo);
       setLoadingVPC(false);
@@ -156,7 +151,7 @@ const ImportOpenSearchCluster: React.FC = () => {
       });
       setLoadingNext(false);
       if (resData.data.validateVpcCidr === "OK") {
-        setCurStep(2);
+        confirmImportDomain();
       }
     } catch (error) {
       setLoadingNext(false);
@@ -164,16 +159,22 @@ const ImportOpenSearchCluster: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    console.info("importedCluster:", importedCluster);
-  }, [importedCluster]);
+  const checkTheSelectedDomain = () => {
+    if (!importedCluster.domainName) {
+      setDomainEmptyError(true);
+      return;
+    }
+    if (!DOMAIN_ALLOW_STATUS.includes(importedCluster.domainStatus)) {
+      return;
+    }
+    setCurStep(1);
+  };
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
   }, []);
 
   useEffect(() => {
-    console.info("domainStatus:", importedCluster.domainStatus);
     if (DOMAIN_ALLOW_STATUS.includes(importedCluster.domainStatus)) {
       getDomainVPCInfoByName(importedCluster.domainName);
     }
@@ -192,9 +193,6 @@ const ImportOpenSearchCluster: React.FC = () => {
                 name: t("cluster:import.step.configNetwork"),
               },
               {
-                name: t("cluster:import.step.createTags"),
-              },
-              {
                 name: t("cluster:import.step.importDomain"),
               },
             ]}
@@ -208,7 +206,6 @@ const ImportOpenSearchCluster: React.FC = () => {
               importedCluster={importedCluster}
               emptyError={domainEmptyError}
               changeDomain={(domain) => {
-                console.info("domain:domain:", domain);
                 setDomainEmptyError(false);
                 setImportedCluster((prev: ImportedDomainType) => {
                   return { ...prev, domainName: domain };
@@ -226,7 +223,6 @@ const ImportOpenSearchCluster: React.FC = () => {
               esVPCInfo={esVPCInfo}
               importedCluster={importedCluster}
               changeVpc={(vpcId) => {
-                console.info("vpcId:vpcId:vpcId:", vpcId);
                 setImportedCluster((prev: ImportedDomainType) => {
                   return {
                     ...prev,
@@ -301,8 +297,7 @@ const ImportOpenSearchCluster: React.FC = () => {
               }}
             />
           )}
-          {curStep === 2 && <CreateTags />}
-          {curStep === 3 && (
+          {curStep === 2 && (
             <ImportDomain
               importedCluster={importedCluster}
               importedRes={domainRelatedResources}
@@ -310,6 +305,7 @@ const ImportOpenSearchCluster: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="test-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/clusters/opensearch-domains");
@@ -317,8 +313,9 @@ const ImportOpenSearchCluster: React.FC = () => {
             >
               {t("button.cancel")}
             </Button>
-            {curStep > 0 && curStep < 3 && (
+            {curStep > 0 && curStep < 2 && (
               <Button
+                data-testid="test-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -329,58 +326,44 @@ const ImportOpenSearchCluster: React.FC = () => {
               </Button>
             )}
 
-            {curStep < 2 && (
+            {curStep === 0 && (
               <Button
+                data-testid="test-next-button"
                 disabled={
                   !DOMAIN_ALLOW_STATUS.includes(importedCluster.domainStatus)
                 }
                 btnType="primary"
                 loading={loadingNext}
                 onClick={() => {
-                  if (!importedCluster.domainName) {
-                    setDomainEmptyError(true);
-                    setCurStep(0);
-                  } else {
-                    // Check the domain status
-                    if (
-                      curStep === 0 &&
-                      !DOMAIN_ALLOW_STATUS.includes(
-                        importedCluster.domainStatus
-                      )
-                    ) {
-                      return;
-                    }
-                    if (
-                      curStep === 1 &&
-                      importedCluster.creationMethod ===
-                        CreateLogMethod.Automatic
-                    ) {
-                      checkCIDRConflict();
-                    } else {
-                      setCurStep((curStep) => {
-                        return curStep > 2 ? 2 : curStep + 1;
-                      });
-                    }
+                  if (curStep === 0) {
+                    checkTheSelectedDomain();
                   }
                 }}
               >
                 {t("button.next")}
               </Button>
             )}
-            {curStep === 2 && (
+            {curStep === 1 && (
               <Button
-                loading={loadingCreate}
+                data-testid="test-import-button"
+                loading={loadingCreate || loadingNext}
                 btnType="primary"
                 onClick={() => {
-                  setCurStep(3);
-                  confirmImportDomain();
+                  if (
+                    importedCluster.creationMethod === CreateLogMethod.Automatic
+                  ) {
+                    checkCIDRConflict();
+                  } else {
+                    confirmImportDomain();
+                  }
                 }}
               >
                 {t("button.import")}
               </Button>
             )}
-            {curStep === 3 && (
+            {curStep === 2 && (
               <Button
+                data-testid="test-view-button"
                 disabled={disableViewButton}
                 loading={loadingCreate}
                 btnType="primary"

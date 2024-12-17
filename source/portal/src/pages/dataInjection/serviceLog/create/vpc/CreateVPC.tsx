@@ -17,6 +17,7 @@ import { DestinationType, ServiceType, MonitorInput } from "API";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { Alert } from "assets/js/alert";
@@ -48,7 +49,6 @@ import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import {
   CreateAlarmActionTypes,
   validateAlarmInput,
@@ -81,6 +81,7 @@ import {
   CreateLightEngineActionTypes,
   validateLightEngine,
 } from "reducer/createLightEngine";
+import { ActionType } from "reducer/appReducer";
 
 const BASE_EXCLUDE_PARAMS = [
   "vpcLogObj",
@@ -191,6 +192,7 @@ const CreateVPCLog: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
+  const logIngestType = searchParams.get("ingestLogType") ?? DestinationType.S3;
 
   const totalStep =
     searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 2 : 3;
@@ -204,8 +206,9 @@ const CreateVPCLog: React.FC = () => {
   const [vpcLogIsChanging, setVpcLogIsChanging] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
 
-  const [vpcLogPipelineTask, setVpcLogPipelineTask] =
-    useState<VpcLogTaskProps>(DEFAULT_TASK_VALUE);
+  const [vpcLogPipelineTask, setVpcLogPipelineTask] = useState<VpcLogTaskProps>(
+    { ...DEFAULT_TASK_VALUE, destinationType: logIngestType }
+  );
 
   const [autoVpcEmptyError, setAutoVpcEmptyError] = useState(false);
   const [manualVpcEmptyError, setManualVpcEmptyError] = useState(false);
@@ -218,7 +221,7 @@ const CreateVPCLog: React.FC = () => {
   const [maxShardNumError, setMaxShardNumError] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const openSearch = useOpenSearch();
   const lightEngine = useLightEngine();
@@ -420,14 +423,15 @@ const CreateVPCLog: React.FC = () => {
   const checkS3NeedBucket = () => {
     // check s3 log need bucket name
     if (
-      (vpcLogPipelineTask.params.taskType === CreateLogMethod.Automatic &&
+      vpcLogPipelineTask.destinationType === DestinationType.S3 &&
+      ((vpcLogPipelineTask.params.taskType === CreateLogMethod.Automatic &&
         vpcLogPipelineTask.params.vpcLogSourceType === VPCLogSourceType.NONE) ||
-      ((vpcLogPipelineTask.params.vpcLogSourceType ===
-        VPCLogSourceType.MULTI_S3_DIFF_REGION ||
-        vpcLogPipelineTask.params.vpcLogSourceType ===
-          VPCLogSourceType.ONE_S3_DIFF_REGION ||
-        vpcLogPipelineTask.params.vpcLogSourceType === "") &&
-        !vpcLogPipelineTask.params.logBucketName)
+        ((vpcLogPipelineTask.params.vpcLogSourceType ===
+          VPCLogSourceType.MULTI_S3_DIFF_REGION ||
+          vpcLogPipelineTask.params.vpcLogSourceType ===
+            VPCLogSourceType.ONE_S3_DIFF_REGION ||
+          vpcLogPipelineTask.params.vpcLogSourceType === "") &&
+          !vpcLogPipelineTask.params.logBucketName))
     ) {
       Alert(t("servicelog:vpc.needEnableLogging"));
       return false;
@@ -523,37 +527,32 @@ const CreateVPCLog: React.FC = () => {
     });
   }, [vpcLogPipelineTask.source]);
 
+  useEffect(() => {
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
+  }, []);
+
   return (
     <CommonLayout breadCrumbList={breadCrumbList}>
       <div className="create-wrapper" data-testid="test-create-vpc">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
+              region={amplifyConfig.aws_project_region}
               engineType={engineType}
               vpcLogTask={vpcLogPipelineTask}
               manualVpcEmptyError={manualVpcEmptyError}
@@ -580,6 +579,7 @@ const CreateVPCLog: React.FC = () => {
                 setManualVpcEmptyError(false);
                 setVpcLogPipelineTask({
                   ...DEFAULT_TASK_VALUE,
+                  destinationType: logIngestType,
                   params: {
                     ...DEFAULT_TASK_VALUE.params,
                     taskType: taskType,
@@ -596,7 +596,6 @@ const CreateVPCLog: React.FC = () => {
                   return {
                     ...prev,
                     source: defaultStr(vpcLogObj?.value),
-                    destinationType: "",
                     params: {
                       ...prev.params,
                       logBucketName: "",
@@ -648,26 +647,6 @@ const CreateVPCLog: React.FC = () => {
               }}
               setNextStepDisableStatus={(status) => {
                 setNextStepDisable(status);
-              }}
-              changeSourceType={(type) => {
-                setVpcFlowLogEmptyError(false);
-                setSourceTypeEmptyError(false);
-                // Update processor type to lambda when change buffer type
-                dispatch({
-                  type: SelectProcessorActionTypes.CHANGE_PROCESSOR_TYPE,
-                  processorType: LogProcessorType.LAMBDA,
-                });
-                setVpcLogPipelineTask((prev) => {
-                  return {
-                    ...prev,
-                    destinationType: type,
-                    params: {
-                      ...prev.params,
-                      logSource: "",
-                      logFormat: "",
-                    },
-                  };
-                });
               }}
               changeVPCFLowLog={(flow) => {
                 setVpcFlowLogEmptyError(false);
@@ -816,6 +795,7 @@ const CreateVPCLog: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="vpc-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -825,6 +805,7 @@ const CreateVPCLog: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="vpc-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -837,6 +818,7 @@ const CreateVPCLog: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
+                data-testid="vpc-next-button"
                 disabled={isNextDisabled()}
                 btnType="primary"
                 onClick={() => {
@@ -866,6 +848,7 @@ const CreateVPCLog: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="vpc-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

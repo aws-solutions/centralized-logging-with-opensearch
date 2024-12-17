@@ -30,12 +30,12 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
   DOMAIN_ALLOW_STATUS,
+  genSvcStepTitle,
   ServiceLogType,
 } from "assets/js/const";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
-import LogProcessing from "../common/LogProcessing";
 import {
   bucketNameIsValid,
   buildLambdaConcurrency,
@@ -56,7 +56,6 @@ import {
 } from "reducer/createLightEngine";
 import { useLightEngine } from "assets/js/hooks/useLightEngine";
 import { Dispatch } from "redux";
-import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
@@ -66,6 +65,7 @@ import { useGrafana } from "assets/js/hooks/useGrafana";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
@@ -81,6 +81,7 @@ import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
 import { AppDispatch } from "reducer/store";
 import ConfigOpenSearch from "../common/ConfigOpenSearch";
 import CommonLayout from "pages/layout/CommonLayout";
+import EnrichedFields from "pages/dataInjection/common/EnrichFields";
 
 const EXCLUDE_PARAMS = [
   "elbObj",
@@ -155,8 +156,7 @@ const CreateELB: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
-  const totalStep =
-    searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 3 : 4;
+  const totalStep = 3;
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
@@ -177,7 +177,7 @@ const CreateELB: React.FC = () => {
   const [needEnableAccessLog, setNeedEnableAccessLog] = useState(false);
 
   const tags = useTags();
-  const monitor = useAlarm();
+  const monitor = useSelector((state: RootState) => state.createAlarm);
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
@@ -195,7 +195,7 @@ const CreateELB: React.FC = () => {
     if (elbPipelineTask.params.userAgentPlugin) {
       pluginList.push(SupportPlugin.UserAgent);
     }
-    if (pluginList.length > 0) {
+    if (pluginList.length > 0 && params?.parameters) {
       params.parameters.push({
         parameterKey: "enrichmentPlugins",
         parameterValue: pluginList.join(","),
@@ -298,6 +298,9 @@ const CreateELB: React.FC = () => {
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+    dispatch({
+      type: CreateAlarmActionTypes.CLEAR_ALARM,
+    });
   }, []);
 
   const validateELBInput = () => {
@@ -385,33 +388,17 @@ const CreateELB: React.FC = () => {
       <div className="create-wrapper" data-testid="test-create-elb">
         <div className="create-step">
           <CreateStep
-            list={[
-              {
-                name: t("servicelog:create.step.specifySetting"),
-              },
-              {
-                name: t("servicelog:create.step.logProcessing"),
-              },
-              {
-                name: isLightEngine
-                  ? t("servicelog:create.step.specifyLightEngine")
-                  : t("servicelog:create.step.specifyDomain"),
-              },
-              ...(!isLightEngine
-                ? [
-                    {
-                      name: t("processor.logProcessorSettings"),
-                    },
-                  ]
-                : []),
-              {
-                name: t("servicelog:create.step.createTags"),
-              },
-            ]}
+            list={genSvcStepTitle(
+              osiParams.logProcessorType === LogProcessorType.OSI
+            ).map((item) => {
+              return {
+                name: t(item),
+              };
+            })}
             activeIndex={curStep}
           />
         </div>
-        <div className="create-content m-w-800">
+        <div className="create-content m-w-1024">
           {curStep === 0 && (
             <SpecifySettings
               elbTask={elbPipelineTask}
@@ -521,36 +508,8 @@ const CreateELB: React.FC = () => {
               }}
             />
           )}
+
           {curStep === 1 && (
-            <LogProcessing
-              changePluginSelect={(plugin, enable) => {
-                if (plugin === SupportPlugin.Geo) {
-                  setELBPipelineTask((prev: ELBTaskProps) => {
-                    return {
-                      ...prev,
-                      params: {
-                        ...prev.params,
-                        geoPlugin: enable,
-                      },
-                    };
-                  });
-                }
-                if (plugin === SupportPlugin.UserAgent) {
-                  setELBPipelineTask((prev: ELBTaskProps) => {
-                    return {
-                      ...prev,
-                      params: {
-                        ...prev.params,
-                        userAgentPlugin: enable,
-                      },
-                    };
-                  });
-                }
-              }}
-              pipelineTask={elbPipelineTask}
-            />
-          )}
-          {curStep === 2 && (
             <>
               {isLightEngine ? (
                 <ConfigLightEngine />
@@ -559,16 +518,45 @@ const CreateELB: React.FC = () => {
               )}
             </>
           )}
-          {curStep === 3 && !isLightEngine && (
+          {curStep === 2 && (
             <div>
-              <SelectLogProcessor
-                supportOSI={
-                  !elbPipelineTask.logSourceAccountId && !isLightEngine
-                }
-                enablePlugins={
-                  elbPipelineTask.params.geoPlugin ||
-                  elbPipelineTask.params.userAgentPlugin
-                }
+              {!isLightEngine && (
+                <SelectLogProcessor
+                  supportOSI={
+                    !elbPipelineTask.logSourceAccountId && !isLightEngine
+                  }
+                  enablePlugins={
+                    elbPipelineTask.params.geoPlugin ||
+                    elbPipelineTask.params.userAgentPlugin
+                  }
+                />
+              )}
+              <EnrichedFields
+                pipelineTask={elbPipelineTask}
+                changePluginSelect={(plugin, enable) => {
+                  if (plugin === SupportPlugin.Geo) {
+                    setELBPipelineTask((prev: ELBTaskProps) => {
+                      return {
+                        ...prev,
+                        params: {
+                          ...prev.params,
+                          geoPlugin: enable,
+                        },
+                      };
+                    });
+                  }
+                  if (plugin === SupportPlugin.UserAgent) {
+                    setELBPipelineTask((prev: ELBTaskProps) => {
+                      return {
+                        ...prev,
+                        params: {
+                          ...prev.params,
+                          userAgentPlugin: enable,
+                        },
+                      };
+                    });
+                  }
+                }}
               />
             </div>
           )}
@@ -583,6 +571,7 @@ const CreateELB: React.FC = () => {
           )}
           <div className="button-action text-right">
             <Button
+              data-testid="elb-cancel-button"
               btnType="text"
               onClick={() => {
                 navigate("/log-pipeline/service-log/create");
@@ -592,6 +581,7 @@ const CreateELB: React.FC = () => {
             </Button>
             {curStep > 0 && (
               <Button
+                data-testid="elb-previous-button"
                 onClick={() => {
                   setCurStep((curStep) => {
                     return curStep - 1 < 0 ? 0 : curStep - 1;
@@ -604,6 +594,7 @@ const CreateELB: React.FC = () => {
 
             {curStep < totalStep && (
               <Button
+                data-testid="elb-next-button"
                 // loading={autoCreating}
                 disabled={isNextDisabled()}
                 btnType="primary"
@@ -613,12 +604,12 @@ const CreateELB: React.FC = () => {
                       return;
                     }
                   }
-                  if (curStep === 2) {
+                  if (curStep === 1) {
                     if (!validateAnalyticsEngine()) {
                       return;
                     }
                   }
-                  if (curStep === 3) {
+                  if (curStep === 2 && !isLightEngine) {
                     dispatch({
                       type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
                     });
@@ -636,6 +627,7 @@ const CreateELB: React.FC = () => {
             )}
             {curStep === totalStep && (
               <Button
+                data-testid="elb-create-button"
                 loading={loadingCreate}
                 btnType="primary"
                 onClick={() => {

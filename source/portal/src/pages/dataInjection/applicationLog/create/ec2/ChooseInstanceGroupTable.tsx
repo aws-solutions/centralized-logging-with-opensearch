@@ -16,7 +16,7 @@ limitations under the License.
 /* eslint-disable react/display-name */
 import React, { useState, useEffect } from "react";
 import { SelectType, TablePanel } from "components/TablePanel";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Pagination } from "@material-ui/lab";
 import { EC2GroupPlatform, EC2GroupType, LogSource, LogSourceType } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
@@ -24,7 +24,6 @@ import { listLogSources } from "graphql/queries";
 import Button from "components/Button";
 import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
-import ExtButton from "components/ExtButton";
 import { Validator } from "pages/comps/Validator";
 import { useAutoValidation } from "assets/js/hooks/useAutoValidation";
 import ButtonRefresh from "components/ButtonRefresh";
@@ -47,6 +46,7 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
   props: ChooseInstanceGroupTableProps
 ) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [instanceGroupList, setInstanceGroupList] = useState<LogSource[]>([]);
   const [curPage, setCurPage] = useState(1);
@@ -110,7 +110,10 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
       <div className="table-data">
         <TablePanel
           trackId="sourceId"
-          title={t("resource:group.name") + `(${instanceGroupList.length})`}
+          title={
+            t("applog:logSourceDesc.ec2.instanceGroups") +
+            `(${instanceGroupList.length})`
+          }
           desc={t("applog:logSourceDesc.ec2.step1.titleDesc") || ""}
           defaultSelectItem={[]}
           changeSelected={(item) => {
@@ -162,6 +165,7 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
                 onClick={() => {
@@ -174,9 +178,13 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
               >
                 <ButtonRefresh loading={loadingData} />
               </Button>
-              <ExtButton to="/resources/instance-group/create">
+              <Button
+                onClick={() => {
+                  navigate("/resources/instance-group/create");
+                }}
+              >
                 {t("button.createInstanceGroup")}
-              </ExtButton>
+              </Button>
             </div>
           }
           pagination={

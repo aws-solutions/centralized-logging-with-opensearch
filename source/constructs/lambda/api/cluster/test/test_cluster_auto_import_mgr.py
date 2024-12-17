@@ -7,6 +7,7 @@ from moto import mock_ec2, mock_dynamodb
 import os
 import pytest
 from cluster_auto_import_mgr import ClusterAutoImportManager
+from commonlib.dao import OpenSearchDomainDao
 from commonlib.model import DomainRelatedResourceEnum
 from .conftest import init_ddb
 
@@ -37,6 +38,8 @@ def ddb_client():
                         "engine": "OpenSearch",
                         "importedDt": "2022-07-14T12:54:17Z",
                         "proxyStatus": "DISABLED",
+                        "importMethod": "AUTOMATIC",
+                        "resources": [],
                         "region": "us-west-2",
                         "tags": [],
                         "version": "1.2",
@@ -59,17 +62,17 @@ def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
     tag = {"key": "testenv", "value": "testval"}
     tags = [tag]
     with mock_ec2():
-        ec2 = boto3.client("ec2", region_name="us-west-1")
-        # ec2=boto3.resource("ec2", region_name="us-west-1")
+        ec2 = boto3.client("ec2", region_name="us-west-2")
+        # ec2=boto3.resource("ec2", region_name="us-west-2")
         aos_vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
         # aos_vpc.Vpc.VpcId
         aos_vpc_id = aos_vpc["Vpc"]["VpcId"]
         aos_subnet_response = ec2.create_subnet(
-            VpcId=aos_vpc_id, CidrBlock="10.0.16.0/20", AvailabilityZone="us-west-1a"
+            VpcId=aos_vpc_id, CidrBlock="10.0.16.0/20", AvailabilityZone="us-west-2a"
         )
         aos_subnets = aos_subnet_response["Subnet"]["SubnetId"]
         aos_subnet_response = ec2.create_subnet(
-            VpcId=aos_vpc_id, CidrBlock="10.0.32.0/20", AvailabilityZone="us-west-1b"
+            VpcId=aos_vpc_id, CidrBlock="10.0.32.0/20", AvailabilityZone="us-west-2b"
         )
         aos_subnets = aos_subnets + "," + aos_subnet_response["Subnet"]["SubnetId"]
 
@@ -81,13 +84,13 @@ def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
         clo_vpc = ec2.create_vpc(CidrBlock="133.0.0.0/16")
         clo_vpc_id = clo_vpc["Vpc"]["VpcId"]
         clo_subnet_response = ec2.create_subnet(
-            VpcId=clo_vpc_id, CidrBlock="133.0.16.0/24", AvailabilityZone="us-west-1a"
+            VpcId=clo_vpc_id, CidrBlock="133.0.16.0/24", AvailabilityZone="us-west-2a"
         )
         clo_subnet1_id = clo_subnet_response["Subnet"]["SubnetId"]
         clo_subnets = clo_subnet1_id
 
         clo_subnet_response = ec2.create_subnet(
-            VpcId=clo_vpc_id, CidrBlock="133.0.32.0/24", AvailabilityZone="us-west-1b"
+            VpcId=clo_vpc_id, CidrBlock="133.0.32.0/24", AvailabilityZone="us-west-2b"
         )
         clo_subnet2_id = clo_subnet_response["Subnet"]["SubnetId"]
         clo_subnets = clo_subnets + "," + clo_subnet2_id
@@ -142,15 +145,18 @@ def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
         )
         cluster_auto_import_mgr.delete_solution_route()
         cluster_auto_import_mgr.delete_sg_rule()
-        cluster_table = boto3.resource("dynamodb").Table(os.environ["CLUSTER_TABLE"])
+        cluster_table = boto3.resource("dynamodb", region_name="us-west-2").Table(
+            os.environ["CLUSTER_TABLE"]
+        )
         cluster_auto_import_mgr.get_domain_related_resources(
             "40485c141648f8d0acbbec6eda19a4a7", cluster_table
         )
+        aos_domain_dao = OpenSearchDomainDao(os.environ["CLUSTER_TABLE"])
         cluster_auto_import_mgr.reverse_domain_related_resources(
-            "40485c141648f8d0acbbec6eda19a4a7", False, cluster_table
+            "40485c141648f8d0acbbec6eda19a4a7", False, aos_domain_dao
         )
         cluster_auto_import_mgr.reverse_domain_related_resources(
-            "40485c141648f8d0acbbec6eda19a4a7", True, cluster_table
+            "40485c141648f8d0acbbec6eda19a4a7", True, aos_domain_dao
         )
 
 
@@ -163,16 +169,16 @@ def ec2_client():
 
 
 def test_validate_route_table_with_active_route_in_subnet(ec2_client):
-    ec2 = boto3.client("ec2", region_name="us-west-1")
+    ec2 = boto3.client("ec2", region_name="us-west-2")
     aos_vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
     # aos_vpc.Vpc.VpcId
     aos_vpc_id = aos_vpc["Vpc"]["VpcId"]
     aos_subnet_response = ec2.create_subnet(
-        VpcId=aos_vpc_id, CidrBlock="10.0.16.0/20", AvailabilityZone="us-west-1a"
+        VpcId=aos_vpc_id, CidrBlock="10.0.16.0/20", AvailabilityZone="us-west-2a"
     )
     aos_subnets = aos_subnet_response["Subnet"]["SubnetId"]
     aos_subnet_response = ec2.create_subnet(
-        VpcId=aos_vpc_id, CidrBlock="10.0.32.0/20", AvailabilityZone="us-west-1b"
+        VpcId=aos_vpc_id, CidrBlock="10.0.32.0/20", AvailabilityZone="us-west-2b"
     )
     aos_subnets = aos_subnets + "," + aos_subnet_response["Subnet"]["SubnetId"]
 
@@ -183,16 +189,16 @@ def test_validate_route_table_with_active_route_in_subnet(ec2_client):
     clo_vpc = ec2.create_vpc(CidrBlock="133.0.0.0/16")
     clo_vpc_id = clo_vpc["Vpc"]["VpcId"]
     clo_subnet_response = ec2.create_subnet(
-        VpcId=clo_vpc_id, CidrBlock="133.0.16.0/24", AvailabilityZone="us-west-1a"
+        VpcId=clo_vpc_id, CidrBlock="133.0.16.0/24", AvailabilityZone="us-west-2a"
     )
     clo_subnet1_id = clo_subnet_response["Subnet"]["SubnetId"]
     clo_subnets = clo_subnet1_id
     response = ec2.create_vpc_peering_connection(
-        VpcId=aos_vpc_id, PeerVpcId=clo_vpc_id, PeerRegion="us-west-1"
+        VpcId=aos_vpc_id, PeerVpcId=clo_vpc_id, PeerRegion="us-west-2"
     )
 
     clo_subnet_response = ec2.create_subnet(
-        VpcId=clo_vpc_id, CidrBlock="133.0.32.0/24", AvailabilityZone="us-west-1b"
+        VpcId=clo_vpc_id, CidrBlock="133.0.32.0/24", AvailabilityZone="us-west-2b"
     )
     clo_subnet2_id = clo_subnet_response["Subnet"]["SubnetId"]
     clo_subnets = clo_subnets + "," + clo_subnet2_id

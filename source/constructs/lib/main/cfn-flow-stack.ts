@@ -28,9 +28,9 @@ import {
 } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
-import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 
 export interface CfnFlowProps {
   /**
@@ -53,7 +53,7 @@ export interface CfnFlowProps {
 }
 
 /**
- * Stack to provision a common State Machine to orchestrate CloudFromation Deployment Flow.
+ * Stack to provision a common State Machine to orchestrate CloudFormation Deployment Flow.
  * This flow is used as a Child flow and will notify result at the end to parent flow.
  * Therefore, the input must contains a token.
  */
@@ -69,7 +69,7 @@ export class CfnFlowStack extends Construct {
       process.env.TEMPLATE_OUTPUT_BUCKET || 'aws-gcr-solutions';
     const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || 'log-hub'; // Old name
 
-    // Create a Lambda to handle all the cloudformation releted tasks.
+    // Create a Lambda to handle all the cloudformation related tasks.
     const cfnHandler = new lambda.Function(this, 'CfnHelper', {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/main/cfnHelper')
@@ -93,10 +93,8 @@ export class CfnFlowStack extends Construct {
     const cfnHandlerPolicy = new iam.Policy(this, 'CfnHandlerPolicy', {
       statements: [
         new iam.PolicyStatement({
-          actions: [
-            'sts:AssumeRole',
-          ],
-          resources: [`arn:${Aws.PARTITION}:iam::*:role/*CrossAccountRole*`]
+          actions: ['sts:AssumeRole'],
+          resources: [`arn:${Aws.PARTITION}:iam::*:role/*CrossAccountRole*`],
         }),
         new iam.PolicyStatement({
           actions: [
@@ -234,6 +232,7 @@ export class CfnFlowStack extends Construct {
             'lambda:GetAccountSettings',
             'lambda:GetPolicy',
             'lambda:PutFunctionConcurrency',
+            'lambda:DeleteFunctionConcurrency',
             'ssm:GetParameters',
             'ssm:PutParameter',
             'ssm:AddTagsToResource',
@@ -332,7 +331,7 @@ export class CfnFlowStack extends Construct {
             'states:DeleteStateMachine',
             'states:DescribeStateMachine',
             'states:TagResource',
-            'states:UntagResource'
+            'states:UntagResource',
           ],
           resources: [`*`],
         }),
@@ -342,7 +341,7 @@ export class CfnFlowStack extends Construct {
           actions: ['cloudformation:DescribeStacks'],
         }),
 
-        // This list of actions is to ensure the substack cloudformation template can be launched successfully.
+        // This list of actions is to ensure the sub stack CloudFormation template can be launched successfully.
 
         new iam.PolicyStatement({
           actions: [
@@ -427,7 +426,9 @@ export class CfnFlowStack extends Construct {
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService`,
-            props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilderRole.roleArn,
+            props.microBatchStack.microBatchLambdaStack
+              .PipelineResourcesBuilderStack.PipelineResourcesBuilderRole
+              .roleArn,
           ],
         }),
       ],
@@ -448,7 +449,7 @@ export class CfnFlowStack extends Construct {
         {
           id: 'F4',
           reason:
-            'This policy requires releted actions in order to start/delete sub cloudformation stacks with many other services',
+            'This policy requires related actions in order to start/delete sub cloudformation stacks with many other services',
         },
         {
           id: 'W76',
@@ -515,7 +516,15 @@ export class CfnFlowStack extends Construct {
 
     const cfnQueryTask = new tasks.LambdaInvoke(this, 'Query Stack Status', {
       lambdaFunction: cfnHandler,
-      outputPath: '$.Payload',
+      resultSelector: {
+        'args.$': '$.Payload.args',
+        'action.$': '$.Payload.action',
+        'stackId.$': '$.Payload.result.stackId',
+        'stackStatus.$': '$.Payload.result.stackStatus',
+        'error.$': '$.Payload.result.error',
+        'outputs.$': '$.Payload.result.outputs',
+      },
+      resultPath: '$.result',
     });
 
     const sfnNotifyTask = new tasks.LambdaInvoke(this, 'Notify result', {
@@ -560,7 +569,7 @@ export class CfnFlowStack extends Construct {
     const cfnFlowSMRole = new iam.Role(this, 'SMRole', {
       assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
     });
-    // Least Privilage to enable logging for state machine
+    // Least Privilege to enable logging for state machine
     cfnFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
@@ -575,7 +584,7 @@ export class CfnFlowStack extends Construct {
           'logs:DescribeResourcePolicies',
           'logs:GetLogDelivery',
           'logs:ListLogDeliveries',
-          'logs:TagResource'
+          'logs:TagResource',
         ],
         effect: iam.Effect.ALLOW,
         resources: [logGroup.logGroupArn],
@@ -584,7 +593,7 @@ export class CfnFlowStack extends Construct {
     NagSuppressions.addResourceSuppressions(cfnFlowSMRole, [
       {
         id: 'AwsSolutions-IAM5',
-        reason: 'This role doesnot have wildcard permission',
+        reason: 'This role does not have wildcard permission',
       },
     ]);
 

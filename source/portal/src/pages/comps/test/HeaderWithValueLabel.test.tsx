@@ -15,43 +15,57 @@ limitations under the License.
 */
 
 import React from "react";
-import HeaderWithValueLabel from "../HeaderWithValueLabel";
-import { renderWithProviders } from "test-utils";
-import { MemoryRouter } from "react-router-dom";
-import { AppStoreMockData } from "test/store.mock";
-
-jest.mock("react-i18next", () => ({
-  useTranslation: () => {
-    return {
-      t: (key: any) => key,
-      i18n: {
-        changeLanguage: jest.fn(),
-      },
-    };
-  },
-  initReactI18next: {
-    type: "3rdParty",
-    init: jest.fn(),
-  },
-}));
-
-beforeEach(() => {
-  jest.spyOn(console, "error").mockImplementation(jest.fn());
-});
+import { render } from "@testing-library/react";
+import HeaderWithValueLabel, {
+  LabelValueDataItem,
+} from "../HeaderWithValueLabel";
 
 describe("HeaderWithValueLabel", () => {
-  it("renders without errors", () => {
-    renderWithProviders(
-      <MemoryRouter>
-        <HeaderWithValueLabel />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
+  const dataList: (LabelValueDataItem | null)[] = [
+    { label: "Label 1", data: "Data 1" },
+    { label: "Label 2", data: "Data 2" },
+    { label: "Label 3", data: "Data 3" },
+  ];
+
+  it("renders the header title correctly", () => {
+    const headerTitle = "Test Header";
+    const { getByText } = render(
+      <HeaderWithValueLabel
+        headerTitle={headerTitle}
+        dataList={dataList}
+        additionalData={{ label: "a", data: "b" }}
+      />
     );
+    expect(getByText(headerTitle)).toBeInTheDocument();
+  });
+
+  it("renders the label and data correctly", () => {
+    const { getByText } = render(<HeaderWithValueLabel dataList={dataList} />);
+    dataList.forEach((item) => {
+      if (item) {
+        expect(getByText(item.label!)).toBeInTheDocument();
+      }
+    });
+  });
+
+  it("renders the data fixed data list", () => {
+    const fixedDataList: LabelValueDataItem[][] = [
+      [
+        { label: "Label 1", data: "Data 1" },
+        { label: "Label 2", data: "Data 2" },
+      ],
+      [
+        { label: "Label 3", data: "Data 3" },
+        { label: "Label 4", data: "Data 4" },
+      ],
+    ];
+    const { getByText } = render(
+      <HeaderWithValueLabel fixedDataList={fixedDataList} />
+    );
+    fixedDataList.forEach((data) => {
+      data.forEach((item) => {
+        expect(getByText(item.label!)).toBeInTheDocument();
+      });
+    });
   });
 });

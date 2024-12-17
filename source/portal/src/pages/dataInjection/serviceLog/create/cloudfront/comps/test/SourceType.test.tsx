@@ -15,10 +15,16 @@ limitations under the License.
 */
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import { AppStoreMockData } from "test/store.mock";
 import { MemoryRouter } from "react-router-dom";
 import SourceType from "../SourceType";
-import { cloudFrontMockData } from "test/servicelog.mock";
+import {
+  cloudFrontMockData,
+  MockCloudWatchLogConfig,
+} from "test/servicelog.mock";
+import { act } from "@testing-library/react";
+import { DestinationType } from "API";
+import { appSyncRequestQuery } from "assets/js/request";
+import { S3SourceType } from "../../../cloudtrail/steps/comp/SourceType";
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -40,39 +46,159 @@ jest.mock("react-i18next", () => ({
   },
 }));
 
+jest.mock("assets/js/request", () => ({
+  appSyncRequestQuery: jest.fn(),
+  appSyncRequestMutation: jest.fn(),
+}));
+
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 describe("SourceType", () => {
-  it("renders without errors", () => {
-    const mockChangeLogType = jest.fn();
-    const mockSetIsLoading = jest.fn();
-    const mockChangeTmpFlowList = jest.fn();
-    const mockChangeS3SourceType = jest.fn();
-    const mockChangeSuccessTextType = jest.fn();
-    const { getByText } = renderWithProviders(
-      <MemoryRouter>
-        <SourceType
-          cloudFrontTask={cloudFrontMockData}
-          region={"us-example-1"}
-          changeLogType={mockChangeLogType}
-          setIsLoading={mockSetIsLoading}
-          changeTmpFlowList={mockChangeTmpFlowList}
-          changeS3SourceType={mockChangeS3SourceType}
-          changeSuccessTextType={mockChangeSuccessTextType}
-        />
-      </MemoryRouter>,
-      {
-        preloadedState: {
-          app: {
-            ...AppStoreMockData,
-          },
-        },
-      }
-    );
-    expect(
-      getByText(/servicelog:cloudfront.selectLogType/i)
-    ).toBeInTheDocument();
+  it("renders without errors", async () => {
+    await (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getResourceLogConfigs: MockCloudWatchLogConfig,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SourceType
+            cloudFrontTask={{
+              ...cloudFrontMockData,
+              destinationType: DestinationType.S3,
+              params: {
+                ...cloudFrontMockData.params,
+                userIsConfirmed: true,
+                cloudFrontObj: {
+                  name: "cloudfront-1",
+                  value: "cloudfront-1",
+                },
+                tmpFlowList: [
+                  {
+                    name: "kds-1",
+                    value: "kds-1",
+                  },
+                ],
+              },
+            }}
+            loadingBucket={false}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders with loading", async () => {
+    await (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getResourceLogConfigs: MockCloudWatchLogConfig,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SourceType
+            cloudFrontTask={{
+              ...cloudFrontMockData,
+              destinationType: DestinationType.CloudWatch,
+              params: {
+                ...cloudFrontMockData.params,
+                userIsConfirmed: true,
+                cloudFrontObj: {
+                  name: "cloudfront-1",
+                  value: "cloudfront-1",
+                },
+                tmpFlowList: [
+                  {
+                    name: "kds-1",
+                    value: "kds-1",
+                  },
+                ],
+              },
+            }}
+            loadingBucket={true}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders without errors same region", async () => {
+    await (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getResourceLogConfigs: MockCloudWatchLogConfig,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SourceType
+            cloudFrontTask={{
+              ...cloudFrontMockData,
+              destinationType: DestinationType.S3,
+              params: {
+                ...cloudFrontMockData.params,
+                userIsConfirmed: true,
+                s3SourceType: S3SourceType.SAMEREGION,
+                cloudFrontObj: {
+                  name: "cloudfront-1",
+                  value: "cloudfront-1",
+                },
+                tmpFlowList: [
+                  {
+                    name: "kds-1",
+                    value: "kds-1",
+                  },
+                ],
+              },
+            }}
+            loadingBucket={false}
+          />
+        </MemoryRouter>
+      );
+    });
+  });
+
+  it("renders without errors diff region", async () => {
+    await (appSyncRequestQuery as any).mockResolvedValue({
+      data: {
+        getResourceLogConfigs: MockCloudWatchLogConfig,
+      },
+    });
+
+    await act(async () => {
+      renderWithProviders(
+        <MemoryRouter>
+          <SourceType
+            cloudFrontTask={{
+              ...cloudFrontMockData,
+              destinationType: DestinationType.S3,
+              params: {
+                ...cloudFrontMockData.params,
+                userIsConfirmed: true,
+                s3SourceType: S3SourceType.DIFFREGION,
+                cloudFrontObj: {
+                  name: "cloudfront-1",
+                  value: "cloudfront-1",
+                },
+                tmpFlowList: [
+                  {
+                    name: "kds-1",
+                    value: "kds-1",
+                  },
+                ],
+              },
+            }}
+            loadingBucket={false}
+          />
+        </MemoryRouter>
+      );
+    });
   });
 });

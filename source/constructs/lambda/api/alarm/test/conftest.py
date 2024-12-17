@@ -21,6 +21,7 @@ def default_environment_variables():
     os.environ["APP_PIPELINE_TABLE_NAME"] = "mocked-app-pipeline-table-name"
     os.environ["APP_LOG_INGESTION_TABLE_NAME"] = "mocked-app-ingestion-table-name"
     os.environ["METADATA_TABLE_NAME"] = "mocked-metadata-table-name"
+    os.environ["THROTTLE_LAMBDA_ARN"] = "THROTTLE_LAMBDA_ARN"
 
 
 def make_graphql_lambda_event(name, args):

@@ -20,8 +20,6 @@ logger = get_logger("app_log_ingestion.auto_scaling_group_config")
 
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
-
     action = event["info"]["fieldName"]
     args = event["arguments"]
 

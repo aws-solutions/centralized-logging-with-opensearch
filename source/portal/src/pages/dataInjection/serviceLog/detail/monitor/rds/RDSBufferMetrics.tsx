@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import React from "react";
-import { MetricName, PipelineType } from "API";
+import { LogEventQueueType, MetricName, PipelineType } from "API";
 import { ServiceMetricProps } from "../../Monitoring";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
 
@@ -24,7 +24,7 @@ const RDSBufferMetrics: React.FC<ServiceMetricProps> = (
 ) => {
   const { pipelineInfo, startDate, endDate, refreshCount, isLightEngine } =
     props;
-  const RDSBufferMetricsChartList = [
+  let RDSBufferMetricsChartList = [
     ...(isLightEngine
       ? [
           {
@@ -44,27 +44,55 @@ const RDSBufferMetrics: React.FC<ServiceMetricProps> = (
           },
         ]
       : []),
-    {
-      title: MetricName.SQSNumberOfMessagesSent,
-      graphTitle: MetricName.SQSNumberOfMessagesSent,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.SQSNumberOfMessagesDeleted,
-      graphTitle: MetricName.SQSNumberOfMessagesDeleted,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.SQSApproximateNumberOfMessagesVisible,
-      graphTitle: MetricName.SQSApproximateNumberOfMessagesVisible,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.SQSApproximateAgeOfOldestMessage,
-      graphTitle: MetricName.SQSApproximateAgeOfOldestMessage,
-      yUnit: "Seconds",
-    },
   ];
+  if (pipelineInfo?.logEventQueueType === LogEventQueueType.EventBridge) {
+    RDSBufferMetricsChartList = RDSBufferMetricsChartList.concat([
+      {
+        title: MetricName.EvtMatchedEvents,
+        graphTitle: MetricName.EvtMatchedEvents,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtInvocations,
+        graphTitle: MetricName.EvtInvocations,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtTriggeredRules,
+        graphTitle: MetricName.EvtTriggeredRules,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.EvtFailedInvocations,
+        graphTitle: MetricName.EvtFailedInvocations,
+        yUnit: "Count",
+      },
+    ]);
+  } else {
+    RDSBufferMetricsChartList = RDSBufferMetricsChartList.concat([
+      {
+        title: MetricName.SQSNumberOfMessagesSent,
+        graphTitle: MetricName.SQSNumberOfMessagesSent,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.SQSNumberOfMessagesDeleted,
+        graphTitle: MetricName.SQSNumberOfMessagesDeleted,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.SQSApproximateNumberOfMessagesVisible,
+        graphTitle: MetricName.SQSApproximateNumberOfMessagesVisible,
+        yUnit: "Count",
+      },
+      {
+        title: MetricName.SQSApproximateAgeOfOldestMessage,
+        graphTitle: MetricName.SQSApproximateAgeOfOldestMessage,
+        yUnit: "Seconds",
+      },
+    ]);
+  }
+
   return (
     <MonitorMetrics
       type={PipelineType.SERVICE}

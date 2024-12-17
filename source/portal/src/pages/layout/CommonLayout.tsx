@@ -19,7 +19,6 @@ import HelpPanel from "components/HelpPanel";
 import LoadingText from "components/LoadingText";
 import SideMenu from "components/SideMenu";
 import React, { ReactElement } from "react";
-import NotificationBar from "./NotificationBar";
 
 interface CommonLayoutProps {
   children: ReactElement | ReactElement[];
@@ -37,7 +36,6 @@ const CommonLayout: React.FC<CommonLayoutProps> = (
     <div className="lh-main-content">
       {!hideMenu && <SideMenu />}
       <div className="lh-container">
-        <NotificationBar />
         <div className="lh-content">
           <div className="service-log">
             {breadCrumbList && <Breadcrumb list={breadCrumbList} />}

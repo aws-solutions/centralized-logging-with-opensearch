@@ -13,9 +13,23 @@ from .sqs import SQSClient
 from .stepfunction import SFNClient
 from .events import EventsClient
 from .rds import RDSClient
+from .lambda_function import LambdaClient
+from .wafv2 import WAFV2Client
 
 
-__all__ = ['AthenaClient', 'DynamoDBUtil', 'GlueClient', 'IAMClient', 'S3Client', 
-           'SchedulerClient', 'SESClient', 'SNSClient', 'SQSClient', 'SFNClient', 
-           'EventsClient', 'RDSClient']
-
+__all__ = [
+    "AthenaClient",
+    "DynamoDBUtil",
+    "GlueClient",
+    "IAMClient",
+    "S3Client",
+    "SchedulerClient",
+    "SESClient",
+    "SNSClient",
+    "SQSClient",
+    "SFNClient",
+    "EventsClient",
+    "RDSClient",
+    "LambdaClient",
+    "WAFV2Client",
+]

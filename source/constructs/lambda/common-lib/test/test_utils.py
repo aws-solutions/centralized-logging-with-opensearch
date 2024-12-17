@@ -12,6 +12,7 @@ from commonlib.utils import (
     paginate,
     create_stack_name,
     exec_sfn_flow,
+    strtobool,
 )
 from commonlib.model import BufferParam
 from moto import mock_stepfunctions
@@ -160,11 +161,24 @@ def test_exec_sfn_flow():
 
 
 def test_get_kv_from_buffer_param():
-    assert "Value1" == get_kv_from_buffer_param("Key1", [
-        BufferParam(paramKey="Key1", paramValue="Value1"),
-        BufferParam(paramKey="Key2", paramValue="Value2"),
-    ])
-    assert "" == get_kv_from_buffer_param("Key99", [
-        BufferParam(paramKey="Key1", paramValue="Value1"),
-        BufferParam(paramKey="Key2", paramValue="Value2"),
-    ])
+    assert "Value1" == get_kv_from_buffer_param(
+        "Key1",
+        [
+            BufferParam(paramKey="Key1", paramValue="Value1"),
+            BufferParam(paramKey="Key2", paramValue="Value2"),
+        ],
+    )
+    assert "" == get_kv_from_buffer_param(
+        "Key99",
+        [
+            BufferParam(paramKey="Key1", paramValue="Value1"),
+            BufferParam(paramKey="Key2", paramValue="Value2"),
+        ],
+    )
+
+
+def test_strtobool():
+    assert strtobool("Y")
+    assert strtobool("true")
+    assert not strtobool("N")
+    assert not strtobool("FAlse")

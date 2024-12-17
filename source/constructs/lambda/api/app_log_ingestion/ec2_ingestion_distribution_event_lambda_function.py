@@ -49,8 +49,13 @@ class SSMSendCommandStatus:
 
 
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
-    if is_s3_event(event):
+    if is_eventbridge_event(event):
+        bucket = event["detail"]["bucket"]["name"]
+        key = event["detail"]["object"]["key"]
+        instance_id = key.split("/")[1]
+        logger.info(f"FluentBit config s3://{bucket}/{key} updated")
+        upload_flb_config(instance_id)
+    elif is_s3_event(event):
         process_s3_event(event)
     elif is_sns_event(event):
         process_sns_event(event)
@@ -64,6 +69,10 @@ def is_s3_event(event):
         and "body" in event["Records"][0]
         and "s3" in event["Records"][0]["body"]
     )
+
+
+def is_eventbridge_event(event: dict):
+    return event.get("detail")
 
 
 def process_s3_event(event: dict):

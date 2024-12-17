@@ -3,10 +3,12 @@
 
 import boto3  # type: ignore
 import json
+import random
 import logging
 import urllib.request
 import time
 from functools import partial, wraps
+
 
 s3 = boto3.client("s3")
 
@@ -18,18 +20,22 @@ CONFIGURATION_TYPES = [
     "LambdaFunctionConfigurations",
 ]
 
+class ConfigurationInconsistencyError(Exception):
+     pass
 
-def retry(func=None, retries=3, delays=5, backoff=2):
+
+def retry(func=None, retries=3, delays=5, max_delay=None, backoff=2):
     """Retry decorator."""
 
     if func is None:
-        return partial(retry, retries=retries, delays=delays, backoff=backoff)
+        return partial(retry, retries=retries, delays=delays, max_delay=max_delay, backoff=backoff)
 
     @wraps(func)
     def wrapper(*args, **kwargs):
         retry, delay = retries, delays
 
         while retry > 0:
+            time.sleep(random.uniform(0.0, 10.0))
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -39,6 +45,9 @@ def retry(func=None, retries=3, delays=5, backoff=2):
                 time.sleep(delay)
                 retry -= 1
                 delay *= backoff
+                
+                if max_delay is not None:
+                    delay = min(delay, max_delay)
 
         return func(*args, **kwargs)
 
@@ -49,21 +58,7 @@ def handler(event: dict, context):
     response_status = "SUCCESS"
     error_message = ""
     try:
-        props = event["ResourceProperties"]
-        bucket = props["BucketName"]
-        notification_configuration = props["NotificationConfiguration"]
-        request_type = event["RequestType"]
-        managed = props.get("Managed", "true").lower() == "true"
-        stack_id = event["StackId"]
-
-        if managed:
-            config = handle_managed(request_type, notification_configuration)
-        else:
-            config = handle_unmanaged(
-                bucket, stack_id, request_type, notification_configuration
-            )
-
-        put_bucket_notification_configuration(bucket, config)
+        put_bucket_notification(event=event)
     except Exception as e:
         logging.exception("Failed to put bucket notification configuration")
         response_status = "FAILED"
@@ -127,6 +122,22 @@ def handle_unmanaged(bucket, stack_id, request_type, notification_configuration)
 
     return notifications
 
+def find_notification_by_id(id, notification_configuration):
+    notifications = {}
+    for t in CONFIGURATION_TYPES:
+        notifications[t] = [
+            n
+            for n in notification_configuration.get(t, [])
+            if n.get("Id", "").startswith(f"{id}")
+        ]
+    
+    if EVENTBRIDGE_CONFIGURATION in notification_configuration:
+        notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[
+            EVENTBRIDGE_CONFIGURATION
+        ]
+        
+    return notifications
+
 
 def find_external_notifications(bucket, stack_id):
     existing_notifications = get_bucket_notification_configuration(bucket)
@@ -154,7 +165,32 @@ def get_bucket_notification_configuration(bucket):
     return s3.get_bucket_notification_configuration(Bucket=bucket)
 
 
-@retry(retries=5, delays=3, backoff=2)
+@retry(retries=20, delays=3, max_delay=10, backoff=2)
+def put_bucket_notification(event: dict):
+    props = event["ResourceProperties"]
+    bucket = props["BucketName"]
+    notification_configuration = props["NotificationConfiguration"]
+    request_type = event["RequestType"]
+    managed = props.get("Managed", "true").lower() == "true"
+    stack_id = event["StackId"]
+
+    if managed:
+        config = handle_managed(request_type, notification_configuration)
+    else:
+        config = handle_unmanaged(
+            bucket, stack_id, request_type, notification_configuration
+        )
+
+    put_bucket_notification_configuration(bucket, config)
+    
+    time.sleep(random.uniform(1.0, 3.0))
+    
+    updated_notification_configuration = s3.get_bucket_notification_configuration(Bucket=bucket)
+    for t in CONFIGURATION_TYPES:
+        if sorted([x.get("Id", "") for x in updated_notification_configuration.get(t, [])]) != sorted([x.get("Id", "") for x in config.get(t, [])]):
+            raise ConfigurationInconsistencyError(f"Notification configuration update is inconsistent.")
+
+
 def put_bucket_notification_configuration(bucket, notification_configuration):
     s3.put_bucket_notification_configuration(
         Bucket=bucket, NotificationConfiguration=notification_configuration

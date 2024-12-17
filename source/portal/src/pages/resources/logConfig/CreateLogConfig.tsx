@@ -33,7 +33,7 @@ const CreateLogConfig: React.FC = () => {
 
   return (
     <LogConfigComp
-      headerTitle={t("resource:config.name")}
+      headerTitle={t("resource:config.config")}
       breadCrumbList={breadCrumbList}
       pageType={PageType.New}
       logConfig={logConfig}

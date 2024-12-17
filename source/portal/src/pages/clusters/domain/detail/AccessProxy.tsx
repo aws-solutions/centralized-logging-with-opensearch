@@ -16,8 +16,6 @@ limitations under the License.
 import React, { useState } from "react";
 import { DomainDetails, StackStatus } from "API";
 import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
-import CopyText from "components/CopyText";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
@@ -33,6 +31,7 @@ import { appSyncRequestMutation } from "assets/js/request";
 import { deleteProxyForOpenSearch } from "graphql/mutations";
 import { useTranslation } from "react-i18next";
 import { RootState } from "reducer/reducers";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
 
 interface OverviewProps {
   domainInfo: DomainDetails | undefined | null;
@@ -61,19 +60,27 @@ const AccessProxy: React.FC<OverviewProps> = ({
       reloadDetailInfo();
     } catch (error) {
       setLoadingDelete(false);
-      console.error(error);
     }
   };
 
+  if (!domainInfo?.proxyInput?.vpc) {
+    return (
+      <HeaderPanel title={t("cluster:detail.proxy.name")}>
+        <div>N/A</div>
+      </HeaderPanel>
+    );
+  }
+
   return (
     <div>
-      <HeaderPanel
-        title={t("cluster:detail.proxy.name")}
+      <HeaderWithValueLabel
+        headerTitle={t("cluster:detail.proxy.name")}
         action={
           <div>
             {(domainInfo?.proxyStatus === StackStatus.ENABLED ||
               domainInfo?.proxyStatus === StackStatus.ERROR) && (
               <Button
+                data-testid="delete-proxy-button"
                 onClick={() => {
                   setOpenDeleteModal(true);
                 }}
@@ -83,91 +90,81 @@ const AccessProxy: React.FC<OverviewProps> = ({
             )}
           </div>
         }
-      >
-        {domainInfo?.proxyInput?.vpc ? (
-          <div className="flex value-label-span">
-            <div className="flex-1">
-              <ValueWithLabel label={t("cluster:detail.proxy.domain")}>
-                <CopyText
-                  text={defaultStr(domainInfo?.proxyInput?.customEndpoint)}
-                >
-                  {defaultStr(domainInfo?.proxyInput?.customEndpoint, "-")}
-                </CopyText>
-              </ValueWithLabel>
-              <ValueWithLabel label={t("cluster:detail.proxy.publicSubnets")}>
-                <div>
-                  {domainInfo.proxyInput?.vpc?.publicSubnetIds
-                    ?.split(",")
-                    .map((element) => {
-                      return element ? (
-                        <div key={element}>
-                          <ExtLink
-                            to={buildSubnetLink(
-                              amplifyConfig.aws_project_region,
-                              element
-                            )}
-                          >
-                            {element}
-                          </ExtLink>
-                        </div>
-                      ) : (
-                        ""
-                      );
-                    })}
-                </div>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("cluster:detail.proxy.lbDomain")}>
-                <CopyText text={defaultStr(domainInfo.proxyALB)}>
-                  {defaultStr(domainInfo.proxyALB, "-")}
-                </CopyText>
-              </ValueWithLabel>
-              <ValueWithLabel label={t("cluster:detail.proxy.ec2Key")}>
-                <CopyText text={defaultStr(domainInfo?.proxyInput?.keyName)}>
-                  {defaultStr(domainInfo?.proxyInput?.keyName, "-")}
-                </CopyText>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("cluster:detail.proxy.vpc")}>
-                <CopyText text={defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)}>
-                  <ExtLink
-                    to={buildVPCLink(
-                      amplifyConfig.aws_project_region,
-                      defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)
-                    )}
-                  >
-                    {defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)}
-                  </ExtLink>
-                </CopyText>
-              </ValueWithLabel>
-            </div>
-            <div className="flex-1 border-left-c">
-              <ValueWithLabel label={t("cluster:detail.proxy.publicSecurity")}>
-                <div>
-                  <CopyText
-                    text={defaultStr(
-                      domainInfo?.proxyInput?.vpc?.securityGroupId
-                    )}
-                  >
-                    <ExtLink
-                      to={buildSGLink(
-                        amplifyConfig.aws_project_region,
-                        defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)
-                      )}
-                    >
-                      {defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)}
-                    </ExtLink>
-                  </CopyText>
-                </div>
-              </ValueWithLabel>
-            </div>
-          </div>
-        ) : (
-          <div>N/A</div>
-        )}
-      </HeaderPanel>
+        numberOfColumns={4}
+        dataList={[
+          {
+            label: t("cluster:detail.proxy.domain"),
+            data: defaultStr(domainInfo?.proxyInput?.customEndpoint, "-"),
+          },
+          {
+            label: t("cluster:detail.proxy.lbDomain"),
+            data: defaultStr(domainInfo?.proxyALB, "-"),
+          },
+          {
+            label: t("cluster:detail.proxy.vpc"),
+            data: (
+              <ExtLink
+                to={buildVPCLink(
+                  amplifyConfig.aws_project_region,
+                  defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)
+                )}
+              >
+                {defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)}
+              </ExtLink>
+            ),
+          },
+          {
+            label: t("cluster:detail.proxy.publicSecurity"),
+            data: (
+              <ExtLink
+                to={buildSGLink(
+                  amplifyConfig.aws_project_region,
+                  defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)
+                )}
+              >
+                {defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)}
+              </ExtLink>
+            ),
+          },
+          {
+            label: t("cluster:detail.proxy.instanceType"),
+            data: defaultStr(domainInfo?.proxyInput?.proxyInstanceType, "-"),
+          },
+          {
+            label: t("cluster:detail.proxy.numberOfInstances"),
+            data: defaultStr(domainInfo?.proxyInput?.proxyInstanceNumber, "-"),
+          },
+          {
+            label: t("cluster:detail.proxy.ec2Key"),
+            data: defaultStr(domainInfo?.proxyInput?.keyName, "-"),
+          },
+          {
+            label: t("cluster:detail.proxy.publicSubnets"),
+            data: (
+              <div>
+                {domainInfo?.proxyInput?.vpc?.publicSubnetIds
+                  ?.split(",")
+                  .map((element) => {
+                    return element ? (
+                      <div key={element}>
+                        <ExtLink
+                          to={buildSubnetLink(
+                            amplifyConfig.aws_project_region,
+                            element
+                          )}
+                        >
+                          {element}
+                        </ExtLink>
+                      </div>
+                    ) : (
+                      ""
+                    );
+                  })}
+              </div>
+            ),
+          },
+        ]}
+      />
 
       <Modal
         title={t("cluster:detail.proxy.remove")}
@@ -179,6 +176,7 @@ const AccessProxy: React.FC<OverviewProps> = ({
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               disabled={loadingDelete}
               btnType="text"
               onClick={() => {
@@ -188,6 +186,7 @@ const AccessProxy: React.FC<OverviewProps> = ({
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

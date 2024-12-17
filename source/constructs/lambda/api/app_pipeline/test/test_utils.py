@@ -20,6 +20,8 @@ from commonlib.model import (
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+REGEX = "(?<time>\\d{4}-\\d{2}-\\d{2}\\s*\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s*(?<level>\\S+)\\s*\\[(?<thread>\\S+)\\]\\s*(?<logger>\\S+)\\s*:\\s*(?<message>[\\s\\S]+)"
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%L"
 TEST_JSON_SCHEMA = {
     "type": "object",
     "format": "",
@@ -305,7 +307,6 @@ def test_make_index_template_json_schema():
 def test_make_index_template():
     from util.utils import make_index_template
 
-
     config = LogConfig(
         version=0,
         name="test-config",
@@ -346,13 +347,39 @@ def test_make_index_template():
         name="test-config",
         logType=LogTypeEnum.SINGLELINE_TEXT,
         regex="(?<log>.*)",
+        regexFieldSpecs=[
+            RegularSpec(key="name", type="string"),
+        ],
+    )
+    assert {
+        "index_patterns": ["app-singleline-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "app-singleline"}
+                    },
+                }
+            },
+            "mappings": {"properties": {"name": {"type": "string"}}},
+        },
+    } == make_index_template(config, index_alias="app-singleline")
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex="(?<log>.*)",
         timeKey="time",
         regexFieldSpecs=[
             RegularSpec(key="name", type="string"),
             RegularSpec(key="time", type="date", format="yyyy-MM-dd"),
         ],
     )
-
     assert {
         "index_patterns": ["app-singleline-*"],
         "template": {
@@ -535,6 +562,73 @@ def test_make_index_template():
         codec="default",
         refresh_interval="10s",
     )
+
+    config = LogConfig(
+        version=0,
+        name="test-nginx-config",
+        logType=LogTypeEnum.NGINX,
+        jsonSchema={
+            "type": "object",
+            "properties": {
+                "remote_addr": {"type": "ip"},
+                "remote_user": {"type": "text"},
+                "time_local": {
+                    "type": "date",
+                    "timeKey": True,
+                    "format": "%d/%b/%Y:%H:%M:%S %z",
+                },
+                "request_method": {"type": "keyword"},
+                "request_uri": {"type": "text"},
+                "status": {"type": "integer"},
+                "body_bytes_sent": {"type": "long"},
+            },
+        },
+        regex='(?<remote_addr>\S+)\s+-\s+(?<remote_user>\S+)\s+\[(?<time_local>\d+/\S+/\d+:\d+:\d+:\d+\s+\S+)\]\s+"(?<request_method>\S+)\s+(?<request_uri>\S+)\s+\S+"\s+(?<status>\S+)\s+(?<body_bytes_sent>\S+).*',
+        regexFieldSpecs=[
+            RegularSpec(key="remote_addr", type="ip"),
+            RegularSpec(key="remote_user", type="text"),
+            RegularSpec(key="time_local", type="date", format="%d/%b/%Y:%H:%M:%S %z"),
+            RegularSpec(key="request_method", type="keyword"),
+            RegularSpec(key="request_uri", type="text"),
+            RegularSpec(key="status", type="integer"),
+            RegularSpec(key="body_bytes_sent", type="long"),
+        ],
+        timeKey="time_local",
+    )
+    assert {
+        "index_patterns": ["app-nginx-json-schema-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {
+                            "rollover_alias": "app-nginx-json-schema"
+                        }
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "@timestamp": {"type": "alias", "path": "time_local"},
+                    "remote_addr": {"type": "ip"},
+                    "remote_user": {"type": "text"},
+                    "time_local": {
+                        "type": "date",
+                    },
+                    "request_method": {
+                        "type": "keyword",
+                    },
+                    "request_uri": {"type": "text"},
+                    "status": {"type": "integer"},
+                    "body_bytes_sent": {"type": "long"},
+                },
+            },
+        },
+    } == make_index_template(config, index_alias="app-nginx-json-schema")
 
 
 def test_strptime_to_joda():

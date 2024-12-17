@@ -85,7 +85,6 @@ def get_resource_from_arn(arn):
         for i, attr in enumerate(fields):
             # print(f'{attr} = {result.group(i+1)}')
             resource[attr] = result.group(i + 1)
-        print(resource)
         return resource.get("resource-id") or resource["resource-type"]
 
     return ""
@@ -134,7 +133,7 @@ def set_kv_to_buffer_param(
     key: str, value: str, buffer_param: List[BufferParam]
 ) -> List[BufferParam]:
     has_key = False
-    
+
     for p in buffer_param:
         if p.paramKey == key:
             p.paramValue = value

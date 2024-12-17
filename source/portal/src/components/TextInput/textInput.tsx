@@ -16,7 +16,7 @@ limitations under the License.
 import React from "react";
 import SearchIcon from "@material-ui/icons/Search";
 import classNames from "classnames";
-type DefautlProps = React.HTMLAttributes<HTMLInputElement>;
+type DefaultProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 type TextInputProp = {
   type?: string;
@@ -32,8 +32,8 @@ type TextInputProp = {
 
 const POSITIVE_NUMBER = /^(0|[1-9]\d*)(\.\d+)?$/;
 
-const TextInput: React.FC<TextInputProp & DefautlProps> = (
-  props: TextInputProp & DefautlProps
+const TextInput: React.FC<TextInputProp & DefaultProps> = (
+  props: TextInputProp & DefaultProps
 ) => {
   const {
     type,

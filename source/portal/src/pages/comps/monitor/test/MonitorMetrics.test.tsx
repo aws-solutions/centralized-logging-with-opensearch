@@ -19,7 +19,7 @@ import MonitorMetrics from "../MonitorMetrics";
 import { renderWithProviders } from "test-utils";
 import { MemoryRouter } from "react-router-dom";
 import { AppStoreMockData } from "test/store.mock";
-import { PipelineType } from "API";
+import { MetricName, PipelineType } from "API";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => {
@@ -40,14 +40,25 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
+jest.mock("react-apexcharts", () => ({
+  __esModule: true,
+  default: () => <div />,
+}));
+
 describe("MonitorMetrics", () => {
   it("renders without errors", () => {
     renderWithProviders(
       <MemoryRouter>
         <MonitorMetrics
           type={PipelineType.APP}
-          taskId={""}
-          metrics={[]}
+          taskId={"MetricName.FluentBitOutputProcRecords"}
+          metrics={[
+            {
+              title: MetricName.FluentBitOutputProcRecords,
+              graphTitle: MetricName.FluentBitOutputProcRecords,
+              yUnit: "Count",
+            },
+          ]}
           startTime={0}
           endTime={0}
           refreshCount={0}

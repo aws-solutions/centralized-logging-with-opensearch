@@ -5,15 +5,17 @@ import boto3
 import json
 import gzip
 import base64
-import urllib.parse
 
 from fnmatch import fnmatchcase
-from typing import List, Optional
+from typing import List, Optional, Union
 from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from commonlib import DynamoDBUtil, AWSConnection, ErrorCode, APIException
 from commonlib.model import (
+    DomainImportStatusEnum,
     EC2Instances,
     OpenSearchDomain,
+    ProxyInput,
+    Resource,
     now_iso8601,
     LogSource,
     LogConfig,
@@ -29,6 +31,8 @@ from commonlib.model import (
     ExecutionStatus,
     LogStructure,
     LogTypeEnum,
+    DomainImportStatusEnum,
+    LogSourceTypeEnum,
 )
 from commonlib.utils import get_kv_from_buffer_param
 
@@ -53,6 +57,61 @@ class OpenSearchDomainDao:
         self.table_name = table_name
         self._ddb_table = DynamoDBUtil(self.table_name)
 
+    def get_domain_by_id(self, id):
+        item = self._ddb_table.get_item({"id": id}, raise_if_not_found=True)
+        return OpenSearchDomain.parse_obj(item)
+
+    def get_domain_by_name(self, domain_name: str) -> Union[OpenSearchDomain, None]:
+        filter_expression = Attr("status").ne("INACTIVE") & Attr("domainName").eq(
+            domain_name
+        )
+        items = self._ddb_table.list_items(filter_expression=filter_expression)
+        if items:
+            return OpenSearchDomain.parse_obj(items[0])
+        return None
+
+    def update_status(self, id: str, status: DomainImportStatusEnum):
+        self._ddb_table.update_item(
+            {"id": id}, {"status": status, "updatedAt": now_iso8601()}
+        )
+
+    def update_resources_status(
+        self,
+        id: str,
+        status: DomainImportStatusEnum,
+        resources: List[Resource],
+        error: str = "",
+    ):
+        self._ddb_table.update_item(
+            {"id": id},
+            {
+                "status": status,
+                "error": error,
+                "resources": [each.dict() for each in resources],
+                "updatedAt": now_iso8601(),
+            },
+        )
+
+    def update_proxy(
+        self, id: str, proxy_status: str, proxy_input: Optional[ProxyInput]
+    ):
+        self._ddb_table.update_item(
+            {"id": id},
+            {
+                "proxyStatus": proxy_status,
+                "proxyInput": proxy_input.dict() if proxy_input else None,
+            },
+        )
+
+    def update_alarm(self, id: str, alarm_status: str, alarm_input: dict):
+        self._ddb_table.update_item(
+            {"id": id},
+            {
+                "alarmStatus": alarm_status,
+                "alarmInput": alarm_input if alarm_input else None,
+            },
+        )
+
     def list_domains(
         self,
         filter_expression: Optional[ConditionBase] = None,
@@ -68,6 +127,10 @@ class OpenSearchDomainDao:
             {"id": id_},
             {"masterRoleArn": master_role_arn},
         )
+
+    def save(self, domain: OpenSearchDomain) -> str:
+        self._ddb_table.put_item(domain.dict())
+        return domain.id
 
 
 class LogConfigDao:
@@ -89,6 +152,10 @@ class LogConfigDao:
         else:
             item = self._ddb_table.query_items({"id": id}, limit=1)[0]
         return LogConfig.parse_obj(item)
+
+    def list_log_config_versions(self, id: str) -> list:
+        item = self._ddb_table.query_items({"id": id})
+        return sorted(item, key=lambda x: x["version"], reverse=True)
 
     def get_log_config_by_config_name(self, config_name: str) -> List[LogConfig]:
         filter_expression = Attr("status").ne("INACTIVE") & Attr("name").eq(config_name)
@@ -194,7 +261,7 @@ def s3_notification_prefix(s: str):
     placeholder_sign_index = min(
         filter(lambda x: x >= 0, (len(s), s.find("%"), s.find("$")))
     )
-    return urllib.parse.quote(s[0:placeholder_sign_index])
+    return s[0:placeholder_sign_index]
 
 
 def _get_buffer_params(buffer_type, buffer_params: List[BufferParam]):
@@ -238,6 +305,12 @@ def _get_buffer_params(buffer_type, buffer_params: List[BufferParam]):
 class AppPipelineDao:
     def __init__(self, table_name) -> None:
         self._ddb_table = DynamoDBUtil(table_name)
+
+    def find_id_begins_with(self, id_prefix: str):
+        items = self._ddb_table.list_items(
+            filter_expression=Attr("pipelineId").begins_with(id_prefix)
+        )
+        return [AppPipeline.parse_obj(each) for each in items]
 
     def get_stack_name(self, app_pipeline: AppPipeline):
         if (
@@ -395,14 +468,16 @@ class AppPipelineDao:
         else:
             return app_pipeline.bufferParams
 
-    def validate_duplicated_index_prefix(self, app_pipeline: AppPipeline, force: bool):
+    def validate_duplicated_index_prefix(
+        self, index_prefix: str, domain_name: str, force: bool
+    ):
         pipelines = self.list_app_pipelines(
             Attr("status").is_in(["INACTIVE", "ACTIVE", "CREATING", "DELETING"])
-            & Attr("aosParams.indexPrefix").eq(app_pipeline.indexPrefix)
-            & Attr("aosParams.domainName").eq(app_pipeline.aosParams.domainName)
+            & Attr("aosParams.indexPrefix").eq(index_prefix)
+            & Attr("aosParams.domainName").eq(domain_name)
         )
         if len(pipelines) > 0:
-            msg = f"Duplicate index prefix: {app_pipeline.indexPrefix}"
+            msg = f"Duplicate index prefix: {index_prefix}"
             inactive_pipelines = list(
                 filter(lambda x: x.status == StatusEnum.INACTIVE, pipelines)
             )
@@ -415,10 +490,9 @@ class AppPipelineDao:
                 if not force:
                     raise APIException(ErrorCode.DUPLICATED_INDEX_PREFIX, msg)
 
-    def validate_index_prefix_overlap(self, app_pipeline: AppPipeline):
-        index_prefix = app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix
+    def validate_index_prefix_overlap(self, index_prefix: str, domain_name: str):
         pipelines = self.list_app_pipelines(
-            Attr("aosParams.domainName").eq(app_pipeline.aosParams.domainName)
+            Attr("aosParams.domainName").eq(domain_name)
             & Attr("status").is_in(["ACTIVE", "INACTIVE", "CREATING", "DELETING"])
         )
 
@@ -437,9 +511,9 @@ class AppPipelineDao:
                 else:
                     raise APIException(ErrorCode.OVERLAP_INDEX_PREFIX, msg)
 
-    def validate_buffer_params(self, app_pipeline: AppPipeline):
-        required_params = self._get_required_params(app_pipeline.bufferType)
-        buffer_names = [param.paramKey for param in app_pipeline.bufferParams]
+    def validate_buffer_params(self, buffer_type: str, buffer_params: list):
+        required_params = self._get_required_params(buffer_type)
+        buffer_names = [param.paramKey for param in buffer_params]
         missing_params = [
             param for param in required_params if param not in buffer_names
         ]
@@ -448,7 +522,7 @@ class AppPipelineDao:
             raise APIException(
                 ErrorCode.INVALID_BUFFER_PARAMETERS,
                 "Missing buffer parameters %s for buffer type %s"
-                % (",".join(missing_params), app_pipeline.bufferType),
+                % (",".join(missing_params), buffer_type),
             )
 
     def _get_required_params(self, buffer_type: str) -> list:
@@ -477,9 +551,19 @@ class AppPipelineDao:
         return m.get(buffer_type, [])
 
     def validate(self, app_pipeline: AppPipeline, force: bool = False):
-        self.validate_duplicated_index_prefix(app_pipeline, force)
-        self.validate_index_prefix_overlap(app_pipeline)
-        self.validate_buffer_params(app_pipeline)
+        self.validate_duplicated_index_prefix(
+            index_prefix=app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix,
+            domain_name=app_pipeline.aosParams.domainName,
+            force=force,
+        )
+        self.validate_index_prefix_overlap(
+            index_prefix=app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix,
+            domain_name=app_pipeline.aosParams.domainName,
+        )
+        self.validate_buffer_params(
+            buffer_type=app_pipeline.bufferType,
+            buffer_params=app_pipeline.bufferParams,
+        )
 
     def save(self, app_pipeline: AppPipeline) -> AppPipeline:
         self._ddb_table.put_item(app_pipeline.dict())
@@ -490,6 +574,13 @@ class AppPipelineDao:
             attributes["updatedAt"] = now_iso8601()
 
         self._ddb_table.update_item({"pipelineId": id}, attributes)
+
+    def update_log_processor_last_concurrency(
+        self, id: str, concurrency: Optional[int] = None
+    ):
+        self._ddb_table.update_item(
+            {"pipelineId": id}, {"logProcessorLastConcurrency": concurrency}
+        )
 
     def get_app_pipeline(self, id: str):
         item = self._ddb_table.get_item({"pipelineId": id}, raise_if_not_found=True)
@@ -614,6 +705,11 @@ class LogSourceDao:
 
         items = self._ddb_table.list_items(filter_expression)
         return [self._enrich_log_source(LogSource.parse_obj(each)) for each in items]
+    
+    def get_log_source_by_name(self, name: str, type: LogSourceTypeEnum, account_id: str) -> List[LogSource]:
+        filter_expression = Attr("status").ne("INACTIVE") & Attr("type").eq(type) & Attr("accountId").eq(account_id)
+        items = self.list_log_sources(filter_expression=filter_expression)
+        return [item for item in items if item.name == name]
 
 
 class PipelineAlarmDao:
@@ -897,6 +993,19 @@ class SvcPipelineDao:
     def __init__(self, table_name) -> None:
         self._ddb_table = DynamoDBUtil(table_name)
 
+    def find_id_begins_with(self, id_prefix: str):
+        items = self._ddb_table.list_items(
+            filter_expression=Attr("id").begins_with(id_prefix)
+        )
+        return [SvcPipeline.parse_obj(each) for each in items]
+
+    def update_log_processor_last_concurrency(
+        self, id: str, concurrency: Optional[int] = None
+    ):
+        self._ddb_table.update_item(
+            {"id": id}, {"logProcessorLastConcurrency": concurrency}
+        )
+
     def get_light_engine_stack_parameters(
         self, service_pipeline: SvcPipeline, grafana=None
     ):
@@ -920,9 +1029,9 @@ class SvcPipelineDao:
             params["grafanaToken"] = grafana["token"]
 
         if service_pipeline.type.lower() in ("elb", "cloudfront"):
-            params[
-                "enrichmentPlugins"
-            ] = service_pipeline.lightEngineParams.enrichmentPlugins
+            params["enrichmentPlugins"] = (
+                service_pipeline.lightEngineParams.enrichmentPlugins
+            )
         return _create_stack_params(params)
 
     def save(self, service_pipeline: SvcPipeline) -> SvcPipeline:

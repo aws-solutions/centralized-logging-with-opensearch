@@ -46,7 +46,6 @@ const InstanceGroupList: React.FC = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [curInstanceGroup, setCurInstanceGroup] = useState<LogSource>();
   const [selectedInstanceGroup, setSelectedInstanceGroup] = useState<any[]>([]);
-  const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [instanceGroupList, setInstanceGroupList] = useState<LogSource[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -105,13 +104,6 @@ const InstanceGroupList: React.FC = () => {
     }
   };
 
-  // Click View Detail Button Redirect to detail page
-  const clickToReviewDetail = () => {
-    navigate(
-      `/resources/instance-group/detail/${selectedInstanceGroup[0]?.sourceId}`
-    );
-  };
-
   // Get instance group list when page rendered.
   useEffect(() => {
     getInstanceGroupList();
@@ -119,11 +111,6 @@ const InstanceGroupList: React.FC = () => {
 
   // Disable delete button and view detail button when no row selected.
   useEffect(() => {
-    if (selectedInstanceGroup.length === 1) {
-      setDisabledDetail(false);
-    } else {
-      setDisabledDetail(true);
-    }
     if (selectedInstanceGroup.length > 0) {
       setDisabledDelete(false);
     } else {
@@ -159,12 +146,19 @@ const InstanceGroupList: React.FC = () => {
               cell: (e: LogSource) => renderGroupName(e),
             },
             {
+              id: "Account",
+              header: t("resource:group.list.account"),
+              cell: (e: LogSource) => {
+                return e.accountId ?? "-";
+              },
+            },
+            {
               id: "Type",
               header: t("resource:group.list.type"),
               cell: (e: LogSource) => {
                 return e.ec2?.groupType === EC2GroupType.ASG
-                  ? "EC2/Auto Scaling Group"
-                  : e.ec2?.groupType;
+                  ? t("resource:group.asg")
+                  : t("resource:group.manual");
               },
             },
             {
@@ -187,6 +181,7 @@ const InstanceGroupList: React.FC = () => {
           actions={
             <div>
               <Button
+                data-testid="refresh-button"
                 btnType="icon"
                 disabled={loadingData}
                 onClick={() => {
@@ -200,14 +195,7 @@ const InstanceGroupList: React.FC = () => {
                 <ButtonRefresh loading={loadingData} />
               </Button>
               <Button
-                disabled={disabledDetail}
-                onClick={() => {
-                  clickToReviewDetail();
-                }}
-              >
-                {t("button.viewDetail")}
-              </Button>
-              <Button
+                data-testid="delete-button"
                 disabled={disabledDelete}
                 onClick={() => {
                   removeInstanceGroup();
@@ -216,6 +204,7 @@ const InstanceGroupList: React.FC = () => {
                 {t("button.delete")}
               </Button>
               <Button
+                data-testid="create-button"
                 btnType="primary"
                 onClick={() => {
                   navigate("/resources/instance-group/create");
@@ -245,6 +234,7 @@ const InstanceGroupList: React.FC = () => {
         actions={
           <div className="button-action no-pb text-right">
             <Button
+              data-testid="cancel-delete-button"
               btnType="text"
               disabled={loadingDelete}
               onClick={() => {
@@ -254,6 +244,7 @@ const InstanceGroupList: React.FC = () => {
               {t("button.cancel")}
             </Button>
             <Button
+              data-testid="confirm-delete-button"
               loading={loadingDelete}
               btnType="primary"
               onClick={() => {

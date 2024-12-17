@@ -20,6 +20,7 @@ import LoadingText from "components/LoadingText";
 import HighlightOffIcon from "@material-ui/icons/HighlightOff";
 import { useTranslation } from "react-i18next";
 import { StatusType } from "components/Status/Status";
+import { defaultStr } from "assets/js/utils";
 
 export interface OptionType {
   name: string;
@@ -91,17 +92,15 @@ const autoComplete: React.FC<AutoCompleteMenuProp> = (
         getOptionLabel={(option) => option.name}
         getOptionDisabled={(option) => option.status === StatusType.Deleted}
         renderOption={(option) => (
-          <React.Fragment>
-            <div className="flex flex-1 space-between">
-              <span>{option.name}</span>
-              {hasStatus && <ItemStatus status={option.status} />}
-            </div>
-          </React.Fragment>
+          <div role="none" className="flex flex-1 space-between">
+            <span>{option.name}</span>
+            {hasStatus && <ItemStatus status={option.status} />}
+          </div>
         )}
         renderInput={(params) => (
           <div ref={params.InputProps.ref}>
             <input
-              placeholder={placeholder || ""}
+              placeholder={defaultStr(placeholder)}
               type="search"
               autoComplete="off"
               {...params.inputProps}

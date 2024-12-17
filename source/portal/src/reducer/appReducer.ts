@@ -69,6 +69,8 @@ export enum InfoBarTypes {
   S3_PREFIX_FILTER = "S3_PREFIX_FILTER",
   PIPELINE_ALARM = "PIPELINE_ALARM",
   OSI_PIPELINE = "OSI_PIPELINE",
+  APP_PIPELINE_IMPORT = "APP_PIPELINE_IMPORT",
+  NUMBER_OF_SHARDS = "NUMBER_OF_SHARDS",
 }
 
 export const InfoBarTitleMap: any = {
@@ -108,6 +110,8 @@ export const InfoBarTitleMap: any = {
   PIPELINE_ALARM: "info:pipelineAlarm.name",
   OSI_PIPELINE: "info:osi.name",
   BUFFER_LAYER: "info:bufferLayer.name",
+  APP_PIPELINE_IMPORT: "info:appPipelineImport.name",
+  NUMBER_OF_SHARDS: "info:numberOfShards.name",
 };
 
 export interface AppStateProps {
