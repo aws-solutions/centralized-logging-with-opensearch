@@ -30,6 +30,7 @@ stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
 sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
 account_helper = LinkAccountHelper(sub_account_link_table_name)
+GLOBAL_IDENTIFIER = ":global/"
 
 
 def lambda_handler(event, _):
@@ -1132,12 +1133,12 @@ class WAF(Resource):
 
     def _get_default_prefix(self, acl_arn):
         web_acl_name = re.search("/webacl/([^/]*)", acl_arn).group(1)
-        region = "cloudfront" if ":global/" in acl_arn else self._region
+        region = "cloudfront" if GLOBAL_IDENTIFIER in acl_arn else self._region
         return f"AWSLogs/{self._account_id}/WAFLogs/{region}/{web_acl_name}/"
 
     @staticmethod
     def _get_scope(acl_arn):
-        if ":global/" in acl_arn:
+        if GLOBAL_IDENTIFIER in acl_arn:
             return "CLOUDFRONT"
         return "REGIONAL"
 
@@ -1535,7 +1536,7 @@ class WAFSampled(WAF):
 
     def _get_default_prefix(self, acl_arn):
         web_acl_name = re.search("/webacl/([^/]*)", acl_arn).group(1)
-        region = "cloudfront" if ":global/" in acl_arn else self._region
+        region = "cloudfront" if GLOBAL_IDENTIFIER in acl_arn else self._region
         return f"AWSLogs/{self._account_id}/WAFSamplingLogs/{region}/{web_acl_name}/"
 
     def get_resource_log_config(self, acl_arn):

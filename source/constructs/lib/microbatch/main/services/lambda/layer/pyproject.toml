@@ -1,0 +1,40 @@
+[project]
+name = "layer"
+description = "Lambda layers"
+requires-python = ">=3.10,<4.0.0"
+dependencies = [
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.boto3.dependencies]
+boto3 = "^1.36.1"
+botocore = "^1.36.1"
+s3transfer = "^0.11.1"
+
+[tool.poetry.group.enrichment.dependencies]
+user-agents = "^2.2.0"
+maxminddb = "^2.6.3"
+
+[tool.poetry.group.pyarrow.dependencies]
+pyarrow = "^19.0.0"
+numpy = "^2.2.1"
+
+[tool.poetry.group.utils.dependencies]
+binaryornot = "^0.4.4"
+certifi = "^2024.12.14"
+chardet = "^5.2.0"
+charset-normalizer = "^3.4.1"
+idna = "^3.10"
+prettytable = "^3.12.0"
+requests = "^2.32.3"
+urllib3 = "~1.26.20"
+wcwidth = "^0.2.13"
+cachetools = "^5.5.0"
+aws-lambda-powertools = "^3.4.1"
+

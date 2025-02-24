@@ -1,0 +1,26 @@
+[project]
+name = "pipeline-ingestion-flow"
+description = "pipeline ingestion flow lambda"
+requires-python = ">=3.10,<4.0.0"
+dependencies = [
+    "jinja2 (>=3.1.5,<4.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+moto = "~4.2.13"
+boto3 = "^1.36.1"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+docker = "^7.1.0"
+openapi-spec-validator = "^0.7.1"
+jsonschema = "4.19.0"
+jinja2 = "^3.1.5"
+pytest-mock = "^3.14.0"
+requests-mock = "^1.12.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,27 +1,27 @@
-FROM public.ecr.aws/lambda/python:3.11.2024.11.22.15 AS builder
+FROM public.ecr.aws/lambda/python:3.12.2025.01.24.11 AS builder
 
 WORKDIR /build
 
-COPY common-lib .
+COPY common-lib ./common-lib
+COPY pyproject.toml poetry.lock ./
 
 RUN python -m venv .venv && \
     source .venv/bin/activate && \
     pip install --upgrade build && \
-    pip install --upgrade pip && \
-    pip install setuptools==70.0.0 && \
-    python3 -m build -s
+    pip install poetry==2.0.1 && \
+    poetry self add poetry-plugin-export && \
+    poetry export --format requirements.txt --output requirements.txt --without-hashes --without dev && \
+    cd common-lib && \
+    poetry build
 
-
-FROM public.ecr.aws/lambda/python:3.11.2024.11.22.15
+FROM public.ecr.aws/lambda/python:3.12.2025.01.24.11
 
 WORKDIR /ws
 
-COPY requirements.txt .
-COPY --from=builder /build/dist/commonlib-0.1.0.tar.gz .
+COPY --from=builder /build/common-lib/dist/commonlib-0.1.0.tar.gz .
+COPY --from=builder /build/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --upgrade pip && \
-    pip install setuptools==70.0.0 && \
     pip install --no-cache-dir commonlib-0.1.0.tar.gz
 
 COPY . .

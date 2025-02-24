@@ -521,7 +521,6 @@ class _HotState(_State):
         super().__init__(ism, age)
         action = {
             "rollover": {},
-            "timeout": "24h",
             "retry": {"count": 5, "delay": "1h"},
         }
         if self._ism.rollover_size:
@@ -548,7 +547,6 @@ class _WarmState(_State):
         self.actions = [
             {
                 "warm_migration": {},
-                "timeout": "24h",
                 "retry": {"count": 5, "delay": "1h"},
             }
         ]

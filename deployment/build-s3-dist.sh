@@ -73,6 +73,15 @@ do_cmd()
     fi
 }
 
+if command -v poetry >/dev/null 2>&1; then
+    export POETRY_COMMAND="poetry"
+elif [ -n "$POETRY_HOME" ] && [ -x "$POETRY_HOME/bin/poetry" ]; then
+    export POETRY_COMMAND="$POETRY_HOME/bin/poetry"
+else
+    echo "Poetry is not available. Aborting script." >&2
+    exit 1
+fi
+
 sedi()
 {
     # cross-platform for sed -i
@@ -284,9 +293,37 @@ t do_cmd npm run build       # build javascript from typescript to validate the 
 
 
 echo "------------------------------------------------------------------------------"
-echo "${bold}[Create] Templates${normal}"
+echo "[Install] Install dependencies for Lambda functions & layers"
 echo "------------------------------------------------------------------------------"
 
+do_cmd cd $source_dir/constructs/lib/microbatch/main/services/lambda/layer
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-boto3.txt --without-hashes --only boto3
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-pyarrow.txt --without-hashes --only pyarrow
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-utils.txt --without-hashes --only utils
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-enrichment.txt --without-hashes --only enrichment
+
+lambda_paths=(
+    "common-lib"
+    "api/app_log_ingestion"
+    "api/app_pipeline"
+    "api/cluster"
+    "api/log_source"
+    "plugin/standard"
+    "api/pipeline_ingestion_flow"
+)
+
+base_lambda_dir="$source_dir/constructs/lambda"
+for path in "${lambda_paths[@]}"; do
+    full_path="$base_lambda_dir/$path"
+    do_cmd cd "$full_path"
+    "$POETRY_COMMAND" export --format requirements.txt --output requirements.txt --without-hashes --without dev
+done
+
+
+echo "------------------------------------------------------------------------------"
+echo "${bold}[Create] Templates${normal}"
+echo "------------------------------------------------------------------------------"
+do_cmd cd $source_dir/constructs
 if fn_exists create_template_${template_format}; then
     t create_template_${template_format}
 else
@@ -375,3 +412,18 @@ cd $template_dir
 # build ecr
 echo "Run s3_list_objects_dir/build.sh"
 t do_cmd $s3_list_objects_dir/build.sh
+
+# cleanup requirement.txt files 
+paths=(
+    "$source_dir/constructs/lib/microbatch/main/services/lambda/layer"
+    "$source_dir/constructs/lambda/common-lib"
+    "$source_dir/constructs/lambda/api/app_log_ingestion"
+    "$source_dir/constructs/lambda/api/app_pipeline"
+    "$source_dir/constructs/lambda/api/cluster"
+    "$source_dir/constructs/lambda/api/log_source"
+    "$source_dir/constructs/lambda/plugin/standard"
+    "$source_dir/constructs/lambda/api/pipeline_ingestion_flow"
+)
+for path in "${paths[@]}"; do
+    rm $path/requirements*.txt
+done

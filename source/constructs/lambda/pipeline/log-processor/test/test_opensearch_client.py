@@ -97,7 +97,6 @@ def hot_only_policy():
         "actions": [
             {
                 "rollover": {},
-                "timeout": "24h",
                 "retry": {"count": 5, "delay": "1h"},
             }
         ],
@@ -121,7 +120,6 @@ def hot_to_warm_policy():
         "actions": [
             {
                 "rollover": {},
-                "timeout": "24h",
                 "retry": {"count": 5, "delay": "1h"},
             }
         ],
@@ -139,7 +137,6 @@ def rollover_policy():
                     "min_primary_shard_size": "300gb",
                     "min_index_age": "12h",
                 },
-                "timeout": "24h",
                 "retry": {"count": 5, "delay": "1h"},
             }
         ],

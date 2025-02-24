@@ -1,8 +1,0 @@
-boto3
-moto<=4.2.13
-pytest
-pytest-cov
-pytest-mock
-requests-mock
-
-requests_aws4auth

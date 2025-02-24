@@ -1,0 +1,22 @@
+[project]
+name = "custom-resource"
+description = "Custom resource lambda"
+requires-python = ">=3.10"
+dependencies = [
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+boto3 = "^1.36.1"
+moto = "~4.2.13"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+requests-mock = "^1.12.1"
+

@@ -14,23 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
 import * as firehose from '@aws-cdk/aws-kinesisfirehose-alpha';
 import { S3Bucket } from '@aws-cdk/aws-kinesisfirehose-destinations-alpha';
 import {
   Aws,
-  CfnResource,
   CfnCondition,
-  Fn,
-  Size,
+  CfnOutput,
+  CfnResource,
   CustomResource,
   Duration,
+  Fn,
+  Size,
   custom_resources as cr,
   aws_iam as iam,
-  aws_s3 as s3,
   aws_lambda as lambda,
-  CfnOutput,
+  aws_s3 as s3,
 } from 'aws-cdk-lib';
+import * as path from 'path';
 
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';

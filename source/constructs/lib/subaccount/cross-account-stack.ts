@@ -14,24 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import {
+  Aspects,
   Aws,
-  CfnResource,
-  Stack,
-  StackProps,
+  CfnCondition,
   CfnMapping,
   CfnOutput,
-  CfnCondition,
   CfnParameter,
+  CfnResource,
   Duration,
-  RemovalPolicy,
   Fn,
   aws_iam as iam,
-  aws_s3 as s3,
   aws_kms as kms,
-  Aspects,
   Lazy,
+  RemovalPolicy,
+  aws_s3 as s3,
+  Stack,
+  StackProps,
 } from 'aws-cdk-lib';
-import { Rule, EventBus } from 'aws-cdk-lib/aws-events';
+import { EventBus, Rule } from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import { Effect } from 'aws-cdk-lib/aws-iam';
 import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
@@ -96,7 +96,7 @@ export class CrossAccount extends Stack {
 
     // Create a default logging bucket
     let loggingBucket: s3.Bucket;
-    loggingBucket = new s3.Bucket(this, `${stackPrefix}LoggingBucket`, {
+    loggingBucket = new s3.Bucket(this, `${stackPrefix}LoggingBucket`, { // NOSONAR Bucket versioning not required as it's a logging bucket.
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
@@ -133,7 +133,7 @@ export class CrossAccount extends Stack {
           ],
         },
       ],
-    });
+    }); 
 
     const parentBus = EventBus.fromEventBusArn(
       this,

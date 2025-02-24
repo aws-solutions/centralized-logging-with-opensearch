@@ -12,7 +12,7 @@ from boto3_client import get_client
 logger = get_logger(__name__)
 
 log_bucket_name = os.environ.get("LOG_BUCKET_NAME", "")
-
+log_type = os.environ.get("LOG_TYPE")
 
 def lambda_handler(event, _):
     request_type = event["RequestType"]
@@ -28,7 +28,11 @@ def lambda_handler(event, _):
 
 def on_create():
     try:
-        s3 = get_client("s3")
+        if log_type in ["RDS", "Lambda"]: #For Lambda and RDS service pipelines, the log bucket is in master account
+            s3 = get_client("s3", is_local_session= True)
+        else: 
+            s3 = get_client("s3")
+        
         history_config = s3.get_bucket_notification_configuration(
             Bucket=log_bucket_name,
         )

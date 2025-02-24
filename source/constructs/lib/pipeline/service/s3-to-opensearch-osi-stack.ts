@@ -14,33 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
 import {
+  Aspects,
   Aws,
+  CfnCondition,
+  CfnParameter,
   CfnResource,
   Duration,
-  RemovalPolicy,
-  CfnCondition,
   Fn,
-  Aspects,
   IAspect,
-  aws_iam as iam,
-  aws_s3 as s3,
-  aws_sqs as sqs,
-  aws_lambda as lambda,
-  aws_kms as kms,
-  aws_s3_notifications as s3n,
-  aws_stepfunctions_tasks as tasks,
-  aws_stepfunctions as sfn,
-  custom_resources as cr,
-  aws_logs as logs,
-  CfnParameter,
+  RemovalPolicy,
   Stack,
+  custom_resources as cr,
+  aws_iam as iam,
+  aws_kms as kms,
+  aws_lambda as lambda,
+  aws_logs as logs,
+  aws_s3 as s3,
+  aws_s3_notifications as s3n,
+  aws_stepfunctions as sfn,
+  aws_sqs as sqs,
+  aws_stepfunctions_tasks as tasks,
 } from 'aws-cdk-lib';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct, IConstruct } from 'constructs';
+import * as path from 'path';
 import { SharedPythonLayer } from '../../layer/layer';
 import { UseS3BucketNotificationsWithRetryAspects } from '../../util/stack-helper';
 import { S3toOpenSearchStackProps } from '../service/s3-to-opensearch-common-stack';

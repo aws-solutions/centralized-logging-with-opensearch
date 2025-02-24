@@ -1,6 +1,0 @@
-boto3
-moto<=4.2.13
-pytest
-pytest-cov
-pyOpenSSL
-certifi

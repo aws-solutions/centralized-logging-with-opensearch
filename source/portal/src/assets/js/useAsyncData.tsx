@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type DataGenerator<T> = () => PromiseLike<T> | null;
 
@@ -24,7 +24,7 @@ export function useAsyncData<T>(
   const [internalThis] = useState<InternalThis<T>>({ dataPromise: null });
   const [reload, setReload] = useState(false);
 
-  useEffect(() => {
+  /* NOSONAR */ useEffect(() => {
     let mounted = true;
 
     const setLoadingState = (loading: boolean) => {

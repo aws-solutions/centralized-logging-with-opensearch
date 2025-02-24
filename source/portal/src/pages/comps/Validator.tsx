@@ -23,7 +23,7 @@ export class Validator {
   private setError: React.Dispatch<React.SetStateAction<string>>;
 
   constructor(private onValidate: () => void) {
-    const [error, setError] = useError();
+    const [error, setError] = useError(); // NOSONAR
     this.error = error;
     this.setError = setError;
   }

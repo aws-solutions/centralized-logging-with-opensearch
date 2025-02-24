@@ -1,6 +1,0 @@
-moto<=4.2.13
-docker
-pytest
-pytest-cov
-openapi_spec_validator
-jsonSchema==4.19.0

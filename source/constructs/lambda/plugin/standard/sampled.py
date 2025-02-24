@@ -33,7 +33,7 @@ class Plugin:
         total = len(records)
         sample = math.ceil(total * self.sampled_rate)
         # logger.info(f"---> Filter in {sample} of {total} records")
-        return random.sample(records, sample)
+        return random.sample(records, sample) #NOSONAR By design, to randomly filter out logs
 
     def get_mapping(self):
         """Returns an extra index mappings for logs"""

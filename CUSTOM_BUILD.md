@@ -10,8 +10,22 @@ Before you start customizing the solution, make sure you have the following prer
 - Python (>=3.9)
 - NodeJS (v18 or later)
 - Docker
-
 > if you are using ARM CPU like Apple M1 chip, please run `export DOCKER_DEFAULT_PLATFORM=linux/amd64` for building amd64 container image.
+-   Install Poetry. Below is one of the ways to install poetry. For other ways to install poetry, refer [Poetry installation instructions](https://python-poetry.org/docs/#installation)
+
+```shell
+## Install pipx via pip
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+
+## OR Install pipx via brew
+brew install pipx
+pipx ensurepath
+
+## Install poetry
+pipx install poetry
+pipx inject poetry poetry-plugin-export
+```
 
 Clone the repository and make desired code changes.
 
@@ -29,6 +43,7 @@ The following is the file structure of the solution. You can customize the solut
 │   ├── cdk-solution-helper/                - helper function for converting CDK output to a format compatible with the AWS Solutions pipelines.
 │   ├── build-open-source-dist.sh           - builds the open source package with cleaned assets and builds a .zip file in the /open-source folder for distribution to GitHub
 │   ├── build-s3-dist.sh                    - builds the solution and copies artifacts to the appropriate /global-s3-assets or /regional-s3-assets folders.
+│   ├── run-unit-tests.sh                    - runs all the unit tests within the /source folder
 ├── source/
 │   ├── constructs
 │   │   ├── bin
@@ -58,9 +73,9 @@ The following is the file structure of the solution. You can customize the solut
 After you have customized the solution. Run the unit tests to ensure the solution is working as expected. Review the generated coverage report.
 
 ```
-cd ./source
-chmod +x ./run-all-tests.sh
-./run-all-tests.sh
+cd ./deployment
+chmod +x ./run-unit-tests.sh
+./run-unit-tests.sh
 cd ..
 ```
 

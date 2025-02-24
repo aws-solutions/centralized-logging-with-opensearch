@@ -81,7 +81,7 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
               className="cp sign-out"
               onClick={() => {
                 if (fullLogoutUrl) {
-                  oidcSignOUt?.();
+                  oidcSignOUt?.(); //NOSONAR
                   window.location.href = fullLogoutUrl;
                 }
                 oidcSignOUt();

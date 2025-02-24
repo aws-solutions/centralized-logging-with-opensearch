@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
 import {
-  RemovalPolicy,
   CfnOutput,
   aws_lambda as lambda,
-  aws_ssm as ssm,
+  RemovalPolicy,
+  aws_ssm as ssm
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as path from 'path';
+
 
 export interface InitLambdaLayerProps {
   readonly solutionId: string;

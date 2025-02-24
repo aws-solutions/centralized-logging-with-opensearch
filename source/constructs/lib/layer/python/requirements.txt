@@ -1,4 +1,0 @@
-pydantic==1.10.14 --no-binary=pydantic
-aws-lambda-powertools
-requests
-requests-aws4auth

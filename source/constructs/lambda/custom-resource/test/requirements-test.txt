@@ -1,4 +1,0 @@
-moto<=4.2.13
-pytest
-pytest-cov
-pytest-mock
