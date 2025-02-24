@@ -1717,6 +1717,28 @@ yocto-queue under the MIT license
 zen-observable under the MIT license
 zen-observable-ts under the MIT license
 zen-push under the MIT license
+urlgrabber under the LGPL-2.0-or-later license.
+pygpgme under the LGPL-2.1-only license.
+pycurl under the MIT license.
+call-bind-apply-helpers under the MIT license.
+dunder-proto under the MIT license.
+highlightjs-vue under the CC0-1.0 license.
+@rtsao/scc under the MIT license.
+regjsgen under the MIT license.
+@babel/plugin-transform-regexp-modifiers under the MIT license.
+color-support under the ISC license.
+@aws-solutions-constructs/resources under the Apache-2.0 license.
+charset-normalizer under the MIT license.
+python-dateutil under the Apache-2.0 license.
+six under the MIT license.
+typing-extensions under the PSF-2.0 license.
+jinja2 under the 0BSD license.
+markupsafe under the 0BSD license.
+packaging under the Apache-2.0 license.
+pywin32 under the PSF-2.0 license.
+werkzeug under the 0BSD license.
+commonlib under the 0BSD license.
+pyopenssl under the Apache-2.0 license.
 
 
 ********************
@@ -1739,3 +1761,4 @@ Unlicense - https://opensource.org/licenses/Unlicense
 LGPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 LGPL-2.1-only - https://spdx.org/licenses/LGPL-2.1-only.html
 Zlib - https://spdx.org/licenses/Zlib.html
+PSF-2.0 - https://opensource.org/licenses/Python-2.0

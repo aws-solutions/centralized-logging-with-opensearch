@@ -1,6 +1,8 @@
+# Typescript
 source/*/*.js
 *.d.ts
 *.js
+!.nightswatch/**/*.js
 node_modules/
 
 # CDK asset staging directory
@@ -13,21 +15,19 @@ cdk.out
 # Jetbrains project
 .idea/
 
-# mkdocs documentation
-docs/site/
-
 # MaxMind GeoIP database
 source/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb
 source/constructs/lambda/microbatch/utils/enrichment/maxminddb/GeoLite2-City.mmdb
 
 # Test folder including coverage report
 source/tests/
+source/test/
 
 # Deployment
-staging
-global-s3-assets
-regional-s3-assets
-viperlight
+deployment/global-s3-assets/
+deployment/regional-s3-assets/
+deployment/viperlight
+deployment/staging/
 
 ### macOS ###
 # General
@@ -49,7 +49,7 @@ __pycache__/
 pip-log.txt
 pip-delete-this-directory.txt
 
-## Distribution / packaging
+# Distribution / packaging
 *.egg-info/
 
 # Unit test / coverage reports
@@ -78,3 +78,7 @@ ENV/
 env.bak/
 venv.bak/
 
+*.mmdb
+
+#requirement files
+source/constructs/**/*requirement*.txt

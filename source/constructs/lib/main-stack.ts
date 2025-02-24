@@ -654,7 +654,7 @@ export class MainStack extends Stack {
       })
     );
     if (this.userPoolId != '') {
-      new cognito.CfnLogDeliveryConfiguration(
+      new cognito.CfnLogDeliveryConfiguration( // NOSONAR CDK construct initialization
         this,
         'CognitoLogDeliveryConfiguration',
         {

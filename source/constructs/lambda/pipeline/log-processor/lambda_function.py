@@ -71,9 +71,10 @@ def handle_sqs_retries(record):
             "This message has exceeded the maximum number of retries, verify that you can connect to OpenSearch or that the data type does not match the field type defined for the index",
         )
     else:
-        raise Exception(
+        # NOSONAR
+        raise Exception( # NOSONAR
             f"Error processing SQS message: {record}, Lambda function has been called {approximate_receive_count} times, the message will be re-consumed and then retried!"
-        )  # NOSONAR
+        )
 
 
 def change_sqs_message_visibility(event_record):

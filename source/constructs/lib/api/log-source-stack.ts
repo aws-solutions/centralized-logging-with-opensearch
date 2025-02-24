@@ -13,16 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
 import {
   Aws,
   Duration,
   aws_appsync as appsync,
   aws_dynamodb as ddb,
-  aws_lambda as lambda,
   aws_iam as iam,
+  aws_lambda as lambda,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
 
 export interface LogSourceStackProps {

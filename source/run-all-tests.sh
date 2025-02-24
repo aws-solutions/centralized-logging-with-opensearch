@@ -12,6 +12,18 @@
 
 [ "$DEBUG" == 'true' ] && set -x
 set -e
+
+# Check if poetry is available in the shell
+if command -v poetry >/dev/null 2>&1; then
+    export POETRY_COMMAND="poetry"
+elif [ -n "$POETRY_HOME" ] && [ -x "$POETRY_HOME/bin/poetry" ]; then
+    export POETRY_COMMAND="$POETRY_HOME/bin/poetry"
+else
+    echo "Poetry is not available. Aborting script." >&2
+    exit 1
+fi
+
+
 t() {
   # count elapsed time for a command
   local start=$(date +%s)
@@ -51,45 +63,6 @@ recreate_symbolic_link() {
 	ln -s $source $target
 }
 
-build_common_lib() {
-
-	echo "Build Common Lib"
-	cd $source_dir/constructs/lambda/common-lib
-	python3 -m venv .venv-test
-	source .venv-test/bin/activate
-
-	pip3 install --upgrade build
-	python -m build
-
-	echo "deactivate virtual environment"
-	deactivate
-
-	rm -fr .venv-test
-}
-
-setup_python_env() {
-	if [ -d "./.venv-test" ]; then
-		echo "Reusing already setup python venv in ./.venv-test. Delete ./.venv-test if you want a fresh one created."
-		return
-	fi
-
-  	echo "Setting up python venv"
-	python3 -m venv .venv-test
-	echo "Initiating virtual environment"
-	source .venv-test/bin/activate
-
-    echo "Installing python packages"
-    # install test dependencies in the python virtual environment
-	t pip install --upgrade pip==23.3 
-	t pip install --upgrade pytest-xdist
-	t pip3 install --no-cache-dir -r test/requirements-test.txt
-	t pip3 install -e $source_dir/constructs/lambda/common-lib
-	# pip3 install -r requirements.txt --target .
-
-	echo "deactivate virtual environment"
-	deactivate
-}
-
 run_python_test() {
 	local component_path=$1
 	local component_name=$2
@@ -99,14 +72,17 @@ run_python_test() {
 	echo "------------------------------------------------------------------------------"
 	cd $component_path
 
-	if [ "${CLEAN:-true}" = "true" ]; then
-        rm -fr .venv-test
-    fi
-
-	t setup_python_env
-
 	echo "Initiating virtual environment"
-	source .venv-test/bin/activate
+
+	"$POETRY_COMMAND" install
+	source $("$POETRY_COMMAND" env info --path)/bin/activate
+
+    echo "Installing python packages"
+    # install test dependencies in the python virtual environment
+	t pip install --upgrade pip
+	t pip install --upgrade pytest-xdist
+	# t pip3 install --no-cache-dir -r test/requirements-test.txt
+	t pip3 install -e $source_dir/constructs/lambda/common-lib
 
 	# setup coverage report path
 	mkdir -p $source_dir/tests/coverage-reports
@@ -126,7 +102,6 @@ run_python_test() {
 	deactivate
 
 	if [ "${CLEAN:-true}" = "true" ]; then
-		rm -fr .venv-test
 		rm .coverage
 		rm -fr .pytest_cache
 		rm -fr __pycache__ test/__pycache__
@@ -142,14 +117,13 @@ run_python_test_concurrently() {
 	echo "------------------------------------------------------------------------------"
 	cd $component_path
 
-	if [ "${CLEAN:-true}" = "true" ]; then
-        rm -fr .venv-test
-    fi
+	"$POETRY_COMMAND" install
+	source $("$POETRY_COMMAND" env info --path)/bin/activate
 
-	t setup_python_env
-
-	echo "Initiating virtual environment"
-	source .venv-test/bin/activate
+    echo "Installing python packages"
+    # install test dependencies in the python virtual environment
+	t pip install --upgrade pip 
+	t pip install --upgrade pytest-xdist
 
 	# setup coverage report path
 	mkdir -p $source_dir/tests/coverage-reports
@@ -169,7 +143,6 @@ run_python_test_concurrently() {
 	deactivate
 
 	if [ "${CLEAN:-true}" = "true" ]; then
-		rm -fr .venv-test
 		rm .coverage
 		rm -fr .pytest_cache
 		rm -fr __pycache__ test/__pycache__
@@ -256,6 +229,31 @@ run_frontend_project_test() {
 # Get reference for source folder
 source_dir="$(cd $PWD; pwd -P)"
 echo $source_dir
+
+# Generate requirement.txt files
+cd $source_dir/constructs/lib/microbatch/main/services/lambda/layer
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-boto3.txt --without-hashes --only boto3
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-pyarrow.txt --without-hashes --only pyarrow
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-utils.txt --without-hashes --only utils
+"$POETRY_COMMAND" export --format requirements.txt --output requirements-enrichment.txt --without-hashes --only enrichment
+
+lambda_paths=(
+	"common-lib"
+    "api/app_log_ingestion"
+    "api/app_pipeline"
+    "api/cluster"
+    "api/log_source"
+    "plugin/standard"
+    "api/pipeline_ingestion_flow"
+)
+
+base_lambda_dir="$source_dir/constructs/lambda"
+for path in "${lambda_paths[@]}"; do
+    full_path="$base_lambda_dir/$path"
+    cd "$full_path"
+    "$POETRY_COMMAND" export --format requirements.txt --output requirements.txt --without-hashes --without dev
+done
+
 
 # Download MaxMind database
 if [ ! -e $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb ]; then

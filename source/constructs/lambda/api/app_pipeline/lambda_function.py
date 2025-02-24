@@ -832,22 +832,22 @@ class AppPipelineAnalyzer:
             items
             and "logConfigVersionNumber" in app_pipeline.keys()
             and self._is_numeric(app_pipeline["logConfigVersionNumber"])
-        ):
-            if not list(
+            and not list(
                 filter(
                     lambda x: int(x.version)
                     >= int(app_pipeline["logConfigVersionNumber"]),
                     items,
                 )
-            ):
-                self.add_finding(
-                    issue=IssueCode.INVALID_VALUE,
-                    finding_detail_args={
-                        "value": app_pipeline["logConfigVersionNumber"],
-                        "key": "logConfigVersionNumber",
-                    },
-                    path=f"{path}.logConfigVersionNumber",
-                )
+            )
+        ):
+            self.add_finding(
+                issue=IssueCode.INVALID_VALUE,
+                finding_detail_args={
+                    "value": app_pipeline["logConfigVersionNumber"],
+                    "key": "logConfigVersionNumber",
+                },
+                path=f"{path}.logConfigVersionNumber",
+            )
 
     def _validate_s3_buffer_params(self, buffer_params: dict, path: str = ""):
         self._check_required_element(

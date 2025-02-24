@@ -1,0 +1,22 @@
+[project]
+name = "kinesis-lambda"
+description = "Kinesis lambda"
+requires-python = ">=3.10,<4.0.0"
+dependencies = [
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+moto = "~4.2.13"
+docker = "^7.1.0"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+jsonschema = "4.19.0"
+openapi-spec-validator = "^0.7.1"
+

@@ -13,18 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
 import {
   Aws,
-  Fn,
-  Duration,
   CfnCondition,
+  Duration,
+  Fn,
   aws_appsync as appsync,
   aws_dynamodb as ddb,
-  aws_iam as iam,
-  aws_s3 as s3,
-  aws_lambda as lambda,
   aws_ecs as ecs,
+  aws_iam as iam,
+  aws_lambda as lambda,
+  aws_s3 as s3,
 } from 'aws-cdk-lib';
 import { Rule } from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
@@ -32,6 +31,7 @@ import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import * as path from 'path';
 
 import { AppIngestionFlowStack } from '../api/app-log-ingestion-flow';
 

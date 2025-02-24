@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.0] - 2024-12-17
+## [2.3.1] - 2025-02-24
+
+### Changed
+
+- Migrated to Poetry for Python dependency management
+
+### Fixed
+
+- Fixed S3 permission issue when creating cross-account Lambda log ingestion pipeline [Issue #312](https://github.com/aws-solutions/centralized-logging-with-opensearch/issues/312)
+- Fixed STS credential expiration handling when ingesting logs from cross-account sources
+- Fixed Opensearch index rollover timeout issue
+
+### Security
+
+- Updated serialize-javascript package to address [CVE-2024-11831](https://avd.aquasec.com/nvd/2024/cve-2024-11831/)
+- Updated cryptography package to address [CVE-2024-12797](https://avd.aquasec.com/nvd/2024/cve-2024-12797/)
+
+## [2.3.0] - 2024-12-11
 
 ### Added
 
@@ -25,7 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix the issue that the content of Log Config detail may exceed the maximum length of the window. #275
 - Fix the issue that the EKS DaemonSet Guide is not refreshed after editing the log config. #241
 - Fix the user interface issue that a wrong S3 bucket prefix is using when creating WAF log pipeline if the logging has already been enabled. #67
-
 
 ## [2.2.2] - 2024-08-23
 

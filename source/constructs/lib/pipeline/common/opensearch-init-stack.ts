@@ -14,24 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
 import {
-  Aws,
-  Duration,
-  CfnCondition,
-  Fn,
   Aspects,
-  IAspect,
-  CfnResource,
-  aws_iam as iam,
-  aws_lambda as lambda,
-  aws_sqs as sqs,
+  Aws,
+  CfnCondition,
   CfnParameter,
+  CfnResource,
+  Duration,
+  Fn,
+  aws_iam as iam,
+  IAspect,
+  aws_lambda as lambda,
   Lazy,
+  aws_sqs as sqs,
 } from 'aws-cdk-lib';
 import { ISecurityGroup, IVpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct, IConstruct } from 'constructs';
+import * as path from 'path';
 
 import { SharedPythonLayer } from '../../layer/layer';
 

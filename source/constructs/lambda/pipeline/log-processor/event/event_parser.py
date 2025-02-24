@@ -14,7 +14,6 @@ import boto3
 from itertools import islice
 import threading
 from typing import Iterable
-from datetime import datetime, timedelta
 from commonlib import AWSConnection
 from log_processor.log_parser import LogParser
 from idx.idx_svc import AosIdxService
@@ -64,12 +63,6 @@ ERROR_UNABLE_TO_PARSE_LOG_RECORDS = "Unable to parse log records: %s"
 assume_role = os.environ.get("LOG_SOURCE_ACCOUNT_ASSUME_ROLE", "")
 
 conn = AWSConnection()
-if log_type in ("Lambda", "RDS") or IS_APP_PIPELINE:
-    s3_resource = conn.get_client("s3", client_type="resource")
-else:
-    s3_resource = conn.get_client(
-        "s3", sts_role_arn=assume_role, client_type="resource"
-    )
 
 log_source_region = os.environ.get("LOG_SOURCE_REGION", default_region)
 
@@ -78,8 +71,6 @@ interval = int(os.environ.get("INTERVAL", "1"))
 web_acl_names = os.environ.get("WEB_ACL_NAMES", "")
 web_acl_list = web_acl_names.split(",")
 scope = os.environ.get("SCOPE", "REGIONAL")
-waf_region = log_source_region if scope == "REGIONAL" else "us-east-1"
-waf_client = conn.get_client("wafv2", sts_role_arn=assume_role, region_name=waf_region)
 
 source = str(os.environ.get("SOURCE", "KDS"))
 idx_svc = AosIdxService()
@@ -284,11 +275,17 @@ class SQS(EventType):
         self._time_key = self._config.get("time_key", "")
         self._time_format = self._config.get("time_format", "")
         self._time_offset = self._config.get("time_offset", "")
+        if log_type in ("Lambda", "RDS") or IS_APP_PIPELINE:
+            self.s3_resource = conn.get_client("s3", client_type="resource")
+        else:
+            self.s3_resource = conn.get_client(
+                "s3", sts_role_arn=assume_role, client_type="resource"
+            )   
         super().__init__(log_source)
 
     def s3_read_object_by_lines(self, bucket, object_key):
         """Read a file from S3 Line by Line"""
-        obj = s3_resource.Object(bucket, object_key)
+        obj = self.s3_resource.Object(bucket, object_key)
         try:
             logger.info("Start reading file...")
             body = obj.get()["Body"]

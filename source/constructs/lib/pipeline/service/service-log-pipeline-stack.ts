@@ -18,6 +18,11 @@ import { CfnParameter, Fn, StackProps, aws_iam as iam } from 'aws-cdk-lib';
 import { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import {
+  OpenSearchInitProps,
+  OpenSearchInitStack,
+} from '../common/opensearch-init-stack';
+import { SolutionStack } from '../common/solution-stack';
+import {
   CWtoFirehosetoS3Props,
   CWtoFirehosetoS3Stack,
 } from './cw-to-firehose-to-s3-stack';
@@ -29,11 +34,6 @@ import {
 } from './s3-to-opensearch-osi-stack';
 import { S3toOpenSearchStack } from './s3-to-opensearch-stack';
 import { WAFSampledStack } from './waf-sampled-stack';
-import {
-  OpenSearchInitProps,
-  OpenSearchInitStack,
-} from '../common/opensearch-init-stack';
-import { SolutionStack } from '../common/solution-stack';
 
 const { VERSION } = process.env;
 
@@ -469,19 +469,12 @@ export class ServiceLogPipelineStack extends SolutionStack {
         this.cfnOutput('LogEventQueueName', pipelineStack.logEventQueueName);
       }
 
-      if (['RDS'].includes(props.logType)) {
-        const dbIdentifier = new CfnParameter(this, 'dbIdentifier', {
-          description: 'The identifier of the database.',
-          type: 'String',
-        });
-
-        /* NOSONAR */ new RDSLogsToS3(this, 'RDSLogs2S3', {
-          dbIdentifier: dbIdentifier.valueAsString,
-          dbRoleArn: logSourceAccountAssumeRole.valueAsString,
-          bucketName: logBucketName.valueAsString,
-          bucketPrefix: logBucketPrefix.valueAsString,
-        });
-      }
+      this.createRdsToS3Logs(
+        props,
+        logSourceAccountAssumeRole,
+        logBucketName,
+        logBucketPrefix
+      );
 
       if (['WAFSampled'].includes(props.logType)) {
         const webACLNames = new CfnParameter(this, 'webACLNames', {
@@ -596,5 +589,26 @@ export class ServiceLogPipelineStack extends SolutionStack {
     this.addToParamGroups('Advanced Options', ...advancedOptions);
 
     this.setMetadata();
+  }
+
+  private createRdsToS3Logs(
+    props: PipelineStackProps,
+    logSourceAccountAssumeRole: CfnParameter,
+    logBucketName: CfnParameter,
+    logBucketPrefix: CfnParameter
+  ) {
+    if (['RDS'].includes(props.logType)) {
+      const dbIdentifier = new CfnParameter(this, 'dbIdentifier', {
+        description: 'The identifier of the database.',
+        type: 'String',
+      });
+
+        /* NOSONAR */ new RDSLogsToS3(this, 'RDSLogs2S3', {
+        dbIdentifier: dbIdentifier.valueAsString,
+        dbRoleArn: logSourceAccountAssumeRole.valueAsString,
+        bucketName: logBucketName.valueAsString,
+        bucketPrefix: logBucketPrefix.valueAsString,
+      });
+    }
   }
 }

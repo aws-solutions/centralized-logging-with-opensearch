@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
 import {
   Aws,
-  Fn,
   CfnCondition,
   Duration,
+  Fn,
   SymlinkFollowMode,
   aws_appsync as appsync,
   aws_dynamodb as ddb,
@@ -29,10 +28,11 @@ import { IVpc, SecurityGroup, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import * as path from 'path';
 
-import { AppPipelineFlowStack } from './app-pipeline-flow';
 import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
+import { AppPipelineFlowStack } from './app-pipeline-flow';
 export interface AppPipelineStackProps {
   readonly vpc: IVpc;
 

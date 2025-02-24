@@ -180,12 +180,12 @@ export const humanFileSize = (bytes: any, si = false, dp = 1) => {
 };
 
 export const domainIsValid = (domain: string): boolean => {
-  const reg = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/;
+  const reg = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/; 
   return reg.test(String(domain).toLowerCase());
 };
 
 export const emailIsValid = (email: string): boolean => {
-  const re = /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/;
+  const re = /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/; //NOSONAR
   return re.test(String(email).toLowerCase());
 };
 
