@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2025-03-14
+
+### Fixed
+
+- Fixed an issue where Lambda Elastic Network Interface resources were not being properly cleaned up during CloudFormation stack deletion
+
+### Security
+
+- Updated axios package to address [CVE-2025-27152](https://avd.aquasec.com/nvd/2025/cve-2025-27152/)
+- Updated Jinja2 package to address [CVE-2025-27516](https://avd.aquasec.com/nvd/2025/cve-2025-27516/)
+- Updated prismjs package to address [CVE-2024-53382](https://avd.aquasec.com/nvd/2024/cve-2024-53382/)
+- Updated Babel packages to address [CVE-2025-27789](https://avd.aquasec.com/nvd/2025/cve-2025-27789/)
+
+
 ## [2.3.1] - 2025-02-24
 
 ### Changed

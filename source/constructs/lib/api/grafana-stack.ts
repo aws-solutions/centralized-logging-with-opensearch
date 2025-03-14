@@ -13,21 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
 import {
+  aws_appsync as appsync,
   Aws,
+  aws_dynamodb as ddb,
   Duration,
+  aws_ec2 as ec2,
+  aws_kms as kms,
+  aws_lambda as lambda,
   RemovalPolicy,
   SymlinkFollowMode,
-  aws_appsync as appsync,
-  aws_ec2 as ec2,
-  aws_dynamodb as ddb,
-  aws_lambda as lambda,
-  aws_kms as kms,
 } from 'aws-cdk-lib';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { constructWithFixedLogicalId } from '../util/stack-helper';
@@ -128,6 +128,10 @@ export class GrafanaStack extends Construct {
       {
         description: 'Lambda Resolver Datasource',
       }
+    );
+
+    microBatchStack.microBatchVPCStack.privateSecurityGroup.node.addDependency(
+      grafanaHandler.role!
     );
 
     grafanaLambdaDS.createResolver('createGrafana', {

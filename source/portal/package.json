@@ -24,7 +24,7 @@
     "aws-amplify": "^5.3.12",
     "aws-appsync-auth-link": "^3.0.7",
     "aws-appsync-subscription-link": "^3.1.2",
-    "axios": "^1.7.4",
+    "axios": "^1.8.2",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
     "graphql-tag": "^2.12.6",
@@ -134,6 +134,9 @@
     "send": "0.19.0",
     "serve-static": "1.16.0",
     "cookie": "0.7.0",
-    "serialize-javascript": "6.0.2"
+    "serialize-javascript": "6.0.2",
+    "prismjs": "1.30.0",
+    "@babel/core": "7.26.10",
+    "@babel/runtime": "7.26.10"
   }
 }
