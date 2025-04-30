@@ -106,6 +106,7 @@ xmltodict under the MIT license
 @aws-cdk/aws-kinesisfirehose-alpha under the under the Apache-2.0 license
 @aws-cdk/aws-kinesisfirehose-destinations-alpha under the under the Apache-2.0 license
 @aws-solutions-constructs/aws-cloudfront-s3 under the under the Apache-2.0 license 
+@aws-solutions-constructs/aws-cloudfront-oai-s3 under the Apache-2.0 license
 @typescript-eslint/eslint-plugin under the MIT license
 @typescript-eslint/parser under the BSD-2-Clause
 eslint under the MIT license

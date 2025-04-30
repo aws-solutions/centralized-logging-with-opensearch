@@ -14,26 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
 import {
+  aws_certificatemanager as acm,
+  Aspects,
+  aws_autoscaling as au,
+  CfnCondition,
   CfnOutput,
   CfnParameter,
-  CfnCondition,
   CfnResource,
-  Stack,
-  StackProps,
-  Fn,
   Duration,
   aws_ec2 as ec2,
   aws_elasticloadbalancingv2 as elbv2,
-  aws_autoscaling as au,
-  aws_certificatemanager as acm,
+  Fn,
   aws_iam as iam,
-  Aspects,
   IAspect,
+  Stack,
+  StackProps,
 } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
-import { IConstruct, Construct } from 'constructs';
+import { Construct, IConstruct } from 'constructs';
+import * as path from 'path';
 import { constructFactory } from '../util/stack-helper';
 
 const { VERSION } = process.env;
@@ -326,8 +326,9 @@ export class NginxForOpenSearchStack extends Stack {
         subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         onePerAz: true,
       },
-      healthCheck: au.HealthCheck.elb({
-        grace: Duration.millis(0),
+      healthChecks: au.HealthChecks.withAdditionalChecks({
+        gracePeriod: Duration.seconds(300),
+        additionalTypes: [au.AdditionalHealthCheckType.ELB],
       }),
     });
 

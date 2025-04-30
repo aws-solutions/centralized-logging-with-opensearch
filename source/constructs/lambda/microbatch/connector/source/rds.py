@@ -161,7 +161,7 @@ class MysqlGeneralLogFormat(metaclass=LogFormat):
 
 
 class PostgresQueryLogFormat(metaclass=LogFormat):
-    PATTERN = r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})? \w{3})\s*(?::(\S*?)\({0,1}(\d*)\){0,1}:(\w*)@(\w*):)?\s*\[(\d+)\][:| ](\w+):\s*(.*?(?=(?:(?:\n\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})? \w{3}\s*(?::\S*?\({0,1}(\d*)\){0,1}:\w*@\w*:)?\s*\[\d+\][:| ]\w+)|$)))"
+    PATTERN = r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})? \w{3})\s*(?::(\S*?)\({0,1}(\d*)\){0,1}:(\w*)@(\w*):)?\s*\[(\d+)\][:| ](\w+):\s*(?:(?:duration:\s*([\d.]+)\s*ms(?:\s+statement:\s*)?)|(?:statement:\s*)|(?:\s*))(.*?(?=(?:(?:\n\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})? \w{3}\s*(?::\S*?\({0,1}(\d*)\){0,1}:\w*@\w*:)?\s*\[\d+\][:| ]\w+)|$)))"
     NAME = (
         "timestamp",
         "host",
@@ -170,6 +170,7 @@ class PostgresQueryLogFormat(metaclass=LogFormat):
         "database",
         "connection_id",
         "operation",
+        "duration",
         "object",
     )
     FLAGS = re.DOTALL
