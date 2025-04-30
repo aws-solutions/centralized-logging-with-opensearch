@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import {
-  Stack,
-  RemovalPolicy,
   Duration,
+  RemovalPolicy,
+  Stack,
   aws_cognito as cognito,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -58,6 +58,10 @@ export class AuthStack extends Construct {
         requireUppercase: true,
         requireDigits: true,
         requireSymbols: true,
+      },
+      userInvitation: {
+        emailSubject: 'Welcome to Centralized Logging with OpenSearch',
+        emailBody: `Hello,<br><br>Welcome to Centralized Logging with OpenSearch <br><br>Your username is {username}<br>Your temporary password is {####}`,
       },
     });
 

@@ -28,9 +28,11 @@ TOTAL_RETRIES = 3
 SLEEP_INTERVAL = 10
 DEFAULT_BULK_BATCH_SIZE = "10000"
 BULK_ACTION = "index"
+DEFAULT_MAX_PAYLOAD_SIZE = 100
 
 # batch size can be overwritten via Env. var.
 batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
+MAX_PAYLOAD_SIZE = int(os.environ.get("MAX_HTTP_PAYLOAD_SIZE_IN_MB", DEFAULT_MAX_PAYLOAD_SIZE))
 bucket_name = os.environ.get("LOG_BUCKET_NAME")
 
 default_region = os.environ.get("AWS_REGION")
@@ -367,35 +369,75 @@ class SQS(EventType):
         if not self.is_event_valid(event):
             return
 
-        failed_records_count = 0
+        
         total_logs_counter = Counter()
         for bucket, key in self.get_bucket_and_keys(event):
-            lines = self.s3_read_object_by_lines(bucket, key)
-            if CONFIG_JSON:
-                log_entry_iter = self.get_log_entry_iter(lines)
+            self.process_s3_log_file(total_logs_counter, bucket, key)
+
+    def process_s3_log_file(self, total_logs_counter, bucket, key):
+        lines = self.s3_read_object_by_lines(bucket, key)
+        logs = self.get_log_records(total_logs_counter, lines)
+
+        failed_records_count = 0
+        current_batch = []
+        current_batch_size = 0
+        batch_number = 0
+        # If configured MAX_PAYLOAD_SIZE is >= 100MB, reserve 5MB buffer
+        # Otherwise for smaller payload sizes (10 MB), reserve 1MB buffer
+        if MAX_PAYLOAD_SIZE >= 100:
+            BUFFER_MB = 5
+        else:
+            BUFFER_MB = 1
+        ## Calculate actual usable payload size in bytes by subtracting buffer from max payload size
+        MAX_PAYLOAD_SIZE_BYTES = (MAX_PAYLOAD_SIZE - BUFFER_MB) * 1024 * 1024
+        for record in logs:
+            record_size = idx_svc.calculate_record_size(record)
+            should_process_current_batch = (
+                current_batch_size + record_size > MAX_PAYLOAD_SIZE_BYTES or 
+                len(current_batch) == batch_size
+            )
+            if should_process_current_batch and current_batch:
+                logger.debug(f"Processing batch_number: {batch_number}, record_count: {len(current_batch)}")
+                _, failed_records = self._bulk(current_batch)
+                failed_records_count += len(failed_records)
+                if failed_records:
+                    restorer.export_failed_records(
+                            plugin_modules,
+                            failed_records,
+                            restorer._get_export_prefix(batch_number, bucket, key),
+                        )
+                batch_number += 1
+                current_batch = []
+                current_batch_size = 0
+            current_batch.append(record)
+            current_batch_size += record_size
+        if current_batch:
+            logger.debug(f"Processing batch_number: {batch_number}, record_count: {len(current_batch)}")
+            _, failed_records = self._bulk(current_batch)
+            failed_records_count += len(failed_records)
+            if failed_records:
+                restorer.export_failed_records(
+                        plugin_modules,
+                        failed_records,
+                        restorer._get_export_prefix(batch_number, bucket, key),
+                    )
+        self._put_metric(total_logs_counter.value, failed_records_count)
+
+    def get_log_records(self, total_logs_counter, lines):
+        if CONFIG_JSON:
+            log_entry_iter = self.get_log_entry_iter(lines)
                 # log format is LogEntry type
-                logs = self._counter_iter(
+            logs = self._counter_iter(
                     (log.dict(self._time_key) for log in log_entry_iter),
                     total_logs_counter,
                 )
 
-            else:
+        else:
                 # service log and application log with s3 data buffer
-                log_iter = self._log_parser.parse(lines)
-
-                logs = self._counter_iter(log_iter, total_logs_counter)
-
-            batches = self._batch_iter(logs, batch_size)
-            for idx, records in enumerate(batches):
-                total, failed_records = self._bulk(records)
-                failed_records_count += len(failed_records)
-                restorer.export_failed_records(
-                    plugin_modules,
-                    failed_records,
-                    restorer._get_export_prefix(idx, bucket, key),
-                )
-            self._put_metric(total_logs_counter.value, failed_records_count)
-
+            log_iter = self._log_parser.parse(lines)
+            logs = self._counter_iter(log_iter, total_logs_counter)
+        return logs    
+    
     def get_log_entry_iter(self, lines):
         if self._parser_name != "JSONWithS3":
             # regex log from s3 source

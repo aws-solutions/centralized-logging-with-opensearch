@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - 2025-04-30
+
+### Updated
+
+- Cognito user invitation email template
+
+### Fixed
+
+- NGINX service startup issue and optimized health check settings for OpenSearch Access Proxy instances
+- OpenSearch bulk loading to split large payloads into smaller batches to comply with OpenSearch's HTTP request size limits
+- PostgreSQL log ingestion parser to parse duration and log message into separate fields
+
+### Security
+
+- Updated http-proxy-middleware to version 2.0.9
+- Updated AWS CDK packages to latest versions
+
 ## [2.3.2] - 2025-03-14
 
 ### Fixed

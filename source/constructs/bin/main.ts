@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'source-map-support/register';
 import {
   App,
   Aspects,
@@ -31,6 +30,7 @@ import {
   NagSuppressions,
 } from 'cdk-nag';
 import { IConstruct } from 'constructs';
+import 'source-map-support/register';
 import { MainStack } from '../lib/main-stack';
 import { MicroBatchMainStack } from '../lib/microbatch/main/microbatch-main-stack';
 import { MicroBatchApplicationFluentBitPipelineStack } from '../lib/microbatch/pipeline/application-fluent-bit-stack';

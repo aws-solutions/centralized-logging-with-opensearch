@@ -1548,7 +1548,7 @@ select * from t
             "POSTGRES_QUERY_LOGS"
         ] = """2023-11-29 09:23:46 UTC::@:[560]:LOG:  checkpoint starting: time
 2023-11-29 09:23:46 UTC::@:[560]:LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB
-2023-11-29 09:23:51 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  statement: SELECT d.datname as "Name",
+2023-11-29 09:23:51 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  duration: 100.50 ms statement: SELECT d.datname as "Name",
         pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
         pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
         d.datcollate as "Collate",

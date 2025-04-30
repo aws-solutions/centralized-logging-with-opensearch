@@ -324,6 +324,27 @@ class AosIdxService:
                 bulk_body.append(json.dumps(record) + "\n")
         data = "".join(bulk_body)
         return data
+    
+    def calculate_record_size(self, record):
+        """
+        Calculate size of a single record including bulk format overhead
+        
+        Args:
+            record (dict): The record to be indexed
+            
+        Returns:
+            int: Size in bytes of the record including bulk format
+        """
+        try:
+            action_size = len(json.dumps({BULK_ACTION: {}}).encode('utf-8')) + 1
+            
+            record_size = len(json.dumps(record).encode('utf-8')) + 1
+            total_size = action_size + record_size
+            return total_size
+        except Exception as e:
+            logger.error(f"Error calculating record size: {str(e)}")
+            # Return a large number to force a new batch in case of error
+            return 1024 * 1024 # Returning 1 MB as record size
 
     def json_serial(self, obj):
         """JSON serializer for objects not serializable by default json code"""
@@ -399,14 +420,27 @@ class AosIdxService:
         response = lambda_client.get_function_configuration(FunctionName=func_name)
         variables = response["Environment"]["Variables"]
 
+        updated = False
+
         if (
             variables.get("BULK_BATCH_SIZE")
             and int(variables["BULK_BATCH_SIZE"]) >= 4000
         ):
             variables["BULK_BATCH_SIZE"] = str(int(variables["BULK_BATCH_SIZE"]) - 2000)
+            updated = True
+        if variables.get("MAX_HTTP_PAYLOAD_SIZE_IN_MB"):
+            current_payload_size = int(variables["MAX_HTTP_PAYLOAD_SIZE_IN_MB"])
+            if current_payload_size > 10:
+                variables["MAX_HTTP_PAYLOAD_SIZE_IN_MB"] = "10"
+                updated = True
+        else:
+            variables["MAX_HTTP_PAYLOAD_SIZE_IN_MB"] = "10"
+            updated = True
+        if updated:
             lambda_client.update_function_configuration(
-                FunctionName=func_name, Environment={"Variables": variables}
-            )
+                FunctionName=func_name, 
+                Environment={"Variables": variables}
+            )           
 
     def adjust_lambda_env_var(self, env_name: str, val, func_name=function_name):
         response = lambda_client.get_function_configuration(FunctionName=function_name)

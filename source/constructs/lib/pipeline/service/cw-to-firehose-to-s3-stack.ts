@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as firehose from '@aws-cdk/aws-kinesisfirehose-alpha';
-import { S3Bucket } from '@aws-cdk/aws-kinesisfirehose-destinations-alpha';
 import {
   Aws,
   CfnCondition,
@@ -26,6 +24,7 @@ import {
   Fn,
   Size,
   custom_resources as cr,
+  aws_kinesisfirehose as firehose,
   aws_iam as iam,
   aws_lambda as lambda,
   aws_s3 as s3,
@@ -85,15 +84,15 @@ export class CWtoFirehosetoS3Stack extends Construct {
     );
 
     // Create the Kinesis Firehose
-    const destination = new S3Bucket(logBucket, {
+    const destination = new firehose.S3Bucket(logBucket, {
       dataOutputPrefix: props.logBucketPrefix,
       errorOutputPrefix: 'error/' + props.logBucketPrefix,
       bufferingInterval: Duration.minutes(1),
       bufferingSize: Size.mebibytes(1),
     });
     const logFirehose = new firehose.DeliveryStream(this, 'Delivery Stream', {
-      encryption: firehose.StreamEncryption.AWS_OWNED,
-      destinations: [destination],
+      encryption: firehose.StreamEncryption.awsOwnedKey(),
+      destination: destination,
     });
     NagSuppressions.addResourceSuppressions(
       logFirehose,

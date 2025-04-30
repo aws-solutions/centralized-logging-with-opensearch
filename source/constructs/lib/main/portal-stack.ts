@@ -14,20 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
-import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
+import * as CloudFrontToS3Oai from '@aws-solutions-constructs/aws-cloudfront-oai-s3';
+import * as CloudFrontToS3Oac from '@aws-solutions-constructs/aws-cloudfront-s3';
 import {
   Aws,
-  Duration,
-  RemovalPolicy,
   CfnCondition,
-  Fn,
-  aws_s3 as s3,
   aws_cloudfront as cloudfront,
+  Duration,
+  Fn,
+  RemovalPolicy,
+  aws_s3 as s3,
   aws_s3_deployment as s3d,
 } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import * as path from 'path';
 import { constructFactory } from '../util/stack-helper';
 
 export interface PortalProps {
@@ -164,8 +165,7 @@ export class PortalStack extends Construct {
       return {};
     };
 
-    // Use cloudfrontToS3 solution contructs
-    const portal = new CloudFrontToS3(this, 'UI', {
+    const cloudFrontConfig = {
       bucketProps: {
         versioned: true,
         encryption: s3.BucketEncryption.S3_MANAGED,
@@ -178,7 +178,7 @@ export class PortalStack extends Construct {
         priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
         minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
         enableIpv6: false,
-        enableLogging: true, //Enable access logging for the distribution.
+        enableLogging: true,
         comment: `${Aws.STACK_NAME} - Web Console Distribution (${Aws.REGION})`,
         errorResponses: [
           {
@@ -190,7 +190,18 @@ export class PortalStack extends Construct {
         defaultBehavior: getDefaultBehavior(),
       },
       insertHttpSecurityHeaders: false,
-    });
+    };
+
+    let portal;
+    if (props.authenticationType === AuthType.OIDC) {
+      portal = new CloudFrontToS3Oai.CloudFrontToOaiToS3(this, 'UI', {
+        ...cloudFrontConfig,
+      });
+    } else {
+      portal = new CloudFrontToS3Oac.CloudFrontToS3(this, 'UI', {
+        ...cloudFrontConfig,
+      });
+    }
     NagSuppressions.addResourceSuppressions(portal.cloudFrontWebDistribution, [
       {
         id: 'AwsSolutions-CFR1',
@@ -204,6 +215,10 @@ export class PortalStack extends Construct {
         id: 'AwsSolutions-CFR4',
         reason:
           'CloudFront automatically sets the security policy to TLSv1 when the distribution uses the CloudFront domain name',
+      },
+      {
+        id: 'AwsSolutions-CFR7',
+        reason: 'Origin Access control is not supported in China Partition',
       },
     ]);
     this.portalBucket = portal.s3Bucket as s3.Bucket;
@@ -291,6 +306,7 @@ export class PortalStack extends Construct {
       ],
       destinationBucket: this.portalBucket,
       prune: false,
+      memoryLimit: 512,
     });
   }
 }
