@@ -7,6 +7,7 @@ import pytest
 import os
 import boto3
 from moto import mock_dynamodb, mock_cloudformation
+from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -121,7 +122,9 @@ def ddb_client():
         yield
 
 
+@patch('svc_pipe_flow.send_metrics')
 def test_lambda_function_create_event(
+    mock_send_metrics,
     ddb_client,
     test_create_event,
 ):
@@ -143,15 +146,31 @@ def test_lambda_function_create_event(
     assert "stackId" in item
 
     assert item["status"] == "ACTIVE"
+    mock_send_metrics.assert_called_once_with(
+        {
+            'metricType': 'PIPELINE_MANAGEMENT',
+            'pipelineType': 'Service',
+            'status': 'CREATE_COMPLETE', 
+            'region': 'us-east-1',
+            'pipelineId': '2e536ae6-0f85-463c-9e61-04cebf3ec12b',
+            'sourceType': '', 
+            'engineType': '',
+            'logSourceType': '', 
+            'logProcessorType': 'AWS Lambda',
+            'isCrossAccountIngestion': False
+            }
+    )
 
 
+@patch('svc_pipe_flow.send_metrics')
 def test_lambda_function_delete_event(
+    mock_send_metrics,
     ddb_client,
     test_delete_event,
 ):
     import svc_pipe_flow
 
-    # run lambda
+    # run lambda 
     svc_pipe_flow.lambda_handler(test_delete_event, None)
     region = os.environ.get("AWS_REGION")
     table_name = os.environ["PIPELINE_TABLE"]
@@ -161,6 +180,20 @@ def test_lambda_function_delete_event(
     response = table.get_item(Key={"id": "2e536ae6-0f85-463c-9e61-04cebf3ec12b"})
     item = response["Item"]
     assert item["status"] == "INACTIVE"
+    mock_send_metrics.assert_called_once_with(
+        {
+            'metricType': 'PIPELINE_MANAGEMENT',
+            'pipelineType': 'Service',
+            'status': 'DELETE_COMPLETE', 
+            'region': 'us-east-1',
+            'pipelineId': '2e536ae6-0f85-463c-9e61-04cebf3ec12b',
+            'sourceType': '', 
+            'engineType': '',
+            'logSourceType': '', 
+            'logProcessorType': 'AWS Lambda',
+            'isCrossAccountIngestion': False
+            }
+    )        
 
 
 def test_lambda_function_error_event(

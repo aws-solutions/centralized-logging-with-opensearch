@@ -1,18 +1,5 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 import * as path from 'path';
 import {
   Aws,
@@ -41,6 +28,7 @@ import { Construct, IConstruct } from 'constructs';
 
 import { AppLogProcessor } from '../pipeline/application/app-log-processor';
 import { constructFactory } from '../util/stack-helper';
+import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
 
 export interface KDSStackProps {
   /**
@@ -175,6 +163,7 @@ export class KDSStack extends Construct {
           Aws.NO_VALUE
         )
       ),
+      encryption: kinesis.StreamEncryption.MANAGED,
     });
 
     this.kinesisStreamArn = kinesisStream.streamArn;
@@ -293,12 +282,13 @@ export class KDSStack extends Construct {
           reason: 'The managed policy needs to use any resources.',
         },
       ]);
-
+      
       // CWL LogGroup for APIGateway
       const apiAccessLogGroup = new logs.LogGroup(
         this,
         'APIGatewayAccessLogGroup'
       );
+
 
       // Rest API GW
       const api = new apigateway.SpecRestApi(this, 'MyApi', {
@@ -314,6 +304,8 @@ export class KDSStack extends Construct {
             apiAccessLogGroup
           ),
           accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(),
+          cacheDataEncrypted: true,
+          cachingEnabled: true
         },
         apiDefinition: apigateway.ApiDefinition.fromInline({
           info: {
@@ -376,6 +368,7 @@ export class KDSStack extends Construct {
         }),
         // endpointTypes: [apigateway.EndpointType.PRIVATE]
       });
+
       constructFactory(apigateway.RequestValidator)(
         this,
         'MyRequestValidator',
@@ -539,9 +532,10 @@ export class KDSStack extends Construct {
         sourceArn: api.arnForExecuteApi('PATCH', '/scalableTargetDimensions/*'),
       });
     }
-    // else {
-    //   this.cfnOutput("MyApiEndpoint869ABE96", "https://DummyEndpoint");
-    // }
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"] // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+    }));
   }
 
   /* istanbul ignore next */

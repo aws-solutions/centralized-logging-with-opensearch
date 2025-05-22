@@ -41,3 +41,6 @@ Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/l
 Please follow the [Customization Guide](CUSTOM_BUILD.md) for custom build.
 
 
+## Collection of operational metrics
+
+This solution collects anonymized operational metrics to help AWS improve the quality and features of the solution. For more information, including how to disable this capability, please see the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/reference.html).

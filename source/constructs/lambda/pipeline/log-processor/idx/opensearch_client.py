@@ -122,7 +122,7 @@ class OpenSearchUtil:
             response.status_code,
             response.content,
         )
-        raise APIException(ErrorCode.UNKNOWN_ERROR, "error in calling get_ism_policy")
+        return response
 
     def get_ism_policy(self, url) -> requests.Response:
         logger.info("GET %s", url)

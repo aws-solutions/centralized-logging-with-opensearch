@@ -1,39 +1,26 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 import {
+  Aspects,
   Aws,
+  CfnCondition,
+  CfnMapping,
+  CfnOutput,
   CfnParameter,
   CfnResource,
-  CfnOutput,
-  CfnCondition,
-  Duration,
-  Fn,
-  CfnMapping,
-  RemovalPolicy,
-  Stack,
-  StackProps,
-  aws_kms as kms,
-  aws_iam as iam,
-  aws_s3 as s3,
-  aws_ec2 as ec2,
-  aws_sqs as sqs,
-  IAspect,
-  Aspects,
   aws_cognito as cognito,
+  Duration,
+  aws_ec2 as ec2,
+  Fn,
+  aws_iam as iam,
+  IAspect,
+  aws_kms as kms,
+  RemovalPolicy,
+  aws_s3 as s3,
+  aws_sqs as sqs,
+  Stack,
+  StackProps
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
@@ -46,10 +33,12 @@ import { EcsClusterStack } from './main/ecs-cluster-stack';
 import { PortalStack } from './main/portal-stack';
 import { VpcStack } from './main/vpc-stack';
 import { MicroBatchStack } from './microbatch/main/services/amazon-services-stack';
+import { SolutionMetrics } from './solution-metrics/solution-metrics-construct';
 import {
   EnforceUnmanagedS3BucketNotificationsAspects,
   UseS3BucketNotificationsWithRetryAspects,
 } from './util/stack-helper';
+import { CfnGuardSuppressResourceList } from '../lib/util/add-cfn-guard-suppression';
 
 const { VERSION } = process.env;
 
@@ -71,9 +60,9 @@ export function addCfnNagSuppressRules(
 }
 
 export interface MainProps extends StackProps {
-  solutionName?: string;
+  solutionName: string;
   solutionDesc?: string;
-  solutionId?: string;
+  solutionId: string;
 
   /**
    * Indicate whether to create a new VPC or use existing VPC for this Solution
@@ -138,6 +127,32 @@ export class MainStack extends Stack {
     });
     this.addToParamLabels('Admin User Email', username.logicalId);
     this.addToParamGroups('Authentication', username.logicalId);
+
+    const metricsMapping = new CfnMapping(this, 'AnonymousData', {
+      mapping: {
+        SendAnonymizedUsageData: {
+          Data: 'Yes',
+        },
+      },
+    });
+
+    const metricsConstruct = new SolutionMetrics(this, 'SolutionMetrics', {
+      solutionId: solutionId,
+      solutionVersion: VERSION!,
+      template: this.stackName,
+      sendMetrics: metricsMapping.findInMap('SendAnonymizedUsageData', 'Data'),
+    });
+
+    const solutionUuid = Fn.conditionIf(
+      new CfnCondition(this, 'AnonymousDatatoAWS', {
+        expression: Fn.conditionEquals(
+          metricsMapping.findInMap('SendAnonymizedUsageData', 'Data'),
+          'Yes'
+        ),
+      }).logicalId,
+      metricsConstruct.uuidCustomResource.getAtt('UUID'),
+      ''
+    );
 
     if (this.authType === AuthType.OIDC) {
       oidcProvider = new CfnParameter(this, 'OidcProvider', {
@@ -613,6 +628,11 @@ export class MainStack extends Stack {
       stackPrefix: stackPrefix,
       microBatchStack: microBatchStack,
       snsEmailTopic: microBatchStack.microBatchSNSStack.SNSSendEmailTopic,
+      solutionUuid: solutionUuid.toString(),
+      sendAnonymizedUsageData: metricsMapping.findInMap(
+        'SendAnonymizedUsageData',
+        'Data'
+      ),
     });
     NagSuppressions.addResourceSuppressions(
       apiStack,
@@ -711,6 +731,11 @@ export class MainStack extends Stack {
       description: 'Web Console URL (front-end)',
       value: portalStack.portalUrl,
     }).overrideLogicalId('WebConsoleUrl');
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::IAM::Role": ["IAM_NO_INLINE_POLICY_CHECK", "IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE", "CFN_NO_EXPLICIT_RESOURCE_NAMES"], // Explicit role names required for cross account assumption
+      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+    }))
   }
 
   private addToParamGroups(label: string, ...param: string[]) {
@@ -724,11 +749,11 @@ export class MainStack extends Stack {
     this.paramLabels[param] = {
       default: label,
     };
-  }
+  }    
 }
 
 class AddS3BucketNotificationsDependency implements IAspect {
-  public constructor(private deps: CfnResource) { }
+  public constructor(private deps: CfnResource) {}
 
   public visit(node: IConstruct): void {
     if (

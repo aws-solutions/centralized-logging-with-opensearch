@@ -8,6 +8,7 @@ import json
 from commonlib import AWSConnection, AppSyncRouter, handle_error
 from commonlib.exception import APIException, ErrorCode
 from commonlib.logging import get_logger
+from commonlib.solution_metrics import send_metrics
 from util.alarm_helper import AlarmHelper
 
 logger = get_logger("alarm")
@@ -53,6 +54,7 @@ def create_pipeline_alarm(**args):
 
     alarm_helper = AlarmHelper(pipeline_id, sns_topic_arn, emails, pipeline_type)
     alarm_helper.create_alarms(sns_topic_name)
+    send_anonymous_metrics(pipeline_id, pipeline_type, "CREATE")
     return "OK"
 
 
@@ -70,6 +72,7 @@ def update_pipeline_alarm(**args):
 
     alarm_helper = AlarmHelper(pipeline_id, sns_topic_arn, emails, pipeline_type)
     alarm_helper.update_alarms()
+    send_anonymous_metrics(pipeline_id, pipeline_type, "UPDATE")
     return "OK"
 
 
@@ -81,4 +84,14 @@ def delete_pipeline_alarm(**args):
 
     alarm_helper = AlarmHelper(pipeline_id, "", "", pipeline_type)
     alarm_helper.delete_alarms()
+    send_anonymous_metrics(pipeline_id, pipeline_type, "DELETE")
     return "OK"
+
+def send_anonymous_metrics(pipeline_id: str, pipeline_type: str, operation: str):
+    metrics_data = {}
+    metrics_data["metricType"] = "PIPELINE_ALARM_MANAGEMENT"
+    metrics_data["pipelineType"] = pipeline_type
+    metrics_data["region"] = os.environ.get("AWS_REGION")
+    metrics_data["pipelineId"] = pipeline_id
+    metrics_data["operation"] = operation
+    send_metrics(metrics_data) 

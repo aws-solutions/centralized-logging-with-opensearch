@@ -1,19 +1,7 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 import {
+  Aspects,
   Aws,
   CfnCondition,
   Duration,
@@ -33,6 +21,7 @@ import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { AppPipelineFlowStack } from './app-pipeline-flow';
+import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
 export interface AppPipelineStackProps {
   readonly vpc: IVpc;
 
@@ -77,6 +66,8 @@ export interface AppPipelineStackProps {
 
   readonly defaultLoggingBucket: string;
   readonly defaultCmkArn: string;
+  readonly sendAnonymizedUsageData: string;
+  readonly solutionUuid: string;
 }
 export class AppPipelineStack extends Construct {
   constructor(scope: Construct, id: string, props: AppPipelineStackProps) {
@@ -88,6 +79,8 @@ export class AppPipelineStack extends Construct {
       ingestionTable: props.appLogIngestionTable,
       cfnFlowSMArn: props.cfnFlowSMArn,
       microBatchStack: props.microBatchStack,
+      solutionUuid: props.solutionUuid,
+      sendAnonymizedUsageData: props.sendAnonymizedUsageData,
     });
 
     // Create a lambda layer with required python packages.
@@ -278,6 +271,11 @@ export class AppPipelineStack extends Construct {
         reason: 'The managed policy needs to use any resources.',
       },
     ]);
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::IAM::Role": ["CFN_NO_EXPLICIT_RESOURCE_NAMES"], // Explicit role names required for cross account assumption
+    }));
+
     appPipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,

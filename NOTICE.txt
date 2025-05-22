@@ -20,7 +20,7 @@ openapi_spec_validator under the Apache-2.0 license
 pyparsing under the MIT license
 pyyaml under the MIT license
 binaryornot under the BSD license
-chardet under GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
+chardet under the LGPL license(s).
 numpy under the BSD-3-Clause license
 pyarrow under the Apache-2.0 license
 pytest-httpserver under the MIT license
@@ -218,15 +218,11 @@ cookie under the MIT license
 ua-parser-builtins under the under the Apache-2.0 license
 urllib3 under the MIT license
 urllib3<1.27, under the MIT license
-urlgrabber under GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
 iniparse under the MIT license
 pip under the MIT license
-wsgiref under the Python-2.0 license
 Python under the Python-2.0 license
-yum-metadata-parser under the GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
 rpm-python under the MIT license
 pycurl under the GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
-pygpgme under the GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
 lambda/python under the ISC license
 format under the MIT license
 exit under the Unlicense license
@@ -809,7 +805,6 @@ char-regex under the MIT license
 character-entities under the MIT license
 character-entities-legacy under the MIT license
 character-reference-invalid under the MIT license
-chardet under the MIT license
 check-types under the MIT license
 chokidar under the MIT license
 chrome-trace-event under the MIT license
@@ -1416,7 +1411,7 @@ prettier-linter-helpers under the MIT license
 pretty-bytes under the MIT license
 pretty-error under the MIT license
 pretty-format under the MIT license
-prettytable under the MIT license
+prettytable under the BSD-3-Clause license
 prismjs under the MIT license
 process-nextick-args under the MIT license
 promise under the MIT license
@@ -1516,7 +1511,7 @@ set-blocking under the ISC license
 set-function-length under the MIT license
 set-function-name under the MIT license
 setprototypeof under the ISC license
-setuptools under the ISC license
+setuptools under the MIT license
 shebang-command under the MIT license
 shebang-regex under the MIT license
 shell-quote under the MIT license
@@ -1732,7 +1727,7 @@ color-support under the ISC license.
 charset-normalizer under the MIT license.
 python-dateutil under the Apache-2.0 license.
 six under the MIT license.
-typing-extensions under the PSF-2.0 license.
+typing-extensions under the PSF-2.0 license. 
 jinja2 under the 0BSD license.
 markupsafe under the 0BSD license.
 packaging under the Apache-2.0 license.
@@ -1740,7 +1735,8 @@ pywin32 under the PSF-2.0 license.
 werkzeug under the 0BSD license.
 commonlib under the 0BSD license.
 pyopenssl under the Apache-2.0 license.
-
+wsgiref under the PSF or ZPL license(s).
+yum-metadata-parser under the MIT license.
 
 ********************
 OPEN SOURCE LICENSES
@@ -1761,5 +1757,7 @@ Python-2.0 - https://opensource.org/licenses/Python-2.0
 Unlicense - https://opensource.org/licenses/Unlicense
 LGPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 LGPL-2.1-only - https://spdx.org/licenses/LGPL-2.1-only.html
+LGPL - https://spdx.org/licenses/GPL-2.0-or-later.html
+GNU Lesser General Public License v2 or later (LGPLv2+) - https://spdx.org/licenses/GPL-2.0-or-later.html
 Zlib - https://spdx.org/licenses/Zlib.html
 PSF-2.0 - https://opensource.org/licenses/Python-2.0

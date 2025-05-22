@@ -1,20 +1,8 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 import {
   aws_appsync as appsync,
+  Aspects,
   Aws,
   aws_dynamodb as ddb,
   Duration,
@@ -31,6 +19,7 @@ import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { constructWithFixedLogicalId } from '../util/stack-helper';
+import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
 
 export interface GrafanaStackProps {
   /**
@@ -185,5 +174,9 @@ export class GrafanaStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+    
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::DynamoDB::Table": ["DYNAMODB_TABLE_ENCRYPTED_KMS"] // Using service default encryption https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/EncryptionAtRest.html
+    }))
   }
 }

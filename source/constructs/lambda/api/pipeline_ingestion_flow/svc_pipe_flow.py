@@ -7,6 +7,7 @@ from commonlib.logging import get_logger
 from commonlib import AWSConnection
 from commonlib.model import PipelineAlarmStatus, PipelineType, PipelineMonitorStatus
 from util.pipeline_helper import StackErrorHelper
+from commonlib.solution_metrics import send_metrics
 
 logger = get_logger(__name__)
 
@@ -35,6 +36,8 @@ def lambda_handler(event, _):
         item = resp["Item"]
 
         update_status(pipeline_id, args, result, item)
+
+        send_anonymous_metrics(pipeline_id, result, item)
 
         if "monitor" in item:
             if (
@@ -198,3 +201,25 @@ def get_earliest_error_event(stack_id: str):
     """
     stack_error_helper = StackErrorHelper(stack_id)
     return stack_error_helper.get_cfn_stack_earliest_error_event()
+
+def send_anonymous_metrics(pipeline_id: str, result, item):
+    metrics_data = {}
+    metrics_data["metricType"] = "PIPELINE_MANAGEMENT"
+    metrics_data["pipelineType"] = "Service"
+    metrics_data["status"] = result.get("stackStatus", "")
+    metrics_data["region"] = os.environ.get("AWS_REGION")
+    metrics_data["pipelineId"] = pipeline_id
+    
+    metrics_data["sourceType"] = item.get("type", "")
+    metrics_data["engineType"] = item.get("engineType", "")
+    metrics_data["logSourceType"]= item.get("destinationType", "")
+    if item.get("osiParams", {}).get("minCapacity", 0) > 0:
+        metrics_data["logProcessorType"] = "OpenSearch Ingestion Service"
+    else:
+        metrics_data["logProcessorType"] = "AWS Lambda"
+    log_source_account_id = next((param['parameterValue'] 
+                            for param in item.get("parameters", []) 
+                            if param['parameterKey'] == 'logSourceAccountId'), None)        
+    is_cross_account_ingestion = log_source_account_id is not None and log_source_account_id != os.environ.get("ACCOUNT_ID")
+    metrics_data["isCrossAccountIngestion"] = is_cross_account_ingestion
+    send_metrics(metrics_data)

@@ -5,9 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-05-22
+
+### Added 
+
+- Anonymized operational metrics collection
+
+### Changed
+
+- Added input validation to ensure Light Engine table name only contains alphanumeric characters, hyphens, and underscores
+- Renamed PostgreSQL log field `duration` to `query_time` for consistency with existing MySQL log format
+
+### Fixed
+
+- Issue where domains would display inconsistent metric values. [Issue #277](https://github.com/aws-solutions/centralized-logging-with-opensearch/issues/277)
+- Enhanced OpenSearch API retry mechanism in Log processor Lambda to handle IAM role propagation delays
+
+### Security
+
+- Updated setuptools package to address [CVE-2025-47273](https://avd.aquasec.com/nvd/2025/cve-2025-47273/)
+
 ## [2.3.3] - 2025-04-30
 
-### Updated
+### Changed
 
 - Cognito user invitation email template
 
@@ -34,7 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Jinja2 package to address [CVE-2025-27516](https://avd.aquasec.com/nvd/2025/cve-2025-27516/)
 - Updated prismjs package to address [CVE-2024-53382](https://avd.aquasec.com/nvd/2024/cve-2024-53382/)
 - Updated Babel packages to address [CVE-2025-27789](https://avd.aquasec.com/nvd/2025/cve-2025-27789/)
-
 
 ## [2.3.1] - 2025-02-24
 

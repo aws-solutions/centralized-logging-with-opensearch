@@ -1,18 +1,5 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 import {
   Aws,
@@ -20,6 +7,7 @@ import {
   aws_s3 as s3,
   aws_lambda as lambda,
   aws_logs as logs,
+  Aspects,
 } from 'aws-cdk-lib';
 import { ISecurityGroup, IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
@@ -29,6 +17,7 @@ import {
   OpenSearchInitStack,
   OpenSearchInitProps,
 } from '../common/opensearch-init-stack';
+import { CfnGuardSuppressResourceList } from '../../util/add-cfn-guard-suppression';
 export interface LogProcessorProps {
   /**
    * Default VPC for OpenSearch REST API Handler
@@ -124,6 +113,10 @@ export class AppLogProcessor extends Construct {
       logGroupName: `/aws/lambda/${Aws.STACK_NAME}-LogProcessorFn`,
       removalPolicy: RemovalPolicy.DESTROY,
     });
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"] // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+    }))
 
     constructFactory(CWLMetricStack)(this, 'cwlMetricStack', {
       metricSourceType: MetricSourceType.LOG_PROCESSOR_APP,

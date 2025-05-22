@@ -1,28 +1,15 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 import {
-  CfnOutput,
   Aws,
+  CfnOutput,
   aws_appsync as appsync,
-  aws_s3 as s3,
-  aws_sns as sns,
   aws_ecs as ecs,
   aws_iam as iam,
   aws_kms as kms,
+  aws_s3 as s3,
+  aws_sns as sns,
 } from 'aws-cdk-lib';
 import { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
@@ -48,9 +35,9 @@ import { LogSourceStack } from './log-source-stack';
 
 import { PipelineAlarmStack } from './pipeline-alarm-stack';
 
-import { SvcPipelineStack } from './svc-pipeline-stack';
 import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { CfnFlowStack } from '../main/cfn-flow-stack';
+import { SvcPipelineStack } from './svc-pipeline-stack';
 
 const TEMPLATE_OUTPUT_BUCKET =
   process.env.TEMPLATE_OUTPUT_BUCKET || 'solutions-features-reference';
@@ -125,6 +112,8 @@ export interface APIProps {
   readonly encryptionKey: kms.IKey;
 
   readonly snsEmailTopic: sns.Topic;
+  readonly sendAnonymizedUsageData: string;
+  readonly solutionUuid: string;
 }
 
 /**
@@ -249,6 +238,8 @@ export class APIStack extends Construct {
       stackPrefix: props.stackPrefix,
       microBatchStack: props.microBatchStack,
       encryptionKey: props.encryptionKey,
+      solutionUuid: props.solutionUuid,
+      sendAnonymizedUsageData: props.sendAnonymizedUsageData,
     });
     NagSuppressions.addResourceSuppressions(
       svcPipelineStack,
@@ -329,6 +320,8 @@ export class APIStack extends Construct {
         solutionId: props.solutionId,
         stackPrefix: props.stackPrefix,
         encryptionKey: props.encryptionKey,
+        solutionUuid: props.solutionUuid,
+        sendAnonymizedUsageData: props.sendAnonymizedUsageData,
       }
     ));
     NagSuppressions.addResourceSuppressions(
@@ -364,6 +357,8 @@ export class APIStack extends Construct {
       microBatchStack: props.microBatchStack,
       defaultLoggingBucket: props.defaultLoggingBucket.bucketName,
       defaultCmkArn: props.cmkKeyArn,
+      solutionUuid: props.solutionUuid,
+      sendAnonymizedUsageData: props.sendAnonymizedUsageData,
     });
     NagSuppressions.addResourceSuppressions(
       appPipelineStack,
@@ -509,7 +504,11 @@ export class APIStack extends Construct {
     const throttleFunc = new CloudWatchAlarmManagerSingleton(
       this,
       'AlarmHandlerFn',
-      { SNS_EMAIL_TOPIC_ARN: props.snsEmailTopic.topicArn }
+      {
+        SNS_EMAIL_TOPIC_ARN: props.snsEmailTopic.topicArn,
+        DEPLOYMENT_UUID: props.solutionUuid,
+        SEND_ANONYMIZED_USAGE_DATA: props.sendAnonymizedUsageData,
+      }
     ).throttleFunc;
 
     appTableStack.appPipelineTable.grantReadWriteData(throttleFunc);

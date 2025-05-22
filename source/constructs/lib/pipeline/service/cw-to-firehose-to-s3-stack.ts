@@ -1,20 +1,8 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 import {
+  Aspects,
   Aws,
   CfnCondition,
   CfnOutput,
@@ -34,6 +22,7 @@ import * as path from 'path';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { SharedPythonLayer } from '../../layer/layer';
+import { CfnGuardSuppressResourceList } from '../../util/add-cfn-guard-suppression';
 /**
  * cfn-nag suppression rule interface
  */
@@ -310,5 +299,12 @@ export class CWtoFirehosetoS3Stack extends Construct {
       description: 'CloudWatch Logs Destination ARN',
       value: `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:destination:${Aws.STACK_NAME}-${logFirehose.deliveryStreamName}`,
     }).overrideLogicalId('CloudWatchLogsDestinationARN');
+
+    Aspects.of(logFirehose).add(new CfnGuardSuppressResourceList({
+      // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"],
+      // Using service default encryption https://docs.aws.amazon.com/firehose/latest/dev/encryption.html
+      "AWS::KinesisFirehose::DeliveryStream": ["KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD", "KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD"]
+    }))
   }
 }

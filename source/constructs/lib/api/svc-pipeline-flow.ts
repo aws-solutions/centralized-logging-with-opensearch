@@ -1,18 +1,5 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 import * as path from 'path';
 import {
   Fn,
@@ -50,6 +37,8 @@ export interface SvcPipelineFlowProps {
   readonly pipelineResourcesBuilder: lambda.Function;
 
   readonly microBatchStack: MicroBatchStack;
+  readonly sendAnonymizedUsageData: string;
+  readonly solutionUuid: string;
 }
 
 /**
@@ -80,7 +69,10 @@ export class SvcPipelineFlowStack extends Construct {
       environment: {
         SOLUTION_ID: solution_id,
         PIPELINE_TABLE_NAME: table.tableName,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+        SOLUTION_VERSION: process.env.VERSION ?? 'v1.0.0',
+        ACCOUNT_ID: Aws.ACCOUNT_ID,
+        DEPLOYMENT_UUID: props.solutionUuid,
+        SEND_ANONYMIZED_USAGE_DATA: props.sendAnonymizedUsageData,
       },
       description: `${Aws.STACK_NAME} - Helper function to update svc pipeline status`,
     });
@@ -101,6 +93,15 @@ export class SvcPipelineFlowStack extends Construct {
         actions: [
           'cloudformation:DescribeStacks',
           'cloudformation:DescribeStackEvents',
+        ],
+      })
+    );
+    servicePipeFlowFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ssm:GetParameter'],
+        resources: [
+          `arn:${Aws.PARTITION}:ssm:${Aws.REGION}:${Aws.ACCOUNT_ID}:parameter/CLO/anonymous_metrics_uuid`,
         ],
       })
     );

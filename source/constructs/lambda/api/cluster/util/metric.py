@@ -48,21 +48,20 @@ def get_metric_data(client: boto3.Session.client, domain_list, account_id):
     # Can use the GetMetricData API to retrieve as many as 500 different metrics in a single request,
     # means 100 domains tops
     # ideally, there won't be more than 100 domains.
+    start, end = _generate_metrics_timestamps()
     resp = client.get_metric_data(
         MetricDataQueries=queries,
-        StartTime=datetime.now() - timedelta(seconds=60),
-        EndTime=datetime.now(),
+        StartTime=start,
+        EndTime=end,
     )
     # print(resp)
     metric_data = _parse_result(domain_list, resp["MetricDataResults"])
-
     return metric_data
 
 
 def _build_metric_query(domain_list, account_id):
     """Helper func to set query metric"""
     queries = []
-
     # for each domain, there is a unique index
     # the metric id is in a format of 'mx'+index, e.g. m10
     # This is to map the metric result back to a domain
@@ -129,3 +128,16 @@ def _parse_result(domain_list, metric_result):  # NOSONAR
             logger.info(metric)
 
     return metric_data
+
+def _generate_metrics_timestamps():
+    """ 
+    With the CloudWatch GetMetricData API, if we set the EndTime as anytime within the current minute, we will not get accurate data.
+    Ex: Current Time = 00:02:30, Start Time 00:01:00, End Time 00:02:00 - Incorrect Metrics
+    Fix: Current Time = 00:02:30, Start Time 00:00:59, End Time 00:01:59 - Correct Metrics 
+
+    Returns: 
+        Array: containing dt objects representing the last 60 second window starting and ending at the :59 second mark
+    """
+    start = (datetime.now() - timedelta(seconds=120)).replace(second=59,microsecond=0)
+    end = (datetime.now() - timedelta(seconds=60)).replace(second=59,microsecond=0)
+    return [start, end]

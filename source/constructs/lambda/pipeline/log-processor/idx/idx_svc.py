@@ -92,18 +92,16 @@ class AosIdxService:
                 logger.info("%s runs successfully", func_name)
                 break
             logger.error("%s failed: %s", func_name, response.text)
-            if response.status_code == 403 or response.status_code == 409:
-                logger.info("Please add access to OpenSearch for this Lambda")
-                if response.status_code == 403:
-                    logger.error(
-                        "the last response code is %d, the last response content is %s",
-                        response.status_code,
-                        response.content,
-                    )
-                    self.map_backend_role()
+            if response.status_code == 403 and retry >= total_retry:
+                self.map_backend_role()
                 raise APIException(
                     ErrorCode.UNKNOWN_ERROR,
-                    "Lambda does not have permission to call AOS, the message will be re-consumed and then retried. ",
+                    f"Lambda failed with permission error after {total_retry} attempts. The message will be re-consumed and retried.",
+                )      
+            elif response.status_code == 409:
+                raise APIException(
+                    ErrorCode.UNKNOWN_ERROR,
+                    "Conflict error in OpenSearch, the message will be re-consumed and retried.",
                 )
 
             if retry >= total_retry:
@@ -140,6 +138,9 @@ class AosIdxService:
         global init_master_role_job
         if init_master_role_job == 0:
             self.map_backend_role()
+            # Introduce delay to ensure IAM role mapping propagates across OpenSearch cluster
+            # This prevents 403 permission errors in subsequent API calls
+            time.sleep(SLEEP_INTERVAL)
             init_master_role_job = 1
             self.adjust_lambda_env_var(env_name="INIT_MASTER_ROLE_JOB", val=1)
 
@@ -187,7 +188,7 @@ class AosIdxService:
                 opensearch_util.create_ism_policy,
                 "Create ISM",
                 2,
-                sleep_interval=5,
+                sleep_interval=10,
                 **kwargs,
             )
             init_ism_job = 1

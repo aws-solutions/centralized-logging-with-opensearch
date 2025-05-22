@@ -58,8 +58,4 @@ export const CreateStep: React.FC<CreateStepProps> = (
   );
 };
 
-CreateStep.defaultProps = {
-  className: "",
-};
-
 export default CreateStep;

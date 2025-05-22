@@ -43,7 +43,7 @@
     "auto": "自动",
     "tip21": "该解决方案将检测是否需要创建",
     "tip22": "VPC 对等连接",
-    "tip23": "。如果需要，解决方案将自动创建 VPC 对等连接，更新路由表，并更新 OpenSearch 域的安全组。",
+    "tip23": "。如果需要，解决方案将自动创建 VPC 对等连接，更新路由表，并更新 OpenSearch 域的安全组。注意：如果您计划使用 Transit Gateway 在 OpenSearch domain VPC 与解决方案 VPC 之间建立连接，请使用手动网络创建选项以维持网络连接。",
     "manual": "手动",
     "tip3": "手动指定日志处理层的网络信息。您可能需要创建 VPC 对等连接，更新路由表和 OpenSearch 域的安全组。",
     "importDomain": "导入 OpenSearch 域"

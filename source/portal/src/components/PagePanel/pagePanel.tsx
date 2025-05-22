@@ -39,8 +39,4 @@ export const PagePanel: React.FC<PagePanelProps> = (props: PagePanelProps) => {
   );
 };
 
-PagePanel.defaultProps = {
-  className: "",
-};
-
 export default PagePanel;

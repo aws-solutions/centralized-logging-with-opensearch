@@ -263,8 +263,9 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params, tag=[]):
     template_url = get_template_url(pattern)
     propagation_tag = [
         {"Key": stack_name, "Value": stack_name},
-        {"Key": "CLOSolutionCostAnalysis", "Value": "CLOSolutionCostAnalysis"},
+        {"Key": "CLOSolutionCostAnalysis", "Value": "CLOSolutionCostAnalysis"}
     ]
+
     if len(tag) != 0:
         for element in tag:
             propagation_tag.append(

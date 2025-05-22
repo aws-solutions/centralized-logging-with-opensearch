@@ -39,11 +39,11 @@
   },
   "creationMethod": {
     "name": "Creation method",
-    "tip1": "When import OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. The solution will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
+    "tip1": "When importing an OpenSearch domain, you need to specify the networking configuration associated with the Log Processing Layer. The solution will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
     "auto": "Automatic",
     "tip21": "The solution will detect if there is a need to create a ",
     "tip22": "VPC Peering Connection",
-    "tip23": ". If needed, the solution will automatically create a VPC Peering Connection, update route table, and update the security group of OpenSearch domain.",
+    "tip23": ". If needed, the solution will automatically create a VPC Peering Connection, update route table, and update the security group of OpenSearch domain. Note: If you plan to use Transit Gateway for connectivity between OpenSearch domain VPC and the solution VPC, use manual network create option to maintain network connectivity.",
     "manual": "Manual",
     "tip3": " Manually specify the Log Processing Layer networking information. You may need to create VPC Peering Connection, update route table and security group of OpenSearch domain.",
     "importDomain": "Import OpenSearch domain"

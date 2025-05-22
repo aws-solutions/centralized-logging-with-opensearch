@@ -56,8 +56,8 @@ export overrideWarningsEnabled=false
 usage() 
 {
     echo "Usage: $0 bucket solution-name version"
-    echo "Please provide the base source bucket name, trademarked solution name, and version." 
-    echo "For example: ./build-s3-dist.sh mybucket my-solution v1.0.0" 
+    echo "Please provide the base source bucket name, trademarked solution name, version." 
+    echo "For example: ./build-s3-dist.sh mybucket my-solution v1.0.0"
     exit 1 
 }
 

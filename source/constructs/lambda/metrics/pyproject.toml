@@ -1,0 +1,20 @@
+[project]
+name = "metrics"
+description = "Solution metrics helper lambda"
+requires-python = ">=3.10,<4.0.0"
+dependencies = [
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+urllib3 = "^2.4.0"
+commonlib = { path = "../common-lib" }
+boto3 = "^1.38.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

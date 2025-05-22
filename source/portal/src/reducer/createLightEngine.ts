@@ -1,18 +1,6 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+import { DomainStatusCheckType } from "API";
 import {
   createFieldValidator,
   pipFieldValidator,
@@ -20,10 +8,9 @@ import {
   validateWithRegex,
   withI18nErrorMessage,
 } from "assets/js/utils";
+import i18n from "i18n";
 import { YesNo } from "types";
 import { GrafanaState } from "./grafana";
-import { DomainStatusCheckType } from "API";
-import i18n from "i18n";
 
 export enum ScheduleScale {
   MIN = "minutes",
@@ -159,6 +146,8 @@ const validateGteOne = createFieldValidator(
 const CRON_REGEX_STR =
   "^cron\\(((\\d{1,2}|\\*),?\\/?)+\\s((\\d{1,2}|\\*),?)+\\s((\\d{1,2}|\\*|\\?),?)+\\s((\\d{1,2}|\\*|\\?|(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)),?)+\\s((\\d{1,2}[FL]?|\\*|\\?|(SAT|SUN|MON|TUE|WED|THU|FRI)#?\\d?),?-?)+\\s((\\d{1,4}|\\*),?-?)+\\)$";
 
+const TABLE_NAME_REGEX = "^[0-9A-Za-z_-]+$";
+
 const validateCronExpression = validateWithRegex(
   new RegExp(`${CRON_REGEX_STR}`)
 )(() => i18n.t("lightengine:engine.create.errorCronExpression"));
@@ -182,10 +171,13 @@ const validateLogMergerSchedule = pipFieldValidator(
   ),
   validateCronExpression
 );
-const validateCentralizedTableName = withI18nErrorMessage(
-  validateRequiredText(
-    "lightengine:engine.create.errorCentralizedTableNameMissing"
-  )
+const validateCentralizedTableName = pipFieldValidator(
+  validateRequiredText(() => 
+      i18n.t("lightengine:engine.create.errorCentralizedTableNameMissing")
+  ),
+  validateWithRegex(
+      new RegExp(TABLE_NAME_REGEX)
+    )(() => i18n.t("lightengine:engine.create.errorTableNameValidation"))
 );
 const validateLogArchiveAge = withI18nErrorMessage(
   pipFieldValidator(

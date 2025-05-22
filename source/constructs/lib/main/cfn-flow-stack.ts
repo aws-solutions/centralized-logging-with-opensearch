@@ -1,33 +1,20 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-import * as path from 'path';
 import {
   Aws,
-  Fn,
+  aws_dynamodb as ddb,
   Duration,
-  aws_stepfunctions_tasks as tasks,
-  aws_stepfunctions as sfn,
-  aws_logs as logs,
+  Fn,
   aws_iam as iam,
   aws_lambda as lambda,
-  aws_dynamodb as ddb,
+  aws_logs as logs,
+  aws_stepfunctions as sfn,
+  aws_stepfunctions_tasks as tasks,
 } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import * as path from 'path';
 import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';

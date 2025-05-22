@@ -211,8 +211,4 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
   );
 };
 
-SideMenu.defaultProps = {
-  className: "",
-};
-
 export default SideMenu;

@@ -12,6 +12,7 @@ from commonlib.model import (
     EngineType,
 )
 from util.pipeline_helper import StackErrorHelper
+from commonlib.solution_metrics import send_metrics
 
 logger = get_logger(__name__)
 
@@ -49,6 +50,8 @@ def lambda_handler(event, _):
             raise RuntimeError("Pipeline Not Found")
 
         item = resp["Item"]
+
+        send_anonymous_metrics(pipeline_id, result, item)
 
         update_status(pipeline_id, args, result, item)
 
@@ -226,3 +229,18 @@ def get_earliest_error_event(stack_id: str):
     """
     stack_error_helper = StackErrorHelper(stack_id)
     return stack_error_helper.get_cfn_stack_earliest_error_event()
+
+def send_anonymous_metrics(pipeline_id: str, result: dict, item: dict):
+    metrics_data = {}
+    metrics_data["metricType"] = "PIPELINE_MANAGEMENT"
+    metrics_data["pipelineType"] = "Application"
+    metrics_data["status"] = result.get("stackStatus", "")
+    metrics_data["region"] = os.environ.get("AWS_REGION")
+    metrics_data["pipelineId"] = pipeline_id
+    metrics_data["bufferType"] = item.get("bufferType", "")
+    metrics_data["engineType"] = item.get("engineType", "")
+    if item.get("osiParams", {}).get("minCapacity", 0) > 0:
+        metrics_data["logProcessorType"] = "OpenSearch Ingestion Service"
+    else:
+        metrics_data["logProcessorType"] = "AWS Lambda"
+    send_metrics(metrics_data) 

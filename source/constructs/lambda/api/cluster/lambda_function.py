@@ -5,7 +5,7 @@ import hashlib
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
@@ -25,9 +25,10 @@ from commonlib.model import (
     Vpc,
 )
 from commonlib.dao import AppPipelineDao, SvcPipelineDao, OpenSearchDomainDao
+from commonlib.solution_metrics import send_metrics
 
 from cluster_auto_import_mgr import ClusterAutoImportManager
-from util.metric import get_metric_data
+from util.metric import get_metric_data, _generate_metrics_timestamps
 import util.cluster_status_check_helper as cluster_status_checker
 
 logger = get_logger(__name__)
@@ -103,7 +104,10 @@ def set_master_user_arn(aos_client, domain_name, master_role_arn: str):
 
 @handle_error
 def lambda_handler(event, _):
-
+    if ('source' in event and event['source'] == 'aws.events' 
+        and event.get('detail-type') == 'Anonymized-Metrics-Collection'):
+        return send_anonymous_domain_metrics()
+    
     action = event["info"]["fieldName"]
     args = event["arguments"]
 
@@ -1188,3 +1192,93 @@ def get_domain_engine_and_version_dynamically(resp_from_api, item_from_ddb):
 
     item_from_ddb["version"] = version
     item_from_ddb["engine"] = engine
+
+
+def send_anonymous_domain_metrics():
+    """Send anonymous OpenSearch domain metrics"""
+    try:
+        # Get all domains
+        domains = aos_domain_dao.list_domains()
+
+        metrics_data = []
+        if not domains:
+            logger.debug("No OpenSearch domains found")
+            return
+
+        for domain in domains:
+            # Get CloudWatch metrics
+            cw_metrics = get_opensearch_metrics(domain.domainName)
+            if cw_metrics:
+                metrics_data = {}
+                metrics_data["metricType"] = "OPENSEARCH_METRICS"
+                metrics_data['domainId'] = domain.id
+                metrics_data['domainVersion'] = domain.version
+                metrics_data["region"] = os.environ.get("AWS_REGION")
+                metrics_data['proxyEnabled'] = domain.proxyStatus == 'ENABLED'
+                metrics_data['freeStorageSpace'] = round(cw_metrics.get('FreeStorageSpace', 0), 2)
+                metrics_data['clusterUsedSpace'] = round(cw_metrics.get('ClusterUsedSpace', 0), 2)
+                metrics_data['nodeCount'] = int(cw_metrics.get('Nodes', 0))
+                send_metrics(metrics_data)
+    except Exception as e:
+        logger.info(f"Error sending anonymous metrics: {str(e)}")
+
+
+def get_opensearch_metrics(domain_name: str):
+    """Get OpenSearch metrics from CloudWatch"""
+    try:
+        cw_client = conn.get_client("cloudwatch")
+
+        metrics_to_fetch = [
+            'FreeStorageSpace',
+            'ClusterUsedSpace',
+            'Nodes'
+        ]
+
+        metric_queries = []
+        for metric_name in metrics_to_fetch:
+            query_id = metric_name.lower().replace('.', '_')
+            
+            query = {
+                'Id': query_id,
+                'MetricStat': {
+                    'Metric': {
+                        'Namespace': 'AWS/ES',
+                        'MetricName': metric_name,
+                        'Dimensions': [
+                            {
+                                'Name': 'DomainName',
+                                'Value': domain_name
+                            },
+                            {
+                                'Name': 'ClientId',
+                                'Value': account_id
+                            }
+                        ]
+                    },
+                    'Period': 60,
+                    'Stat': 'Sum'
+                }
+            }
+            metric_queries.append(query)
+
+        start_time, end_time = _generate_metrics_timestamps()
+        response = cw_client.get_metric_data(
+            MetricDataQueries=metric_queries,
+            StartTime=start_time,
+            EndTime=end_time
+        )
+        metrics_data = {}
+        for result in response['MetricDataResults']:
+            metric_name = next(
+                metric for metric in metrics_to_fetch 
+                if metric.lower().replace('.', '_') == result['Id']
+            )
+        
+            value = result['Values'][0] if result['Values'] else 0
+            metrics_data[metric_name] = value
+
+        logger.debug(f"Fetched metrics for domain {domain_name}: {metrics_data}")
+        return metrics_data
+    except Exception as e:
+        logger.info(f"Error fetching CloudWatch metrics: {str(e)}")
+        return None

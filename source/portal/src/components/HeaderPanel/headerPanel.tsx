@@ -74,8 +74,4 @@ export const HeaderPanel: React.FC<
   );
 };
 
-HeaderPanel.defaultProps = {
-  className: "",
-};
-
 export default HeaderPanel;

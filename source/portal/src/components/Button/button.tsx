@@ -49,9 +49,9 @@ export type ButtonProps = Partial<NativeButtonProps & AnchorButtonProps>;
  */
 export const Button: FC<ButtonProps> = (props) => {
   const {
-    btnType,
+    btnType = "default",
     className,
-    disabled,
+    disabled = false,
     loading,
     loadingColor,
     size,
@@ -87,11 +87,6 @@ export const Button: FC<ButtonProps> = (props) => {
       );
     }
   }
-};
-
-Button.defaultProps = {
-  disabled: false,
-  btnType: "default",
 };
 
 export default Button;

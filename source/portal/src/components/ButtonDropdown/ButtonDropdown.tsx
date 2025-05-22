@@ -71,9 +71,9 @@ export const Button: FC<ButtonProps> = (props) => {
   const {
     onItemClick,
     items,
-    btnType,
+    btnType = "default",
     className,
-    disabled,
+    disabled = false,
     loading,
     loadingColor,
     size,
@@ -164,11 +164,6 @@ export const Button: FC<ButtonProps> = (props) => {
       );
     }
   }
-};
-
-Button.defaultProps = {
-  disabled: false,
-  btnType: "default",
 };
 
 export default Button;

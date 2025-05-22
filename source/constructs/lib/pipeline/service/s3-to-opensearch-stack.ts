@@ -1,18 +1,5 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 import * as path from 'path';
 import {
@@ -44,6 +31,7 @@ import { S3toOpenSearchStackProps } from './s3-to-opensearch-common-stack';
 import { SharedPythonLayer } from '../../layer/layer';
 import { constructFactory } from '../../util/stack-helper';
 import { CWLMetricStack, MetricSourceType } from '../common/cwl-metric-stack';
+import { CfnGuardSuppressResourceList } from '../../util/add-cfn-guard-suppression';
 
 /**
  * cfn-nag suppression rule interface
@@ -183,6 +171,10 @@ export class S3toOpenSearchStack extends Construct {
       ],
       true
     );
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"], // Explicit role names required for cross account assumption
+    }));
 
     // Setup SQS and DLQ
     const logEventDLQ = new sqs.Queue(this, 'LogEventDLQ', {
