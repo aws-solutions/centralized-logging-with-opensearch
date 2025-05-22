@@ -4,7 +4,7 @@ description = ""
 requires-python = ">=3.10"
 dependencies = [
     "boto3 (==1.26.111)",
-    "setuptools (==70.0.0)"
+    "setuptools (==78.1.1)"
 ]
 
 [tool.poetry]

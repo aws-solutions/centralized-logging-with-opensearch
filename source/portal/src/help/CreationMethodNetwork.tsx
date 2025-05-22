@@ -42,7 +42,7 @@ const CreationMethodNetwork: React.FC = () => {
           </i>
         </div>
         <div className="gsui-help-link-item">
-          <a href="/clusters/import-opensearch-cluster" target="_blank">
+          <a href="https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/domain-operations.html#import-an-amazon-opensearch-service-domain" target="_blank" rel="noreferrer">
             {t("info:creationMethod.importDomain")}
           </a>
         </div>

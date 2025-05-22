@@ -349,6 +349,8 @@ t run_python_test $construct_dir/lib/kinesis/lambda lambda &
 tests_to_run+=($!)
 t run_python_test $construct_dir/lambda/api/grafana grafana &
 tests_to_run+=($!)
+t run_python_test $construct_dir/lambda/metrics metrics &
+tests_to_run+=($!)
 cd $construct_dir/../../deployment/ecr/clo-s3-list-objects
 rm -rf common-lib
 t run_python_test $construct_dir/../../deployment/ecr/clo-s3-list-objects s3-list-objects &

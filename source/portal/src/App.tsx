@@ -80,7 +80,7 @@ const App: React.FC = () => {
     const timeStamp = new Date().getTime();
     const res = await Axios.get(`/aws-exports.json?timestamp=${timeStamp}`);
     const configData: AmplifyConfigType = res.data;
-    if (authType === AppSyncAuthType.OPEN_ID && !configData.oidc_logout_url) {
+    if (res.data['aws_appsync_authenticationType'] === AppSyncAuthType.OPEN_ID && !configData.oidc_logout_url) {
       // Get oidc logout url from openid configuration
       await Axios.get(
         `${configData.aws_oidc_provider}/.well-known/openid-configuration`

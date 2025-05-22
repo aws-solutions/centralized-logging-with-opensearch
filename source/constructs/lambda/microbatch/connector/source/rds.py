@@ -170,7 +170,7 @@ class PostgresQueryLogFormat(metaclass=LogFormat):
         "database",
         "connection_id",
         "operation",
-        "duration",
+        "query_time",
         "object",
     )
     FLAGS = re.DOTALL

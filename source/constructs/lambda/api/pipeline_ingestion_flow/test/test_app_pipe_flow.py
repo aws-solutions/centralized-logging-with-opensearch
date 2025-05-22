@@ -7,6 +7,7 @@ import pytest
 import os
 import boto3
 from moto import mock_dynamodb, mock_cloudformation
+from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -123,7 +124,9 @@ def ddb_client():
         yield
 
 
+@patch('app_pipe_flow.send_metrics')
 def test_lambda_function_create_event(
+    mock_send_metrics,
     ddb_client,
     test_create_event,
 ):
@@ -145,9 +148,23 @@ def test_lambda_function_create_event(
     assert "stackId" in item
 
     assert item["status"] == "ACTIVE"
+    mock_send_metrics.assert_called_once_with(
+        {
+            'metricType': 'PIPELINE_MANAGEMENT',
+            'pipelineType': 'Application',
+            'status': 'CREATE_COMPLETE', 
+            'region': 'us-east-1',
+            'pipelineId': '2e536ae6-0f85-463c-9e61-04cebf3ec12b',
+            'bufferType': 'S3', 
+            'engineType': '',
+            'logProcessorType': 'AWS Lambda'
+        }
+    )   
 
 
+@patch('app_pipe_flow.send_metrics')
 def test_lambda_function_delete_event(
+    mock_send_metrics,
     ddb_client,
     test_delete_event,
 ):
@@ -165,6 +182,18 @@ def test_lambda_function_delete_event(
     )
     item = response["Item"]
     assert item["status"] == "INACTIVE"
+    mock_send_metrics.assert_called_once_with(
+        {
+            'metricType': 'PIPELINE_MANAGEMENT',
+            'pipelineType': 'Application',
+            'status': 'DELETE_COMPLETE', 
+            'region': 'us-east-1',
+            'pipelineId': '2e536ae6-0f85-463c-9e61-04cebf3ec12b',
+            'bufferType': 'S3', 
+            'engineType': '',
+            'logProcessorType': 'AWS Lambda'
+            }
+    )  
 
 
 def test_lambda_function_error_event(

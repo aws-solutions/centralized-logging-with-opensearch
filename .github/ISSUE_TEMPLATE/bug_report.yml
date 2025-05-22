@@ -15,7 +15,7 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
+      label: Expected behavior
       description: |
         What did you expect to happen?
     validations:
@@ -34,7 +34,7 @@ body:
   - type: textarea
     id: reproduction
     attributes:
-      label: Reproduction Steps
+      label: To Reproduce
       description: |
         Provide a self-contained, concise snippet of code that can be used to reproduce the issue.
         For more complex issues provide a repo with the smallest sample that reproduces the bug.
@@ -54,7 +54,7 @@ body:
   - type: textarea
     id: context
     attributes:
-      label: Additional Information/Context
+      label: Additional context
       description: |
         Anything else that might be relevant for troubleshooting this bug. Providing context helps us come up with a solution that is most useful in the real world.
     validations:
@@ -68,6 +68,10 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: "# Please complete the following information about the solution:"
+
   - type: input
     id: aws-region
     attributes:
@@ -78,7 +82,7 @@ body:
   - type: textarea
     id: other
     attributes:
-      label: Other information
+      label: Other information / Screenshots
       description: |
         e.g. detailed explanation, stacktraces, related issues, suggestions how to fix, links for us to have context, eg. associated pull-request, stackoverflow, slack, etc
     validations:

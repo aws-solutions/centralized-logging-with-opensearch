@@ -130,17 +130,3 @@ Once you have uploaded the distributable to your Amazon S3 bucket, you can start
 
     Then you can deploy the solution to your account by launching a new AWS CloudFormation stack using the link of the solution template in Amazon S3.
 
-- Deploy via CDK
-
-    In case your accounts have not been bootstrapped for cdk yet, run:
-
-    ```
-    npx cdk bootstrap
-    ```
-
-    Then run:
-    ```
-    cd ./source/constructs
-    npx cdk deploy CentralizedLogging --parameters adminEmail=<your email address>
-    ```
-

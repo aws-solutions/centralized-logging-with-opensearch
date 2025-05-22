@@ -212,8 +212,4 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
   );
 };
 
-HelpPanel.defaultProps = {
-  className: "",
-};
-
 export default HelpPanel;

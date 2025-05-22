@@ -363,8 +363,4 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   );
 };
 
-TablePanel.defaultProps = {
-  className: "",
-};
-
 export { SelectType, TablePanel };

@@ -1,28 +1,17 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 import {
   Aws,
+  CfnCondition,
   Duration,
   Fn,
   RemovalPolicy,
   aws_appsync as appsync,
   aws_dynamodb as ddb,
+  aws_events as events,
   aws_iam as iam,
   aws_kms as kms,
-  aws_lambda as lambda,
+  aws_lambda as lambda
 } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
@@ -81,6 +70,8 @@ export interface ClusterStackProps {
   readonly stackPrefix: string;
   readonly aosMasterRole: iam.Role;
   readonly encryptionKey: kms.IKey;
+  readonly sendAnonymizedUsageData: string;
+  readonly solutionUuid: string;
 }
 export class ClusterStack extends Construct {
   readonly clusterTable: ddb.Table;
@@ -165,6 +156,8 @@ export class ClusterStack extends Construct {
         DEFAULT_SG_ID: props.processSgId,
         DEFAULT_PRIVATE_SUBNET_IDS: Fn.join(',', props.subnetIds),
         DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
+        DEPLOYMENT_UUID: props.solutionUuid,
+        SEND_ANONYMIZED_USAGE_DATA: props.sendAnonymizedUsageData,
       },
       description: `${Aws.STACK_NAME} - Cluster APIs Resolver`,
     });
@@ -377,5 +370,46 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+
+    const enableMetricsCondition = new CfnCondition(
+      this,
+      'EnableMetricsCondition',
+      {
+        expression: Fn.conditionEquals(props.sendAnonymizedUsageData, 'Yes'),
+      }
+    );
+
+    const metricsRule = new events.CfnRule(this, 'OpenSearchMetricsRule', {
+      scheduleExpression: 'rate(7 days)',
+      description:
+        'Trigger Anonymized OpenSearch metrics collection every week',
+      state: 'ENABLED',
+      targets: [
+        {
+          arn: clusterHandler.functionArn,
+          id: 'OpenSearchMetricsTarget',
+          input: JSON.stringify({
+            source: 'aws.events',
+            'detail-type': 'Anonymized-Metrics-Collection',
+            detail: {},
+          }),
+        },
+      ],
+    });
+
+    // Apply condition
+    metricsRule.cfnOptions.condition = enableMetricsCondition;
+
+    // Add permission for EventBridge to invoke Lambda
+    clusterHandler.addPermission('EventBridgeInvoke', {
+      principal: new iam.ServicePrincipal('events.amazonaws.com'),
+      sourceArn: metricsRule.attrArn,
+      action: 'lambda:InvokeFunction',
+    });
+
+    const cfnPermission = clusterHandler.node.findChild(
+      'EventBridgeInvoke'
+    ) as lambda.CfnPermission;
+    cfnPermission.cfnOptions.condition = enableMetricsCondition;
   }
 }

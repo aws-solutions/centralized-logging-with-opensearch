@@ -67,8 +67,4 @@ const Tiles: React.FC<TilesProps> = (props: TilesProps) => {
   );
 };
 
-Tiles.defaultProps = {
-  className: "",
-};
-
 export default Tiles;

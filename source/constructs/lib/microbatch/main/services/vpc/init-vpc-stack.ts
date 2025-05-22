@@ -1,20 +1,7 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-import { Aws, Fn, RemovalPolicy, CfnOutput, aws_ssm as ssm } from 'aws-cdk-lib';
+import { Aws, Fn, RemovalPolicy, CfnOutput, aws_ssm as ssm, Aspects } from 'aws-cdk-lib';
 import {
   SecurityGroup,
   CfnSecurityGroup,
@@ -28,6 +15,7 @@ import {
 } from 'aws-cdk-lib/aws-ec2';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
+import { CfnGuardSuppressResourceList } from '../../../../util/add-cfn-guard-suppression';
 
 export interface InitVPCProps {
   vpc?: string;
@@ -161,5 +149,9 @@ export class InitVPCStack extends Construct {
       value: this.privateSecurityGroup.securityGroupId,
       exportName: `${Aws.STACK_NAME}::PrivateSecurityGroupId`,
     }).overrideLogicalId('PrivateSecurityGroupId');
+
+    Aspects.of(this).add(new CfnGuardSuppressResourceList({
+      "AWS::EC2::SecurityGroup": ["SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE"]
+    }))
   }
 }

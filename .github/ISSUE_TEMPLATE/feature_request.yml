@@ -1,6 +1,7 @@
 ---
 name: 🚀 Feature Request
 description: Suggest an idea for this project
+about: Suggest an idea for this solution
 title: "(module name): (short issue description)"
 labels: [enhancement, needs-triage]
 assignees: []
@@ -8,14 +9,14 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Describe the feature
+      label: Describe the feature you'd like
       description: A clear and concise description of the feature you are proposing.
     validations:
       required: true
   - type: textarea
     id: use-case
     attributes:
-      label: Use Case
+      label: Is your feature request related to a problem? Please describe.
       description: |
         Why do you need this feature? For example: "I'm always frustrated when..."
     validations:
@@ -31,7 +32,7 @@ body:
   - type: textarea
     id: other
     attributes:
-      label: Other Information
+      label: Additional context
       description: |
         Any alternative solutions or features you considered, a more detailed explanation, stack traces, related issues, links for context, etc.
     validations:

@@ -582,7 +582,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "",
         "connection_id": "560",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": "checkpoint starting: time",
         "log_type": "Query",
     }
@@ -594,7 +594,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "",
         "connection_id": "560",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": "checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB",
         "log_type": "Query",
     }
@@ -606,7 +606,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "LOG",
-        "duration": "100.50",
+        "query_time": "100.50",
         "object": 'SELECT d.datname as "Name",\n        pg_catalog.pg_get_userbyid(d.datdba) as "Owner",\n        pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",\n        d.datcollate as "Collate",\n        d.datctype as "Ctype",\n        pg_catalog.array_to_string(d.datacl, E\'\n\') AS "Access privileges"\n    FROM pg_catalog.pg_database d\n    ORDER BY 1;',
         "log_type": "Query",
     }
@@ -618,7 +618,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "ERROR",
-        "duration": None,
+        "query_time": None,
         "object": 'syntax error at or near "/" at character 1',
         "log_type": "Query",
     }
@@ -630,7 +630,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "STATEMENT",
-        "duration": None,
+        "query_time": None,
         "object": "/h\n    LIst\n    list\n    select * from audit.record_history;",
         "log_type": "Query",
     }
@@ -642,7 +642,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": "select * from audit.record_history;",
         "log_type": "Query",
     }
@@ -654,7 +654,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "ERROR",
-        "duration": None,
+        "query_time": None,
         "object": 'relation "audit.record_history" does not exist at character 15',
         "log_type": "Query",
     }
@@ -666,7 +666,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "STATEMENT",
-        "duration": None,
+        "query_time": None,
         "object": "select * from audit.record_history;",
         "log_type": "Query",
     }
@@ -678,7 +678,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": "select * from audit.record_history;",
         "log_type": "Query",
     }
@@ -690,7 +690,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": None,
         "connection_id": "394",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": 'skipping missing configuration file "/rdsdbdata/config/recovery.conf"',
         "log_type": "Query",
     }
@@ -702,7 +702,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": None,
         "connection_id": "394",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": 'skipping missing configuration file "/rdsdbdata/config/recovery.conf"',
         "log_type": "Query",
     }
@@ -714,7 +714,7 @@ def test_parse_postgres_query_log(mock_rds_context):
         "database": "postgres",
         "connection_id": "29735",
         "operation": "LOG",
-        "duration": None,
+        "query_time": None,
         "object": "select * from audit.record_history;",
         "log_type": "Query",
     }
@@ -1352,29 +1352,29 @@ class TestRDSSource:
                 aurora_mysql_instance_8}", "engine": "aurora-mysql", "engine_version": "8.0.mysql_aurora.3.06.0", "endpoint_address": "{aurora_mysql_instance_8}.us-east-1.rds.amazonaws.com", "endpoint_port": 3306}}\n""",
             f"""{{"timestamp": "2024-01-03T08:12:20.050990Z", "connection_id": "217704", "operation": "Query", "object": "SELECT durable_lsn, current_read_point, server_id, last_update_timestamp FROM information_schema.replica_host_status;", "log_type": "General", "db_cluster_identifier": "", "db_instance_identifier": "{
                 aurora_mysql_instance_8}", "engine": "aurora-mysql", "engine_version": "8.0.mysql_aurora.3.06.0", "endpoint_address": "{aurora_mysql_instance_8}.us-east-1.rds.amazonaws.com", "endpoint_port": 3306}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:23:46.000000Z", "host": "", "port": "", "username": "", "database": "", "connection_id": "560", "operation": "LOG", "duration": null, "object": "checkpoint starting: time", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:23:46.000000Z", "host": "", "port": "", "username": "", "database": "", "connection_id": "560", "operation": "LOG", "query_time": null, "object": "checkpoint starting: time", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:23:46.000000Z", "host": "", "port": "", "username": "", "database": "", "connection_id": "560", "operation": "LOG", "duration": null, "object": "checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:23:46.000000Z", "host": "", "port": "", "username": "", "database": "", "connection_id": "560", "operation": "LOG", "query_time": null, "object": "checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:23:51.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "duration": "100.50", "object": "SELECT d.datname as \\"Name\\",\\n        pg_catalog.pg_get_userbyid(d.datdba) as \\"Owner\\",\\n        pg_catalog.pg_encoding_to_char(d.encoding) as \\"Encoding\\",\\n        d.datcollate as \\"Collate\\",\\n        d.datctype as \\"Ctype\\",\\n        pg_catalog.array_to_string(d.datacl, E\'\\n\') AS \\"Access privileges\\"\\n    FROM pg_catalog.pg_database d\\n    ORDER BY 1;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:23:51.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "query_time": "100.50", "object": "SELECT d.datname as \\"Name\\",\\n        pg_catalog.pg_get_userbyid(d.datdba) as \\"Owner\\",\\n        pg_catalog.pg_encoding_to_char(d.encoding) as \\"Encoding\\",\\n        d.datcollate as \\"Collate\\",\\n        d.datctype as \\"Ctype\\",\\n        pg_catalog.array_to_string(d.datacl, E\'\\n\') AS \\"Access privileges\\"\\n    FROM pg_catalog.pg_database d\\n    ORDER BY 1;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:05.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "ERROR", "duration": null, "object": "syntax error at or near \\"/\\" at character 1", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:05.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "ERROR", "query_time": null, "object": "syntax error at or near \\"/\\" at character 1", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:05.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "STATEMENT", "duration": null, "object": "/h\\n    LIst\\n    list\\n    select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:05.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "STATEMENT", "query_time": null, "object": "/h\\n    LIst\\n    list\\n    select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "duration": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "query_time": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "ERROR", "duration": null, "object": "relation \\"audit.record_history\\" does not exist at character 15", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "ERROR", "query_time": null, "object": "relation \\"audit.record_history\\" does not exist at character 15", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "STATEMENT", "duration": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:09.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "STATEMENT", "query_time": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2023-11-29T09:24:22.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "duration": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2023-11-29T09:24:22.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "query_time": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2024-03-27T01:35:26.270000Z", "host": null, "port": null, "username": null, "database": null, "connection_id": "394", "operation": "LOG", "duration": null, "object": "skipping missing configuration file \\"/rdsdbdata/config/recovery.conf\\"", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2024-03-27T01:35:26.270000Z", "host": null, "port": null, "username": null, "database": null, "connection_id": "394", "operation": "LOG", "query_time": null, "object": "skipping missing configuration file \\"/rdsdbdata/config/recovery.conf\\"", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2024-03-27T01:35:26.271000Z", "host": null, "port": null, "username": null, "database": null, "connection_id": "394", "operation": "LOG", "duration": null, "object": "skipping missing configuration file \\"/rdsdbdata/config/recovery.conf\\"", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2024-03-27T01:35:26.271000Z", "host": null, "port": null, "username": null, "database": null, "connection_id": "394", "operation": "LOG", "query_time": null, "object": "skipping missing configuration file \\"/rdsdbdata/config/recovery.conf\\"", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
-            f"""{{"timestamp": "2024-03-27T01:36:27.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "duration": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
+            f"""{{"timestamp": "2024-03-27T01:36:27.000000Z", "host": "10.0.2.55", "port": "57562", "username": "postgres", "database": "postgres", "connection_id": "29735", "operation": "LOG", "query_time": null, "object": "select * from audit.record_history;", "log_type": "Query", "db_cluster_identifier": "", "db_instance_identifier": "{
                 postgresql_instance}", "engine": "postgres", "engine_version": "12.12", "endpoint_address": "{postgresql_instance}.us-east-1.rds.amazonaws.com", "endpoint_port": 5432}}\n""",
         ]
         with patch("botocore.client.BaseClient._make_api_call", new=mock_rds_api_call):
