@@ -1737,6 +1737,46 @@ commonlib under the 0BSD license.
 pyopenssl under the Apache-2.0 license.
 wsgiref under the PSF or ZPL license(s).
 yum-metadata-parser under the MIT license.
+get-proto under the MIT license.
+math-intrinsics under the MIT license.
+is-inside-container under the MIT license.
+default-browser under the MIT license.
+bundle-name under the MIT license.
+run-applescript under the MIT license.
+default-browser-id under the MIT license.
+is-network-error under the MIT license.
+@jest/pattern under the MIT license.
+@jest/get-type under the MIT license.
+@jest/diff-sequences under the MIT license.
+@jest/snapshot-utils under the MIT license.
+unrs-resolver under the MIT license.
+napi-postinstall under the MIT license.
+@unrs/resolver-binding-freebsd-x64 under the MIT license.
+@unrs/resolver-binding-win32-ia32-msvc under the MIT license.
+@unrs/resolver-binding-win32-arm64-msvc under the MIT license.
+@unrs/resolver-binding-linux-arm-musleabihf under the MIT license.
+@unrs/resolver-binding-android-arm-eabi under the MIT license.
+@unrs/resolver-binding-android-arm64 under the MIT license.
+@unrs/resolver-binding-linux-s390x-gnu under the MIT license.
+@unrs/resolver-binding-linux-riscv64-gnu under the MIT license.
+@unrs/resolver-binding-linux-riscv64-musl under the MIT license.
+@unrs/resolver-binding-linux-ppc64-gnu under the MIT license.
+@unrs/resolver-binding-linux-arm-gnueabihf under the MIT license.
+@unrs/resolver-binding-linux-x64-gnu under the MIT license.
+@unrs/resolver-binding-darwin-x64 under the MIT license.
+@unrs/resolver-binding-linux-arm64-musl under the MIT license.
+@unrs/resolver-binding-wasm32-wasi under the MIT license.
+@napi-rs/wasm-runtime under the MIT license.
+@emnapi/core under the MIT license.
+@emnapi/wasi-threads under the MIT license.
+@emnapi/runtime under the MIT license.
+@tybys/wasm-util under the MIT license.
+@unrs/resolver-binding-darwin-arm64 under the MIT license.
+@unrs/resolver-binding-win32-x64-msvc under the MIT license.
+@unrs/resolver-binding-linux-arm64-gnu under the MIT license.
+@unrs/resolver-binding-linux-x64-musl under the MIT license.
+exit-x under the MIT license.
+pygments under the 0BSD license.
 
 ********************
 OPEN SOURCE LICENSES

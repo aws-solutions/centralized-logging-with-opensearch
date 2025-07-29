@@ -1,4 +1,4 @@
-FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.5.20250422
+FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:2.33.0
 
 RUN yum update -y && yum install -y unzip
 

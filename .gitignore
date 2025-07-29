@@ -1,7 +1,7 @@
 # Typescript
 source/*/*.js
+source/constructs/**/*.js
 *.d.ts
-*.js
 !.nightswatch/**/*.js
 node_modules/
 
@@ -82,3 +82,6 @@ venv.bak/
 
 #requirement files
 source/constructs/**/*requirement*.txt
+
+#Build
+build
