@@ -11,7 +11,7 @@ package-mode = false
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 pytest-cov = "^6.1.1"
-urllib3 = "^2.4.0"
+urllib3 = "^2.5.0"
 commonlib = { path = "../common-lib" }
 boto3 = "^1.38.1"
 

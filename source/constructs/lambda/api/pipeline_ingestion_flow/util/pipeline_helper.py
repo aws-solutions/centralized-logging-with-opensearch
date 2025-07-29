@@ -47,8 +47,11 @@ class StackErrorHelper:
 
         err_events_return_count = 0
         for event in list(reversed(stack_events)):
-            if "FAILED" in event["ResourceStatus"]:
-                cfn_err_message_array.append(event.get("ResourceStatusReason"))
+            if "FAILED" in event["ResourceStatus"]: 
+                # Cloud Formation Event Statuses can contain stacktrace information in CREATE_FAILED events
+                # Truncating until the first '\n' occurence will prevent that section of the error message from being returned
+                event_status = event.get("ResourceStatusReason").partition('\n')[0]
+                cfn_err_message_array.append(event_status)
                 err_events_return_count += 1
                 if err_events_return_count >= max_err_events_return_count:
                     break

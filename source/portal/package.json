@@ -137,6 +137,13 @@
     "serialize-javascript": "6.0.2",
     "prismjs": "1.30.0",
     "@babel/core": "7.26.10",
-    "@babel/runtime": "7.26.10"
+    "@babel/runtime": "7.26.10",
+    "webpack-dev-server": "5.2.1",
+    "brace-expansion": "2.0.2",
+    "form-data": "3.0.4",
+    "axios": {
+      "form-data": "4.0.4"
+    },
+    "on-headers": "1.1.0"
   }
 }
