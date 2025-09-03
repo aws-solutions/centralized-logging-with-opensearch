@@ -22,6 +22,24 @@ fs.readdirSync(global_s3_assets).forEach(file => {
   });
   lambdaFunctions.forEach(function (f) {
     const fn = template.Resources[f];
+    
+    // Add guard metadata for CDK internal Lambda functions
+    if (file === 'S3SourceStack.template' && f.startsWith('AWSCDKCfnUtilsProviderCustomResourceProviderHandler')) {
+      console.log(`Adding CFN guard metadata to CDK internal Lambda function: ${f} in ${file}`);
+      
+      // Initialize Metadata if it doesn't exist
+      if (!fn.Metadata) {
+        fn.Metadata = {};
+      }
+
+      fn.Metadata.guard = {
+        SuppressedRules: [
+          "LAMBDA_INSIDE_VPC",
+          "LAMBDA_CONCURRENCY_CHECK"
+        ]
+      };
+    }
+    
     if (fn.Properties.Code.hasOwnProperty('S3Bucket')) {
       // Set the S3 key reference
       let s3Key = Object.assign(fn.Properties.Code.S3Key);
