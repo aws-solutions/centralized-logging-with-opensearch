@@ -22,7 +22,7 @@ export const AppStoreMockData = {
     default_cmk_arn: "arn:aws:kms:us-east-2:xxxx:key/xxx-xxx-xxx-xxx-xxx",
     solution_version: "develop",
     solution_name: "centralized-logging-with-opensearch",
-    template_bucket: "xxx-xxx-xxx",
+    template_base_url: "https://s3.amazonaws.com/xxx-xxx-xxx",
   },
   openSideMenu: true,
   showInfoBar: false,

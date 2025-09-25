@@ -106,10 +106,9 @@ const LinkAnAccount: React.FC = () => {
               <div className="pl-20">
                 <CopyText
                   text={buildCrossAccountTemplateLink(
-                    amplifyConfig.aws_appsync_region,
                     amplifyConfig.solution_version,
-                    amplifyConfig.template_bucket,
-                    amplifyConfig.solution_name
+                    amplifyConfig.solution_name,
+                    amplifyConfig.template_base_url
                   )}
                 >
                   {""}
@@ -117,10 +116,9 @@ const LinkAnAccount: React.FC = () => {
                 <pre className="ml-20">
                   <code>
                     {buildCrossAccountTemplateLink(
-                      amplifyConfig.aws_appsync_region,
                       amplifyConfig.solution_version,
-                      amplifyConfig.template_bucket,
-                      amplifyConfig.solution_name
+                      amplifyConfig.solution_name,
+                      amplifyConfig.template_base_url
                     )}
                   </code>
                 </pre>

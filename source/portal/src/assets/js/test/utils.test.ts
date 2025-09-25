@@ -948,35 +948,31 @@ describe("buildASGLink", () => {
 });
 
 describe("buildCrossAccountTemplateLink", () => {
-  it("should build the cross account template link for standard AWS regions", () => {
-    const region = "us-example-1";
+  it("should build the cross account template link with template base URL", () => {
     const solutionVersion = "v1.0.0";
-    const templateBucket = "myTemplateBucket";
     const solutionName = "solutionName";
+    const templateBaseUrl = "https://s3.amazonaws.com/solutions-reference";
     const link = buildCrossAccountTemplateLink(
-      region,
       solutionVersion,
-      templateBucket,
-      solutionName
+      solutionName,
+      templateBaseUrl
     );
     expect(link).toBe(
-      `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`
+      `${templateBaseUrl}/${solutionName}/${solutionVersion}/CrossAccount.template`
     );
   });
 
   it("should build the cross account template link for China regions", () => {
-    const region = "cn-example-1";
     const solutionVersion = "v1.0.1";
-    const templateBucket = "myTemplateBucket";
     const solutionName = "myTemplate";
+    const templateBaseUrl = "https://solutions-reference-cn.s3.cn-north-1.amazonaws.com.cn";
     const link = buildCrossAccountTemplateLink(
-      region,
       solutionVersion,
-      templateBucket,
-      solutionName
+      solutionName,
+      templateBaseUrl
     );
     expect(link).toBe(
-      `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`
+      `${templateBaseUrl}/${solutionName}/${solutionVersion}/CrossAccount.template`
     );
   });
 });

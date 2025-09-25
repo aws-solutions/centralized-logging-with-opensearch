@@ -20,9 +20,9 @@ default_config = config.Config(**user_agent_config)
 
 default_region = os.environ.get("AWS_REGION")
 
-template_output_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET", "aws-gcr-solutions")
+template_base_url = os.environ.get("TEMPLATE_BASE_URL")
 solution_name = os.environ.get("SOLUTION_NAME", "clo")
-template_prefix = f"https://{template_output_bucket}.s3.amazonaws.com/{solution_name}/{solution_version}"
+template_prefix = f"{template_base_url}/{solution_name}/{solution_version}"
 
 sts = boto3.client("sts", config=default_config)
 account_id = sts.get_caller_identity()["Account"]

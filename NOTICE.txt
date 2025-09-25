@@ -1777,6 +1777,18 @@ napi-postinstall under the MIT license.
 @unrs/resolver-binding-linux-x64-musl under the MIT license.
 exit-x under the MIT license.
 pygments under the 0BSD license.
+set-proto under the MIT license.
+side-channel-map under the MIT license.
+safe-push-apply under the MIT license.
+async-function under the MIT license.
+side-channel-list under the MIT license.
+call-bound under the MIT license.
+side-channel-weakmap under the MIT license.
+own-keys under the MIT license.
+@babel/plugin-transform-explicit-resource-management under the MIT license.
+wsl-utils under the MIT license.
+baseline-browser-mapping under the Apache-2.0 license.
+@babel/helper-globals under the Apache-2.0 license.
 
 ********************
 OPEN SOURCE LICENSES

@@ -24,7 +24,7 @@
     "aws-amplify": "^5.3.12",
     "aws-appsync-auth-link": "^3.0.7",
     "aws-appsync-subscription-link": "^3.1.2",
-    "axios": "^1.8.2",
+    "axios": "^1.12.1",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
     "graphql-tag": "^2.12.6",
@@ -141,9 +141,7 @@
     "webpack-dev-server": "5.2.1",
     "brace-expansion": "2.0.2",
     "form-data": "3.0.4",
-    "axios": {
-      "form-data": "4.0.4"
-    },
+    "axios": "^1.12.1",
     "on-headers": "1.1.0"
   }
 }

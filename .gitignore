@@ -28,6 +28,7 @@ deployment/global-s3-assets/
 deployment/regional-s3-assets/
 deployment/viperlight
 deployment/staging/
+deployment/open-source
 
 ### macOS ###
 # General

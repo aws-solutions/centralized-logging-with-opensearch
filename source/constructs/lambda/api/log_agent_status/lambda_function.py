@@ -190,22 +190,22 @@ def list_command_invocations(ssm_client, command_id, details=True, maxResults=50
 
 
 def handle_command_invocations(
-    ssm_client, command_id, max_retries=10, retry_delay=0.25
+    ssm_client, command_id, max_retries=13, retry_delay=2.0
 ):
     """
     Handles the list of command invocations for the specified AWS Systems Manager command.
-    If any of the invocations are in progress, it will retry the command until all invocations are completed or the maximum number of retries is reached.
-
+    Uses fixed retry delay to stay within AppSync's 30-second timeout.
+    
     Args:
         ssm_client (boto3.client): An AWS Systems Manager client.
         command_id (str): The ID of the command to handle.
-        max_retries (int, optional): The maximum number of times to retry the command. Defaults to 5.
-        retry_delay (float, optional): The number of seconds to wait between retries. Defaults to 0.5.
+        max_retries (int, optional): Maximum retries (default: 13)
+        retry_delay (float, optional): Delay between retries (default: 2.0 seconds)
 
     Returns:
         list: The list of command invocations.
     """
-    for _ in range(max_retries):
+    for attempt in range(max_retries):
         command_invocations = list(list_command_invocations(ssm_client, command_id))
         in_progress_count = len(
             list(
@@ -216,13 +216,14 @@ def handle_command_invocations(
             return command_invocations
 
         logger.info(
-            f"Retrying command {command_id} ({in_progress_count}/{len(command_invocations)} invocations in progress)"
+            f"Retrying command {command_id} ({in_progress_count}/{len(command_invocations)} invocations in progress) - attempt {attempt + 1}/{max_retries}"
         )
-        time.sleep(retry_delay)
-        retry_delay *= 2  # Exponential backoff
+
+        if attempt < max_retries - 1:
+            time.sleep(retry_delay)
 
     raise TimeoutError(
-        f"Command {command_id} did not complete within {sum(2 ** i * retry_delay for i in range(max_retries))} seconds."
+        f"Command {command_id} did not complete within {max_retries * retry_delay} seconds."
     )
 
 

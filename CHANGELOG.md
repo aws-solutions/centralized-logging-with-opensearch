@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - 2025-09-24
+
+### Security
+
+- Updated axios from `1.7.7` to `1.12.1` to mitigate [CVE-2025-58754](https://avd.aquasec.com/nvd/cve-2025-58754), a DoS vulnerability.
+- Updated Python Lambda base image from `public.ecr.aws/lambda/python:3.12.2025.09.02.19` to `public.ecr.aws/lambda/python:3.12.2025.09.22.12` to address [CVE-2025-24528](https://avd.aquasec.com/nvd/cve-2025-24528), [CVE-2025-3576](https://avd.aquasec.com/nvd/cve-2025-3576), [CVE-2025-7425](https://avd.aquasec.com/nvd/cve-2025-7425), and [CVE-2025-8058](https://avd.aquasec.com/nvd/cve-2025-8058).
+- Removed deprecated NPM package "fs" has been identified as potentially vulnerable to package takeover.
+
+### Fixed
+
+- Fixed solution CloudFormation template deployment failures in AWS China partition by implementing partition-aware S3 URL generation [Issue #338](https://github.com/aws-solutions/centralized-logging-with-opensearch/issues/338)
+- Fixed timeout issue with Get Agent status API by optimizing retry logic to work within AppSync's 30 second timeout limit
+
 ## [2.4.3] - 2025-09-03
 
 ### Security

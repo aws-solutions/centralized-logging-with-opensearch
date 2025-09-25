@@ -114,6 +114,10 @@ export interface APIProps {
   readonly snsEmailTopic: sns.Topic;
   readonly sendAnonymizedUsageData: string;
   readonly solutionUuid: string;
+
+  readonly s3Endpoint: string;
+  readonly templateBucketName: string;
+  readonly templateBaseUrl: string;
 }
 
 /**
@@ -136,7 +140,7 @@ export class APIStack extends Construct {
     });
 
     apiStack.graphqlApi
-      .addHttpDataSource('LatestVersionDS', 'https://s3.amazonaws.com')
+      .addHttpDataSource('LatestVersionDS', props.s3Endpoint)
       .createResolver('LatestVersionResolver', {
         typeName: 'Query',
         fieldName: 'latestVersion',
@@ -144,7 +148,7 @@ export class APIStack extends Construct {
           JSON.stringify({
             version: '2018-05-29',
             method: 'GET',
-            resourcePath: `/${TEMPLATE_OUTPUT_BUCKET}/centralized-logging-with-opensearch/latest/version`,
+            resourcePath: `/${props.templateBucketName}/centralized-logging-with-opensearch/latest/version`,
             params: {
               headers: {
                 'Content-Type': 'application/json',
@@ -183,6 +187,7 @@ export class APIStack extends Construct {
       stackPrefix: props.stackPrefix,
       solutionId: props.solutionId,
       microBatchStack: props.microBatchStack,
+      templateBaseUrl: props.templateBaseUrl,
     });
     NagSuppressions.addResourceSuppressions(
       cfnFlow,

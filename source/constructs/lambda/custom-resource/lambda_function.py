@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 solution_version = os.environ.get("SOLUTION_VERSION")
 solution_name = os.environ.get("SOLUTION_NAME")
 template_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET")
+template_base_url = os.environ.get("TEMPLATE_BASE_URL")
 bucket_name = os.environ.get("WEB_BUCKET_NAME")
 api_endpoint = os.environ.get("API_ENDPOINT")
 user_pool_id = os.environ.get("USER_POOL_ID")
@@ -121,6 +122,7 @@ def get_config_str():
         "solution_name": solution_name,
         "sns_email_topic_arn": SNS_EMAIL_TOPIC_ARN,
         "template_bucket": template_bucket,
+        "template_base_url": template_base_url,
     }
 
     return json.dumps(export_json)

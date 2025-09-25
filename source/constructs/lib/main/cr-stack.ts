@@ -3,17 +3,17 @@
 
 import * as path from 'path';
 import {
-  Aws,
-  Duration,
-  CfnCondition,
-  Fn,
   Aspects,
-  IAspect,
+  Aws,
+  CfnCondition,
   CfnResource,
-  CustomResource,
-  aws_iam as iam,
-  aws_lambda as lambda,
   custom_resources as cr,
+  CustomResource,
+  Duration,
+  Fn,
+  aws_iam as iam,
+  IAspect,
+  aws_lambda as lambda,
   aws_sns as sns,
 } from 'aws-cdk-lib';
 import { Construct, IConstruct } from 'constructs';
@@ -106,6 +106,9 @@ export interface CRProps {
   readonly apiStack: APIStack;
   readonly webUILoggingBucket: string;
   readonly snsEmailTopic: sns.Topic;
+
+  readonly templateBucketName: string;
+  readonly templateBaseUrl: string;
 }
 
 /**
@@ -117,8 +120,6 @@ export class CustomResourceStack extends Construct {
   constructor(scope: Construct, id: string, props: CRProps) {
     super(scope, id);
 
-    const templateBucket =
-      process.env.TEMPLATE_OUTPUT_BUCKET || 'aws-gcr-solutions';
     const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || 'log-hub'; // Old name
 
     // If in China Region, disable install latest aws-sdk
@@ -163,7 +164,8 @@ export class CustomResourceStack extends Construct {
         STAGING_BUCKET: props.stagingBucket,
         DEFAULT_CMK_ARN: props.cmkKeyArn,
         SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
-        TEMPLATE_OUTPUT_BUCKET: templateBucket,
+        TEMPLATE_OUTPUT_BUCKET: props.templateBucketName,
+        TEMPLATE_BASE_URL: props.templateBaseUrl,
         SOLUTION_NAME: solutionName,
         ACCESS_LOGGING_BUCKET: props.webUILoggingBucket,
         SNS_EMAIL_TOPIC_ARN: props.snsEmailTopic.topicArn,
@@ -203,10 +205,7 @@ export class CustomResourceStack extends Construct {
     this.initConfigFn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: [
-          'kms:DescribeCustomKeyStores',
-          'kms:DescribeKey',
-        ],
+        actions: ['kms:DescribeCustomKeyStores', 'kms:DescribeKey'],
         resources: ['*'],
       })
     );
@@ -236,7 +235,7 @@ export class CustomResourceStack extends Construct {
 }
 
 class InjectCustomerResourceConfig implements IAspect {
-  public constructor(private installLatestAwsSdk: string) { }
+  public constructor(private installLatestAwsSdk: string) {}
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource && node.cfnResourceType === 'Custom::AWS') {
