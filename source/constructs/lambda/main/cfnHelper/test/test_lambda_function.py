@@ -42,13 +42,18 @@ def s3_client():
         key = f"{solution_name}/{version}/AlarmForOpenSearch.template"
 
         s3 = boto3.resource("s3", region_name=region)
-        # Create the bucket
-        template_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET")
-        s3.create_bucket(Bucket=template_bucket)
+        # Create the bucket - extract bucket name from TEMPLATE_BASE_URL
+        template_base_url = os.environ.get("TEMPLATE_BASE_URL")
+        if template_base_url:
+            bucket_name = template_base_url.replace("https://", "").split(".s3.")[0]
+        else:
+            bucket_name = "solution-bucket"
+        
+        s3.create_bucket(Bucket=bucket_name)
 
         # upload template file
         data = open("./test/template/test.template", "rb")
-        s3.Bucket(template_bucket).put_object(Key=key, Body=data)
+        s3.Bucket(bucket_name).put_object(Key=key, Body=data)
 
         yield
 

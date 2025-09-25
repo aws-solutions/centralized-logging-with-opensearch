@@ -7,11 +7,5 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/solutions",
     "organization": true
-  },
-  "devDependencies": {
-    "fs": "0.0.1-security"
-  },
-  "dependencies": {
-    "fs": "0.0.1-security"
   }
 }

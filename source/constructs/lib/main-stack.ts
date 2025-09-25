@@ -20,7 +20,7 @@ import {
   aws_s3 as s3,
   aws_sqs as sqs,
   Stack,
-  StackProps
+  StackProps,
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
@@ -153,6 +153,34 @@ export class MainStack extends Stack {
       metricsConstruct.uuidCustomResource.getAtt('UUID'),
       ''
     );
+
+    // Create China partition condition and resolve template URLs
+    const isChinaCondition = new CfnCondition(this, 'IsChinaPartition', {
+      expression: Fn.conditionEquals(Aws.PARTITION, 'aws-cn'),
+    });
+
+    const templateBucketBase =
+      process.env.TEMPLATE_OUTPUT_BUCKET || 'aws-gcr-solutions';
+    const globalTemplateBucket = templateBucketBase;
+    const chinaTemplateBucket = `${templateBucketBase}-cn`;
+
+    const templateBaseUrl = Fn.conditionIf(
+      isChinaCondition.logicalId,
+      `https://${chinaTemplateBucket}.s3.cn-north-1.amazonaws.com.cn`,
+      `https://${globalTemplateBucket}.s3.amazonaws.com`
+    ).toString();
+
+    const s3Endpoint = Fn.conditionIf(
+      isChinaCondition.logicalId,
+      'https://s3.cn-north-1.amazonaws.com.cn',
+      'https://s3.amazonaws.com'
+    ).toString();
+
+    const templateBucketName = Fn.conditionIf(
+      isChinaCondition.logicalId,
+      chinaTemplateBucket,
+      globalTemplateBucket
+    ).toString();
 
     if (this.authType === AuthType.OIDC) {
       oidcProvider = new CfnParameter(this, 'OidcProvider', {
@@ -633,6 +661,9 @@ export class MainStack extends Stack {
         'SendAnonymizedUsageData',
         'Data'
       ),
+      s3Endpoint: s3Endpoint,
+      templateBucketName: templateBucketName,
+      templateBaseUrl: templateBaseUrl,
     });
     NagSuppressions.addResourceSuppressions(
       apiStack,
@@ -709,6 +740,8 @@ export class MainStack extends Stack {
       authenticationType: this.authType,
       webUILoggingBucket: portalStack.webUILoggingBucket.bucketName,
       snsEmailTopic: microBatchStack.microBatchSNSStack.SNSSendEmailTopic,
+      templateBucketName: templateBucketName,
+      templateBaseUrl: templateBaseUrl,
     });
 
     // Allow init config function to put aws-exports.json to portal bucket
@@ -732,10 +765,16 @@ export class MainStack extends Stack {
       value: portalStack.portalUrl,
     }).overrideLogicalId('WebConsoleUrl');
 
-    Aspects.of(this).add(new CfnGuardSuppressResourceList({
-      "AWS::IAM::Role": ["IAM_NO_INLINE_POLICY_CHECK", "IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE", "CFN_NO_EXPLICIT_RESOURCE_NAMES"], // Explicit role names required for cross account assumption
-      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
-    }))
+    Aspects.of(this).add(
+      new CfnGuardSuppressResourceList({
+        'AWS::IAM::Role': [
+          'IAM_NO_INLINE_POLICY_CHECK',
+          'IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE',
+          'CFN_NO_EXPLICIT_RESOURCE_NAMES',
+        ], // Explicit role names required for cross account assumption
+        'AWS::Logs::LogGroup': ['CLOUDWATCH_LOG_GROUP_ENCRYPTED'], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+      })
+    );
   }
 
   private addToParamGroups(label: string, ...param: string[]) {
@@ -749,7 +788,7 @@ export class MainStack extends Stack {
     this.paramLabels[param] = {
       default: label,
     };
-  }    
+  }
 }
 
 class AddS3BucketNotificationsDependency implements IAspect {

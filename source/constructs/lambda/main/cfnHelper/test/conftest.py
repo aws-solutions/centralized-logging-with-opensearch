@@ -17,6 +17,6 @@ def default_environment_variables():
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SOXXXX"
 
-    os.environ["TEMPLATE_OUTPUT_BUCKET"] = "solution-bucket"
+    os.environ["TEMPLATE_BASE_URL"] = "https://solution-bucket.s3.amazonaws.com"
     os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

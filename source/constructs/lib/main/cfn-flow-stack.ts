@@ -37,6 +37,8 @@ export interface CfnFlowProps {
   readonly solutionId: string;
 
   readonly microBatchStack: MicroBatchStack;
+
+  readonly templateBaseUrl: string;
 }
 
 /**
@@ -52,8 +54,6 @@ export class CfnFlowStack extends Construct {
 
     const stackArn = `arn:${Aws.PARTITION}:cloudformation:${Aws.REGION}:${Aws.ACCOUNT_ID}:stack/${props.stackPrefix}*`;
 
-    const templateBucket =
-      process.env.TEMPLATE_OUTPUT_BUCKET || 'aws-gcr-solutions';
     const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || 'log-hub'; // Old name
 
     // Create a Lambda to handle all the cloudformation related tasks.
@@ -67,7 +67,7 @@ export class CfnFlowStack extends Construct {
       memorySize: 128,
       layers: [SharedPythonLayer.getInstance(this)],
       environment: {
-        TEMPLATE_OUTPUT_BUCKET: templateBucket,
+        TEMPLATE_BASE_URL: props.templateBaseUrl,
         SOLUTION_NAME: solutionName,
         SOLUTION_ID: props.solutionId,
         SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,

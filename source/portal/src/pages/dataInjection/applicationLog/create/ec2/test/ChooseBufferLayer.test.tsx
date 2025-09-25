@@ -63,7 +63,7 @@ describe("ChooseBufferLayer", () => {
             default_cmk_arn: "",
             solution_version: "",
             solution_name: "",
-            template_bucket: "",
+            template_base_url: "",
             sns_email_topic_arn: "",
             oidc_logout_url: "",
           })}

@@ -54,7 +54,7 @@ export interface AmplifyConfigType {
   default_cmk_arn: string;
   solution_version: string;
   solution_name: string;
-  template_bucket: string;
+  template_base_url: string;
   sns_email_topic_arn: string;
   oidc_logout_url: string;
 }

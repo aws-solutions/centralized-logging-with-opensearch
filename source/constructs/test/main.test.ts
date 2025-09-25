@@ -59,7 +59,13 @@ describe('MainStack', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
       Environment: {
         Variables: {
-          TEMPLATE_OUTPUT_BUCKET: 'aws-gcr-solutions',
+          TEMPLATE_BASE_URL: {
+            'Fn::If': [
+              'IsChinaPartition',
+              'https://aws-gcr-solutions-cn.s3.cn-north-1.amazonaws.com.cn',
+              'https://aws-gcr-solutions.s3.amazonaws.com',
+            ],
+          },
           SOLUTION_ID: 'SOXXXX',
           SOLUTION_VERSION: 'v1.0.0',
         },
@@ -134,7 +140,13 @@ describe('MainStack', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
       Environment: {
         Variables: {
-          TEMPLATE_OUTPUT_BUCKET: 'test-bucket',
+          TEMPLATE_BASE_URL: {
+            'Fn::If': [
+              'IsChinaPartition',
+              'https://test-bucket-cn.s3.cn-north-1.amazonaws.com.cn',
+              'https://test-bucket.s3.amazonaws.com',
+            ],
+          },
           SOLUTION_ID: 'SOXXXX',
           SOLUTION_VERSION: 'vX.Y.Z',
         },

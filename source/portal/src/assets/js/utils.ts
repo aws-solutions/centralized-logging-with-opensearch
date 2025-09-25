@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import { AppPipeline, EngineType, SchedulerType, SubAccountLink } from "API";
 import { format, parseISO } from "date-fns";
 import { formatWithOptions } from "date-fns/fp";
-import { AppPipeline, EngineType, SchedulerType, SubAccountLink } from "API";
 import i18n from "i18n";
-import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
 import { ServiceLogDetailProps } from "pages/dataInjection/serviceLog/ServiceLogDetail";
+import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
 
 const stackPrefix = "CL";
 
@@ -448,12 +448,11 @@ export const buildASGLink = (region: string, groupName: string): string => {
 };
 
 export const buildCrossAccountTemplateLink = (
-  region: string,
   solutionVersion: string,
-  templateBucket: string,
-  solutionName: string
+  solutionName: string,
+  templateBaseUrl: string
 ): string => {
-  return `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`;
+  return `${templateBaseUrl}/${solutionName}/${solutionVersion}/CrossAccount.template`;
 };
 
 export const buildSQSLink = (region: string, queueName: string): string => {
