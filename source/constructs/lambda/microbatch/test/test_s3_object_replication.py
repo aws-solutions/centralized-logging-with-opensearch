@@ -275,7 +275,7 @@ def test_lambda_handler(
                     "configurationId": application_ingestion_id,
                     "bucket": {
                         "name": staging_bucket_name,
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {"key": f"AWSLogs/{account_id}/alb/alb.log.gz"},
                 },
@@ -492,7 +492,7 @@ def test_maxminddb(
                     "configurationId": application_ingestion_id,
                     "bucket": {
                         "name": staging_bucket_name,
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {"key": f"AWSLogs/{account_id}/alb/alb.log.gz"},
                 },
@@ -513,7 +513,7 @@ def test_maxminddb(
                     "configurationId": application_ingestion_id,
                     "bucket": {
                         "name": staging_bucket_name,
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {
                         "key": f"AWSLogs/{account_id}/cloudfront/cloudfront.log.gz"

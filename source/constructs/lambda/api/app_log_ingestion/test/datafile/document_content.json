@@ -20,7 +20,7 @@
     },
     {
       "inputs": {
-        "sourceInfo": "{\"path\":\"https://solution-solutionloggingbucket0fa53b76-ysyv4acbp8m7.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}",
+        "sourceInfo": "{\"path\":\"https://amzn-s3-demo-logging-bucket.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}",
         "sourceType": "S3",
         "destinationPath": "/opt/fluent-bit/etc"
       },
@@ -29,7 +29,7 @@
     },
     {
       "inputs": {
-        "sourceInfo": "{\"path\":\"https://solution-solutionloggingbucket0fa53b76-ysyv4acbp8m7.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}",
+        "sourceInfo": "{\"path\":\"https://amzn-s3-demo-logging-bucket.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}",
         "sourceType": "S3",
         "destinationPath": "/opt/fluent-bit/etc"
       },

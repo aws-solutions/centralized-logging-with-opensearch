@@ -142,6 +142,7 @@
     "brace-expansion": "2.0.2",
     "form-data": "3.0.4",
     "axios": "^1.12.1",
-    "on-headers": "1.1.0"
+    "on-headers": "1.1.0",
+    "js-yaml": "4.1.1"
   }
 }

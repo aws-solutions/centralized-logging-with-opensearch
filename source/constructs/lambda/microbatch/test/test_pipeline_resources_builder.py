@@ -10220,7 +10220,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 }
             ],
@@ -10279,7 +10279,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 },
                 {
@@ -10374,7 +10374,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 },
                 {
@@ -10474,7 +10474,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 },
                 {
@@ -10718,7 +10718,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 }
             ],
@@ -10930,7 +10930,7 @@ class TestPipelineResourceBuilder:
                         "s3:GetObject",
                         "s3:GetObjectTagging",
                     ],
-                    "Resource": ["arn:aws:s3:::staging-bucket/*"],
+                    "Resource": ["arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                     "Effect": "Allow",
                 }
             ],

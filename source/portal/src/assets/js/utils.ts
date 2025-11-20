@@ -778,7 +778,6 @@ export const displayI18NMessage = (key: string) => {
 
 export const linkAccountMissingFields = (account: SubAccountLink | null) => {
   return (
-    !account?.subAccountFlbConfUploadingEventTopicArn ||
     !account?.windowsAgentConfDoc ||
     !account?.windowsAgentInstallDoc ||
     !account?.agentStatusCheckDoc

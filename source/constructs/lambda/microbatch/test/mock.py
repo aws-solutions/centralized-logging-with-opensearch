@@ -38,7 +38,7 @@ def default_environment_variables():
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     os.environ["ACCOUNT_ID"] = "123456789012"
-    os.environ["STAGING_BUCKET_NAME"] = "staging-bucket"
+    os.environ["STAGING_BUCKET_NAME"] = "amzn-s3-demo-bucket1"
     os.environ["STAGING_BUCKET_PREFIX"] = "AWSLogs/WAFLogs"
     os.environ["SOURCE_TYPE"] = "waf"
     os.environ["ENRICHMENT_PLUGINS"] = "geo_ip,user_agent"

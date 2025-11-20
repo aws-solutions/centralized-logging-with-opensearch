@@ -164,7 +164,7 @@ class TestParameter:
             parameter["parameters"]["intervalDays"] = -7
             parameter["parameters"]["input"] = {
                 "metadata": {
-                    "s3": {"archivePath": "s3://staging-bucket/archive"},
+                    "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
                     "athena": {
                         "statements": {
                             "create": "create table src;",
@@ -467,7 +467,7 @@ class TestParameter:
         parameter["parameters"] = {
             "input": {
                 "metadata": {
-                    "s3": {"archivePath": "s3://staging-bucket/archive"},
+                    "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
                     "athena": {
                         "statements": {
                             "create": "create table src;",
@@ -836,7 +836,7 @@ class TestParameter:
 
         event = copy.deepcopy(execution_input_formatter_event)
         event["parameters"]["input"]["metadata"] = {
-            "s3": {"archivePath": "s3://staging-bucket/archive"},
+            "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
             "athena": {
                 "statements": {"create": "", "insert": "", "drop": "", "aggregate": []}
             },
@@ -850,7 +850,7 @@ class TestParameter:
 
         event = copy.deepcopy(execution_input_formatter_event)
         event["parameters"]["input"]["metadata"] = {
-            "s3": {"archivePath": "s3://staging-bucket/archive"},
+            "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
             "athena": {
                 "statements": {
                     "create": "create table src{} location{};",
@@ -1063,7 +1063,7 @@ def test_lambda_handler(
     event["API"] = "Step Functions: ExecutionInputFormatter"
     event["parameters"]["input"] = {
         "metadata": {
-            "s3": {"archivePath": "s3://staging-bucket/archive"},
+            "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
             "athena": {
                 "statements": {
                     "create": "create table src;",
@@ -1413,7 +1413,7 @@ def test_execution_input_formatter():
 
     metadata = {
         "metadata": {
-            "s3": {"archivePath": "s3://staging-bucket/archive"},
+            "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
             "athena": {
                 "statements": {
                     "create": "create table src{} {1, 3} location{} {2}{3};",
@@ -1429,10 +1429,10 @@ def test_execution_input_formatter():
 
     assert execution_input_formatter(input=metadata, execution_name="0000") == {
         "metadata": {
-            "s3": {"archivePath": "s3://staging-bucket/archive"},
+            "s3": {"archivePath": "s3://amzn-s3-demo-bucket1/archive"},
             "athena": {
                 "statements": {
-                    "create": "create table src0000 {1, 3} locations3://staging-bucket/archive/0000 {2}{3};",
+                    "create": "create table src0000 {1, 3} locations3://amzn-s3-demo-bucket1/archive/0000 {2}{3};",
                     "insert": "insert into dest {1, a} select * 0000 {2} from src0000 {3};",
                     "drop": "drop table {2}src0000{1}",
                     "aggregate": [

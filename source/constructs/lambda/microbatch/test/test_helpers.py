@@ -396,7 +396,7 @@ def test_sqs_events_parser(mock_sqs_context):
             {
                 "messageId": "00000000-0000-0000-0000-000000000000",
                 "receiptHandle": "AQEBmsBcK",
-                "body": '{"Records":[{"eventVersion":"2.1","eventSource":"aws:s3","awsRegion":"us-east-1","eventTime":"2021-07-18T01:50:10.495Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:123456789012"},"s3":{"s3SchemaVersion":"1.0","configurationId":"fdaec0a9-2f11-4fab-aee8-298179ce1c3b","bucket":{"name":"staging-bucket","ownerIdentity":{"principalId":"A3ADQQCISURLUH"},"arn":"arn:aws:s3:::staging-bucket"},"object":{"key":"AWSLogs/123456789012/alb/alb.log.gz"}}}]}',
+                "body": '{"Records":[{"eventVersion":"2.1","eventSource":"aws:s3","awsRegion":"us-east-1","eventTime":"2021-07-18T01:50:10.495Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:123456789012"},"s3":{"s3SchemaVersion":"1.0","configurationId":"fdaec0a9-2f11-4fab-aee8-298179ce1c3b","bucket":{"name":"amzn-s3-demo-bucket1","ownerIdentity":{"principalId":"A3ADQQCISURLUH"},"arn":"arn:aws:s3:::amzn-s3-demo-bucket1"},"object":{"key":"AWSLogs/123456789012/alb/alb.log.gz"}}}]}',
                 "eventSource": "aws:sqs",
                 "eventSourceARN": s3_replication_sqs_arn,
                 "awsRegion": aws_region,
@@ -404,7 +404,7 @@ def test_sqs_events_parser(mock_sqs_context):
             {
                 "messageId": "00000000-0000-0000-0000-000000000001",
                 "receiptHandle": "AQEBRkBP",
-                "body": '{"Service":"Amazon S3","Event":"s3:TestEvent","Time":"2021-07-18T02:08:39.023Z","Bucket":"staging-bucket"}',
+                "body": '{"Service":"Amazon S3","Event":"s3:TestEvent","Time":"2021-07-18T02:08:39.023Z","Bucket":"amzn-s3-demo-bucket1"}',
                 "eventSource": "aws:sqs",
                 "eventSourceARN": s3_replication_sqs_arn,
                 "awsRegion": aws_region,
@@ -418,8 +418,8 @@ def test_sqs_events_parser(mock_sqs_context):
                 "s3": {
                     "s3SchemaVersion": "1.0",
                     "bucket": {
-                        "name": "staging-bucket",
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "name": "amzn-s3-demo-bucket1",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {"key": "AWSLogs/123456789012/alb/alb-1.log.gz"},
                 },
@@ -433,8 +433,8 @@ def test_sqs_events_parser(mock_sqs_context):
                 "s3": {
                     "s3SchemaVersion": "1.0",
                     "bucket": {
-                        "name": "staging-bucket",
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "name": "amzn-s3-demo-bucket1",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {"key": "AWSLogs/123456789012/alb/alb-deleted.log.gz"},
                 },
@@ -447,8 +447,8 @@ def test_sqs_events_parser(mock_sqs_context):
                 "s3": {
                     "s3SchemaVersion": "1.0",
                     "bucket": {
-                        "name": "staging-bucket",
-                        "arn": "arn:aws:s3:::staging-bucket",
+                        "name": "amzn-s3-demo-bucket1",
+                        "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
                     },
                     "object": {
                         "key": "AWSLogs/123456789012/alb/alb-event-name-is-none.log.gz"
@@ -466,8 +466,8 @@ def test_sqs_events_parser(mock_sqs_context):
     }
 
     assert sqs_events_parser(events) == [
-        {"bucket": "staging-bucket", "key": "AWSLogs/123456789012/alb/alb.log.gz"},
-        {"bucket": "staging-bucket", "key": "AWSLogs/123456789012/alb/alb-1.log.gz"},
+        {"bucket": "amzn-s3-demo-bucket1", "key": "AWSLogs/123456789012/alb/alb.log.gz"},
+        {"bucket": "amzn-s3-demo-bucket1", "key": "AWSLogs/123456789012/alb/alb-1.log.gz"},
     ]
 
 
@@ -485,10 +485,10 @@ def test_event_bridge_event_parser(mock_sqs_context):
         "account": account_id,
         "time": "2024-07-26T07:32:19Z",
         "region": aws_region,
-        "resources": ["arn:aws:s3:::staging-bucket"],
+        "resources": ["arn:aws:s3:::amzn-s3-demo-bucket1"],
         "detail": {
             "version": "0",
-            "bucket": {"name": "staging-bucket"},
+            "bucket": {"name": "amzn-s3-demo-bucket1"},
             "object": {
                 "key": "AWSLogs/123456789012/alb/alb-1.log.gz",
                 "size": 87447,
@@ -497,7 +497,7 @@ def test_event_bridge_event_parser(mock_sqs_context):
     }
     assert event_bridge_event_parser(event=event) == [
         {
-            "bucket": "staging-bucket",
+            "bucket": "amzn-s3-demo-bucket1",
             "key": "AWSLogs/123456789012/alb/alb-1.log.gz",
         }
     ]
@@ -515,7 +515,7 @@ def test_events_parser(mock_sqs_context):
             {
                 "messageId": "00000000-0000-0000-0000-000000000000",
                 "receiptHandle": "AQEBmsBcK",
-                "body": '{"Records":[{"eventVersion":"2.1","eventSource":"aws:s3","awsRegion":"us-east-1","eventTime":"2021-07-18T01:50:10.495Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:123456789012"},"s3":{"s3SchemaVersion":"1.0","configurationId":"fdaec0a9-2f11-4fab-aee8-298179ce1c3b","bucket":{"name":"staging-bucket","ownerIdentity":{"principalId":"A3ADQQCISURLUH"},"arn":"arn:aws:s3:::staging-bucket"},"object":{"key":"AWSLogs/123456789012/alb/alb.log.gz"}}}]}',
+                "body": '{"Records":[{"eventVersion":"2.1","eventSource":"aws:s3","awsRegion":"us-east-1","eventTime":"2021-07-18T01:50:10.495Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:123456789012"},"s3":{"s3SchemaVersion":"1.0","configurationId":"fdaec0a9-2f11-4fab-aee8-298179ce1c3b","bucket":{"name":"amzn-s3-demo-bucket1","ownerIdentity":{"principalId":"A3ADQQCISURLUH"},"arn":"arn:aws:s3:::amzn-s3-demo-bucket1"},"object":{"key":"AWSLogs/123456789012/alb/alb.log.gz"}}}]}',
                 "eventSource": "aws:sqs",
                 "eventSourceARN": s3_replication_sqs_arn,
                 "awsRegion": aws_region,
@@ -525,7 +525,7 @@ def test_events_parser(mock_sqs_context):
 
     assert events_parser(events) == [
         {
-            "bucket": "staging-bucket",
+            "bucket": "amzn-s3-demo-bucket1",
             "key": "AWSLogs/123456789012/alb/alb.log.gz",
         }
     ]
@@ -538,10 +538,10 @@ def test_events_parser(mock_sqs_context):
         "account": account_id,
         "time": "2024-07-26T07:32:19Z",
         "region": aws_region,
-        "resources": ["arn:aws:s3:::staging-bucket"],
+        "resources": ["arn:aws:s3:::amzn-s3-demo-bucket1"],
         "detail": {
             "version": "0",
-            "bucket": {"name": "staging-bucket"},
+            "bucket": {"name": "amzn-s3-demo-bucket1"},
             "object": {
                 "key": "AWSLogs/123456789012/alb/alb-1.log.gz",
                 "size": 87447,
@@ -550,7 +550,7 @@ def test_events_parser(mock_sqs_context):
     }
     assert events_parser(event=event) == [
         {
-            "bucket": "staging-bucket",
+            "bucket": "amzn-s3-demo-bucket1",
             "key": "AWSLogs/123456789012/alb/alb-1.log.gz",
         }
     ]

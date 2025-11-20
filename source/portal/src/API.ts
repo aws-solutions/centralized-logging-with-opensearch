@@ -1066,7 +1066,6 @@ export type SubAccountLink = {
   subAccountVpcId?: string | null,
   subAccountPublicSubnetIds?: string | null,
   subAccountIamInstanceProfileArn?: string | null,
-  subAccountFlbConfUploadingEventTopicArn?: string | null,
   createdAt?: string | null,
   status?: string | null,
   tags?:  Array<Tag | null > | null,
@@ -1729,7 +1728,6 @@ export type CreateSubAccountLinkMutationVariables = {
   subAccountStackId: string,
   subAccountKMSKeyArn: string,
   subAccountIamInstanceProfileArn: string,
-  subAccountFlbConfUploadingEventTopicArn: string,
   tags?: Array< TagInput | null > | null,
 };
 
@@ -1742,7 +1740,6 @@ export type CreateSubAccountLinkMutation = {
 export type UpdateSubAccountLinkMutationVariables = {
   subAccountId: string,
   region?: string | null,
-  subAccountFlbConfUploadingEventTopicArn: string,
   windowsAgentInstallDoc: string,
   windowsAgentConfDoc: string,
   agentStatusCheckDoc: string,
@@ -2960,7 +2957,6 @@ export type ListSubAccountLinksQuery = {
       subAccountVpcId?: string | null,
       subAccountPublicSubnetIds?: string | null,
       subAccountIamInstanceProfileArn?: string | null,
-      subAccountFlbConfUploadingEventTopicArn?: string | null,
       createdAt?: string | null,
       status?: string | null,
       tags?:  Array< {
@@ -2998,7 +2994,6 @@ export type GetSubAccountLinkQuery = {
     subAccountVpcId?: string | null,
     subAccountPublicSubnetIds?: string | null,
     subAccountIamInstanceProfileArn?: string | null,
-    subAccountFlbConfUploadingEventTopicArn?: string | null,
     createdAt?: string | null,
     status?: string | null,
     tags?:  Array< {

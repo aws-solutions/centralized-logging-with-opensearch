@@ -449,7 +449,6 @@ type Mutation {
     subAccountStackId: String!
     subAccountKMSKeyArn: String!
     subAccountIamInstanceProfileArn: String!
-    subAccountFlbConfUploadingEventTopicArn: String!
     tags: [TagInput]
   ): String
 
@@ -457,7 +456,6 @@ type Mutation {
   updateSubAccountLink(
     subAccountId: String!
     region: String
-    subAccountFlbConfUploadingEventTopicArn: String!
     windowsAgentInstallDoc: String!
     windowsAgentConfDoc: String!
     agentStatusCheckDoc: String!
@@ -1495,7 +1493,6 @@ type SubAccountLink {
   subAccountVpcId: String
   subAccountPublicSubnetIds: String
   subAccountIamInstanceProfileArn: String
-  subAccountFlbConfUploadingEventTopicArn: String
   createdAt: String
   status: String
   tags: [Tag]

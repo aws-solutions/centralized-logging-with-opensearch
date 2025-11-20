@@ -435,7 +435,7 @@ class TestMetaTable:
             {
                 "metaName": "AthenaOutputLocation",
                 "arn": "",
-                "name": "s3://staging-bucket/athena-results",
+                "name": "s3://amzn-s3-demo-bucket1/athena-results",
                 "service": "Athena",
             },
             {
@@ -516,8 +516,8 @@ class TestMetaTable:
             },
             {
                 "metaName": "StagingBucket",
-                "arn": "arn:aws:s3:::staging-bucket",
-                "name": "staging-bucket",
+                "arn": "arn:aws:s3:::amzn-s3-demo-bucket1",
+                "name": "amzn-s3-demo-bucket1",
                 "service": "S3",
                 "url": "",
             },

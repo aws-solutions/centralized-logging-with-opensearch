@@ -99,7 +99,7 @@ def ddb_client():
                 "bufferParams": [
                     {
                         "paramKey": "logBucketName",
-                        "paramValue": "solution-solutionloggingbucket0fa53b76-amdiodhh6y8i",
+                        "paramValue": "amzn-s3-demo-logging-bucket",
                     },
                     {
                         "paramKey": "logBucketPrefix",

@@ -231,7 +231,7 @@ def mock_ddb_context():
                 'subAccountRoleArn': { 'S': "arn:aws:iam::xxx:role/CrossAccount-CrossAccountRoleFACE29D1" },
                 'agentInstallDoc': { 'S': "CrossAccount-FluentBitDocumentInstallation-FgTWXJU7Jj0P" },
                 'agentConfDoc': { 'S': "CrossAccount-FluentBitConfigDownloading-6MPXkhKrK4II" },
-                'subAccountBucketName': { 'S': "crossaccount-solutionloggingbucket0fa53b76-tbeb1h6udhav" },
+                'subAccountBucketName': { 'S': "amzn-s3-demo-logging-bucket" },
                 'subAccountStackId': { 'S': "arn:aws:cloudformation:us-east-1:xxx:stack/CrossAccount/ff21" },
                 'subAccountKMSKeyArn': { 'S': "arn:aws:kms:us-east-1:xxx:key/16ae67ab-0991-4ddb-a65b-1dd91cec52dd" },
                 'subAccountIamInstanceProfileArn': { 'S': ec2_instance_profile_arn },

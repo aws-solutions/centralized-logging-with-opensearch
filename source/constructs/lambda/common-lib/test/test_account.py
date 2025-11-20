@@ -26,7 +26,7 @@ def write_data(ddb_table):
                 "agentInstallDoc": "CrossAccount-FluentBitDocumentInstallation-FgTWXJU7Jj0P",
                 "createdAt": "2022-06-20T08:20:45Z",
                 "status": "ACTIVE",
-                "subAccountBucketName": "crossaccount-solutionloggingbucket0fa53b76-tbeb1h6udhav",
+                "subAccountBucketName": "amzn-s3-demo-logging-bucket",
                 "subAccountName": "sub-account-01",
                 "subAccountStackId": "arn:aws:cloudformation:us-east-1:xxx:stack/CrossAccount/ff21",
                 "subAccountRoleArn": "arn:aws:iam::xxx:role/CrossAccount-CrossAccountRoleFACE29D1",
@@ -108,14 +108,12 @@ class TestLinkAccountHelperTrustAccountExists:
 
         assert {} == self.acc_helper.update_link_account(
             account_id=os.environ.get("MOTO_ACCOUNT_ID") or "",
-            uploading_event_topic_arn="arn:topic",
             region=os.environ.get("AWS_REGION") or "",
         )
 
         with pytest.raises(APIException):
             self.acc_helper.update_link_account(
                 account_id=ACCOUNT_ID,
-                uploading_event_topic_arn="arn:topic",
                 region=os.environ.get("AWS_REGION") or "",
             )
 
@@ -129,7 +127,7 @@ class TestLinkAccountHelperTrustAccountExists:
             extra = {
                 "agentConfDoc": "CrossAccount-FluentBitConfigDownloading-6MPXkhKrK4II",
                 "agentInstallDoc": "CrossAccount-FluentBitDocumentInstallation-FgTWXJU7Jj0P",
-                "subAccountBucketName": "crossaccount-solutionloggingbucket0fa53b76-tbeb1h6udhav",
+                "subAccountBucketName": "amzn-s3-demo-logging-bucket",
                 "subAccountName": "sub-account-01",
                 "subAccountStackId": "arn:aws:cloudformation:us-east-1:xxx:stack/CrossAccount/ff21",
                 "subAccountRoleArn": "arn:aws:iam::xxx:role/CrossAccount-CrossAccountRoleFACE29D1",
@@ -156,19 +154,14 @@ class TestLinkAccountHelperTrustAccountExists:
         assert account1["subAccountName"] == "sub-account-01"
 
         self.acc_helper.update_link_account(
-            account_id="111122223333", uploading_event_topic_arn="arn:topic"
-        )
-        account1 = self.acc_helper.get_link_account(account_id="111122223333")
-        assert "subAccountFlbConfUploadingEventTopicArn" in account1
-        assert (
-            account1.get("subAccountFlbConfUploadingEventTopicArn", "") == "arn:topic"
+            account_id="111122223333"
         )
 
         account2 = self.acc_helper.get_link_account()
         assert account2 == {}
 
         with pytest.raises(APIException, match="ACCOUNT_NOT_FOUND"):
-            account2 = self.acc_helper.get_link_account(account_id="444455556666")
+            self.acc_helper.get_link_account(account_id="444455556666")
 
         self.acc_helper.delete_sub_account_link(account_id="111122223333")
 
@@ -178,7 +171,7 @@ class TestLinkAccountHelperTrustAccountExists:
         extra = {
             "agentConfDoc": "CrossAccount-FluentBitConfigDownloading-6MPXkhKrK4II",
             "agentInstallDoc": "CrossAccount-FluentBitDocumentInstallation-FgTWXJU7Jj0P",
-            "subAccountBucketName": "crossaccount-solutionloggingbucket0fa53b76-tbeb1h6udhav",
+            "subAccountBucketName": "amzn-s3-demo-logging-bucket",
             "subAccountName": "sub-account-01",
             "subAccountStackId": "arn:aws:cloudformation:us-east-1:xxx:stack/CrossAccount/ff21",
             "subAccountRoleArn": "arn:aws:iam::xxx:role/CrossAccount-CrossAccountRoleFACE29D1",
@@ -284,19 +277,14 @@ class TestLinkAccountHelperTrustAccountNotExists:
         assert account1["subAccountName"] == "sub-account-01"
 
         self.acc_helper.update_link_account(
-            account_id="111122223333", uploading_event_topic_arn="arn:topic"
-        )
-        account1 = self.acc_helper.get_link_account(account_id="111122223333")
-        assert "subAccountFlbConfUploadingEventTopicArn" in account1
-        assert (
-            account1.get("subAccountFlbConfUploadingEventTopicArn", "") == "arn:topic"
+            account_id="111122223333"
         )
 
         account2 = self.acc_helper.get_link_account()
         assert account2 == {}
 
         with pytest.raises(APIException, match="ACCOUNT_NOT_FOUND"):
-            account2 = self.acc_helper.get_link_account(account_id="444455556666")
+            self.acc_helper.get_link_account(account_id="444455556666")
 
         self.acc_helper.delete_sub_account_link(account_id="111122223333")
 
@@ -306,7 +294,7 @@ class TestLinkAccountHelperTrustAccountNotExists:
         extra = {
             "agentConfDoc": "CrossAccount-FluentBitConfigDownloading-6MPXkhKrK4II",
             "agentInstallDoc": "CrossAccount-FluentBitDocumentInstallation-FgTWXJU7Jj0P",
-            "subAccountBucketName": "crossaccount-solutionloggingbucket0fa53b76-tbeb1h6udhav",
+            "subAccountBucketName": "amzn-s3-demo-logging-bucket",
             "subAccountName": "sub-account-01",
             "subAccountStackId": "arn:aws:cloudformation:us-east-1:xxx:stack/CrossAccount/ff21",
             "subAccountRoleArn": "arn:aws:iam::xxx:role/CrossAccount-CrossAccountRoleFACE29D1",

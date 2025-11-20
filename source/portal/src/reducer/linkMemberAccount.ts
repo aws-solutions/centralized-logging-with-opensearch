@@ -35,7 +35,6 @@ export const INIT_MEMBER_ACCOUNT_DATA: MemberAccountState = {
     subAccountKMSKeyArn: "",
     region: "",
     subAccountIamInstanceProfileArn: "",
-    subAccountFlbConfUploadingEventTopicArn: "",
     tags: [],
   },
   nameError: "",

@@ -102,7 +102,7 @@ def ddb_client():
                     },
                     {
                         "parameterKey": "backupBucketName",
-                        "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+                        "parameterValue": "amzn-s3-demo-logging-bucket",
                     },
                     {
                         "parameterKey": "logSourceAccountId",
@@ -205,7 +205,7 @@ def ddb_client():
                     "coldLogTransition": 0,
                     "domainName": "solution-os",
                     "engine": "OpenSearch",
-                    "failedLogBucket": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
+                    "failedLogBucket": "amzn-s3-demo-logging-bucket",
                     "indexPrefix": "syslog-dev-03",
                     "logRetention": 10,
                     "opensearchArn": "arn:aws:es:us-west-2:123456789012:domain/solution-os",
@@ -240,7 +240,7 @@ def ddb_client():
                 "status": "ACTIVE",
                 "monitor": {
                     "status": "ENABLED",
-                    "backupBucketName": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
+                    "backupBucketName": "amzn-s3-demo-logging-bucket",
                     "errorLogPrefix": "error/",
                 },
                 "helperLogGroupName": "/aws/lambda/CL-pipe-c34f2159-OpenSearchHelperFn-tJZgzlWN1k99",

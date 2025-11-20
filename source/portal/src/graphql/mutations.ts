@@ -428,7 +428,6 @@ export const createSubAccountLink = /* GraphQL */ `
     $subAccountStackId: String!
     $subAccountKMSKeyArn: String!
     $subAccountIamInstanceProfileArn: String!
-    $subAccountFlbConfUploadingEventTopicArn: String!
     $tags: [TagInput]
   ) {
     createSubAccountLink(
@@ -445,7 +444,6 @@ export const createSubAccountLink = /* GraphQL */ `
       subAccountStackId: $subAccountStackId
       subAccountKMSKeyArn: $subAccountKMSKeyArn
       subAccountIamInstanceProfileArn: $subAccountIamInstanceProfileArn
-      subAccountFlbConfUploadingEventTopicArn: $subAccountFlbConfUploadingEventTopicArn
       tags: $tags
     )
   }
@@ -454,7 +452,6 @@ export const updateSubAccountLink = /* GraphQL */ `
   mutation UpdateSubAccountLink(
     $subAccountId: String!
     $region: String
-    $subAccountFlbConfUploadingEventTopicArn: String!
     $windowsAgentInstallDoc: String!
     $windowsAgentConfDoc: String!
     $agentStatusCheckDoc: String!
@@ -463,7 +460,6 @@ export const updateSubAccountLink = /* GraphQL */ `
     updateSubAccountLink(
       subAccountId: $subAccountId
       region: $region
-      subAccountFlbConfUploadingEventTopicArn: $subAccountFlbConfUploadingEventTopicArn
       windowsAgentInstallDoc: $windowsAgentInstallDoc
       windowsAgentConfDoc: $windowsAgentConfDoc
       agentStatusCheckDoc: $agentStatusCheckDoc

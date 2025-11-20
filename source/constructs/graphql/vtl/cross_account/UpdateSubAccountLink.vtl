@@ -1,6 +1,5 @@
 
 $util.validate($util.matches("^\d{12}$", $util.defaultIfNullOrEmpty($ctx.args.subAccountId, '123456789012')), "Invalid Account ID")
 $util.validate($util.matches("^(?!(.*--))(?!(.*-$))[a-z0-9]([a-z0-9-]){0,62}$", $util.defaultIfNullOrEmpty($ctx.args.region,'us-west-2')), "Invalid Region Name")
-$util.validate($util.matches("^arn:([^:\n]*):([^:\n]*):([^:\n]*):([^:\n]*):(([^:\/\n]*)[:\/])?(.*)$", $ctx.args.subAccountFlbConfUploadingEventTopicArn), "Invalid Topic ARN")
 
 {"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

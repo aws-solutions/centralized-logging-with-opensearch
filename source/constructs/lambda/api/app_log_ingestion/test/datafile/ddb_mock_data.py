@@ -9,7 +9,7 @@ base_source_pipeline_data = {
         "coldLogTransition": 0,
         "domainName": "solution-aos-comp",
         "engine": "OpenSearch",
-        "failedLogBucket": "solution-solutionloggingbucket0fa53b76-ysyv4acbp8m7",
+        "failedLogBucket": "amzn-s3-demo-logging-bucket",
         "indexPrefix": "s3-as-source-dev-001",
         "logRetention": 3,
         "opensearchArn":
@@ -55,7 +55,7 @@ syslog_source_pipeline_data = {
         "coldLogTransition": "",
         "domainName": "solution-aos-comp",
         "engine": "OpenSearch",
-        "failedLogBucket": "solution-latest-solutionloggingbucket0fa53b76-vy9h0jn9r6t4",
+        "failedLogBucket": "amzn-s3-demo-logging-bucket",
         "indexPrefix": "syslog-ut-01",
         "indexSuffix": "yyyy-MM-dd",
         "logRetention": "3d",
@@ -111,7 +111,7 @@ ec2_source_pipeline_data = {
         "coldLogTransition": 0,
         "domainName": "solution-aos-comp",
         "engine": "OpenSearch",
-        "failedLogBucket": "solution-solutionloggingbucket0fa53b76-ysyv4acbp8m7",
+        "failedLogBucket": "amzn-s3-demo-logging-bucket",
         "indexPrefix": "index-dev-01",
         "logRetention": 3,
         "opensearchArn":

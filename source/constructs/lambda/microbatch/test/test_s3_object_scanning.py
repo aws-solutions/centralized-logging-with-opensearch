@@ -2677,11 +2677,11 @@ def test_migration_task_writer(
         "data": [
             {
                 "source": {
-                    "bucket": "staging-bucket",
+                    "bucket": "amzn-s3-demo-bucket1",
                     "key": "AWSLogs/3a2p257d.log.gz",
                 },
                 "destination": {
-                    "bucket": "staging-bucket",
+                    "bucket": "amzn-s3-demo-bucket1",
                     "key": "archive/aws_alb_logs/3a2p257d.log.gz",
                 },
             }
@@ -2743,11 +2743,11 @@ def test_migration_task_writer(
         "data": [
             {
                 "source": {
-                    "bucket": "staging-bucket",
+                    "bucket": "amzn-s3-demo-bucket1",
                     "key": "AWSLogs/3a2p257d.log.gz",
                 },
                 "destination": {
-                    "bucket": "staging-bucket",
+                    "bucket": "amzn-s3-demo-bucket1",
                     "key": "archive/aws_alb_logs/3a2p257d.log.gz",
                 },
             }

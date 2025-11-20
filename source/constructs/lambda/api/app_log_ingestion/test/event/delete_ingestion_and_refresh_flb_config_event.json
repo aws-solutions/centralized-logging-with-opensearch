@@ -101,7 +101,7 @@
                         "S": "logBucketName"
                       },
                       "paramValue": {
-                        "S": "centralizedlogging-clloggingbucket5f34e4eb-tugpydf8sf7s"
+                        "S": "amzn-s3-demo-logging-bucket"
                       }
                     }
                   },
@@ -191,7 +191,7 @@
                         "S": "logBucketName"
                       },
                       "paramValue": {
-                        "S": "centralizedlogging-clloggingbucket5f34e4eb-tugpydf8sf7s"
+                        "S": "amzn-s3-demo-logging-bucket"
                       }
                     }
                   }
