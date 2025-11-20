@@ -47,7 +47,7 @@ def s3_client():
         if template_base_url:
             bucket_name = template_base_url.replace("https://", "").split(".s3.")[0]
         else:
-            bucket_name = "solution-bucket"
+            bucket_name = "amzn-s3-demo-bucket1"
         
         s3.create_bucket(Bucket=bucket_name)
 

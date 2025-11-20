@@ -52,7 +52,7 @@ def test_create_s3_ingestion(mocker):
                 "coldLogTransition": 0,
                 "domainName": "solution-os",
                 "engine": "OpenSearch",
-                "failedLogBucket": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
+                "failedLogBucket": "amzn-s3-demo-logging-bucket",
                 "indexPrefix": "app-pipe",
                 "logRetention": 10,
                 "opensearchArn": "arn:aws:es:us-west-2:123456789012:domain/solution-os",
@@ -72,12 +72,12 @@ def test_create_s3_ingestion(mocker):
         logProcessorRoleArn="log-processor-role-arn",
         bufferAccessRoleArn="arn:aws:iam::123456:role/CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
         bufferAccessRoleName="CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
-        bufferResourceArn="arn:aws:s3:::solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
-        bufferResourceName="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        bufferResourceArn="arn:aws:s3:::amzn-s3-demo-logging-bucket",
+        bufferResourceName="amzn-s3-demo-logging-bucket",
         bufferParams=[
             BufferParam(
                 paramKey="logBucketName",
-                paramValue="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+                paramValue="amzn-s3-demo-logging-bucket",
             ),
             BufferParam(
                 paramKey="logBucketPrefix",
@@ -216,7 +216,7 @@ def test_create_s3_ingestion_for_light_engine(mocker):
                 "coldLogTransition": 0,
                 "domainName": "solution-os",
                 "engine": "OpenSearch",
-                "failedLogBucket": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
+                "failedLogBucket": "amzn-s3-demo-logging-bucket",
                 "indexPrefix": "app-pipe",
                 "logRetention": 10,
                 "opensearchArn": "arn:aws:es:us-west-2:123456789012:domain/solution-os",
@@ -236,12 +236,12 @@ def test_create_s3_ingestion_for_light_engine(mocker):
         logProcessorRoleArn="log-processor-role-arn",
         bufferAccessRoleArn="arn:aws:iam::123456:role/CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
         bufferAccessRoleName="CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
-        bufferResourceArn="arn:aws:s3:::solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
-        bufferResourceName="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        bufferResourceArn="arn:aws:s3:::amzn-s3-demo-logging-bucket",
+        bufferResourceName="amzn-s3-demo-logging-bucket",
         bufferParams=[
             BufferParam(
                 paramKey="logBucketName",
-                paramValue="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+                paramValue="amzn-s3-demo-logging-bucket",
             ),
             BufferParam(
                 paramKey="logBucketPrefix",

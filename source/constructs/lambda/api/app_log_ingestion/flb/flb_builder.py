@@ -27,7 +27,6 @@ from commonlib.exception import APIException, ErrorCode
 from jinja2 import FileSystemLoader, Environment
 from flb.flb_model import FluentBitDataPipeline
 from flb.k8s import ConfigMap
-import urllib3
 
 logger = get_logger(__name__)
 
@@ -50,8 +49,6 @@ fluent_bit_image = os.environ.get(
     "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.2.20241008",
 )
 fluent_bit_log_group_name = os.environ["FLUENT_BIT_LOG_GROUP_NAME"]
-s3_address = os.environ.get("FLB_S3_ADDR")
-http = urllib3.PoolManager()
 
 instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
 instance_dao = InstanceDao(table_name=instance_table_name)
@@ -507,8 +504,9 @@ class K8sFlb(Flb):
         return content
 
     def get_kubectl(self):
-        return self.get_s3_object(key="kubectl_version.txt")
-
-    def get_s3_object(self, key):
-        response = http.request("GET", f"https://{s3_address}/clo/" + key)
-        return json.loads(response.data.decode("utf-8"))
+        # Read kubectl version mapping from local file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        kubectl_version_file = os.path.join(current_dir, "kubectl_version.json")
+        
+        with open(kubectl_version_file, 'r') as f:
+            return json.load(f)

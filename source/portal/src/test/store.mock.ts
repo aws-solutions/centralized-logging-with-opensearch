@@ -51,8 +51,6 @@ export const MockMemberAccountData = {
   subAccountPublicSubnetIds: "subnet-1, subnet-2",
   subAccountIamInstanceProfileArn:
     "arn:aws:iam::111111111111:instance-profile/test-xxxx-xxxx",
-  subAccountFlbConfUploadingEventTopicArn:
-    "arn:aws:sns:us-example-1:111111111111:test-FlbUploadingEventSubscriptionTopic822D837F-xxxx",
   createdAt: "2024-02-05T02:38:03Z",
   status: "ACTIVE",
   tags: [],

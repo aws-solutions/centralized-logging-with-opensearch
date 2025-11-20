@@ -348,7 +348,7 @@ develop = false
 
 [package.dependencies]
 aws-lambda-powertools = "^3.4.1"
-pip = "^24.3.1"
+pip = "^25.3"
 pydantic = "1.10.14"
 requests = "^2.32.4"
 requests-aws4auth = "^1.3.1"
@@ -1058,14 +1058,14 @@ files = [
 
 [[package]]
 name = "pip"
-version = "24.3.1"
+version = "25.3"
 description = "The PyPA recommended tool for installing Python packages."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pip-24.3.1-py3-none-any.whl", hash = "sha256:3790624780082365f47549d032f3770eeb2b1e8bd1f7b2e02dace1afa361b4ed"},
-    {file = "pip-24.3.1.tar.gz", hash = "sha256:ebcb60557f2aefabc2e0f918751cd24ea0d56d8ec5445fe1807f1d2109660b99"},
+    {file = "pip-25.3-py3-none-any.whl", hash = "sha256:9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd"},
+    {file = "pip-25.3.tar.gz", hash = "sha256:8d0538dbbd7babbd207f261ed969c65de439f6bc9e5dbd3b3b9a77f25d95f343"},
 ]
 
 [[package]]

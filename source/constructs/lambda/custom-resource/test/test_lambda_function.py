@@ -229,7 +229,7 @@ def ddb_client():
                 "createdAt": "2022-11-26T11:54:02Z",
                 "region": "us-east-1",
                 "status": "ACTIVE",
-                "subAccountBucketName": "ca-test-solutionloggingbucket0fa53b76-1xwsd8z6oehh9",
+                "subAccountBucketName": "amzn-s3-demo-logging-bucket",
                 "subAccountId": "123456789012",
                 "subAccountKMSKeyArn": "arn:aws:kms:us-east-1:123456789012:key/dd64f1a5-a4c7-4703-a2c8-4542158fd15f",
                 "subAccountName": "My-account",
@@ -322,7 +322,7 @@ def ddb_client():
                     {"parameterKey": "replicaNumbers", "parameterValue": "1"},
                     {
                         "parameterKey": "backupBucketName",
-                        "parameterValue": "solution1-2-1-solutionloggingbucket0fa53b76-61wb3dr92joe",
+                        "parameterValue": "amzn-s3-demo-logging-bucket",
                     },
                     {
                         "parameterKey": "defaultCmkArnParam",

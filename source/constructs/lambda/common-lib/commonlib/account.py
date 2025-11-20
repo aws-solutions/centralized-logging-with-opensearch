@@ -93,7 +93,6 @@ class LinkAccountHelper:
         self,
         account_id: str = "",
         region: str = "",
-        uploading_event_topic_arn: str = "",
         windows_agent_install_doc: str = "",
         windows_agent_conf_doc: str = "",
         agent_status_check_doc: str = "",
@@ -122,7 +121,6 @@ class LinkAccountHelper:
         account = self._ddb_util.get_item(key)
         if not account:
             raise APIException(ErrorCode.ACCOUNT_NOT_FOUND)
-        account["subAccountFlbConfUploadingEventTopicArn"] = uploading_event_topic_arn
         account["windowsAgentInstallDoc"] = windows_agent_install_doc
         account["windowsAgentConfDoc"] = windows_agent_conf_doc
         account["agentStatusCheckDoc"] = agent_status_check_doc

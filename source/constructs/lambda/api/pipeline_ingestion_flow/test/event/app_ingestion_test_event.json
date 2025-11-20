@@ -23,7 +23,7 @@
             },
             {
                 "OutputKey": "BufferResourceArn",
-                "OutputValue": "arn:aws:s3:::solution-solutionloggingbucket0fa53b76-111"
+                "OutputValue": "arn:aws:s3:::amzn-s3-demo-logging-bucket"
             },
             {
                 "OutputKey": "BufferAccessRoleName",
@@ -31,7 +31,7 @@
             },
             {
                 "OutputKey": "BufferResourceName",
-                "OutputValue": "solution-solutionloggingbucket0fa53b76-111"
+                "OutputValue": "amzn-s3-demo-logging-bucket"
             },
             {
                 "OutputKey": "LogEventQueueARN",

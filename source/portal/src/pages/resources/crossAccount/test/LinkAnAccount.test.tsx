@@ -58,7 +58,6 @@ jest.mock("assets/js/hooks/useMemberAccount", () => ({
         subAccountStackId: MockNewAccountData[9],
         subAccountKMSKeyArn: MockNewAccountData[10],
         subAccountIamInstanceProfileArn: MockNewAccountData[11],
-        subAccountFlbConfUploadingEventTopicArn: MockNewAccountData[12],
         tags: [],
       },
     };
@@ -115,7 +114,6 @@ describe("LinkAnAccount", () => {
                 subAccountStackId: MockNewAccountData[9],
                 subAccountKMSKeyArn: MockNewAccountData[10],
                 subAccountIamInstanceProfileArn: MockNewAccountData[11],
-                subAccountFlbConfUploadingEventTopicArn: MockNewAccountData[12],
                 tags: [],
               },
             } as any,

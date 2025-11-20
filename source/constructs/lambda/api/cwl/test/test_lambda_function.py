@@ -18,7 +18,7 @@ svc_pipeline_info_1 = {
         {"parameterKey": "engineType", "parameterValue": "OpenSearch"},
         {
             "parameterKey": "logBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "logBucketPrefix",
@@ -48,7 +48,7 @@ svc_pipeline_info_1 = {
         {"parameterKey": "refreshInterval", "parameterValue": "1s"},
         {
             "parameterKey": "backupBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "defaultCmkArnParam",
@@ -79,7 +79,7 @@ svc_pipeline_info_2 = {
         {"parameterKey": "engineType", "parameterValue": "OpenSearch"},
         {
             "parameterKey": "logBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "logBucketPrefix",
@@ -109,7 +109,7 @@ svc_pipeline_info_2 = {
         {"parameterKey": "refreshInterval", "parameterValue": "1s"},
         {
             "parameterKey": "backupBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "defaultCmkArnParam",
@@ -138,7 +138,7 @@ app_pipeline_info_1 = {
         "coldLogTransition": "",
         "domainName": "solution-os",
         "engine": "OpenSearch",
-        "failedLogBucket": "solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        "failedLogBucket": "amzn-s3-demo-logging-bucket",
         "indexPrefix": "monitor-dev-002",
         "indexSuffix": "yyyy_MM_dd",
         "logRetention": "7d",
@@ -174,7 +174,7 @@ app_pipeline_info_1 = {
     "logConfigId": "c7b9eb78-a657-46e1-a24e-cef4acfe8a79",
     "logConfigVersionNumber": 0,
     "monitor": {
-        "backupBucketName": "solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        "backupBucketName": "amzn-s3-demo-logging-bucket",
         "status": "ENABLED",
     },
     "osHelperFnArn": "arn:aws:lambda:us-west-2:111111111111:function:CL-AppPipe-4c6123bb-OpenSearchHelperFn-ahz05AtOKXWd",

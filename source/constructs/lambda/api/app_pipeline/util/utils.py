@@ -182,6 +182,13 @@ def make_index_template(  # NOSONAR
             properties[key] = val
         properties = build_iis_field_format(properties, log_config.iisLogParser)  # type: ignore
 
+        # For WindowsEvent logs, if no timeKey is set, default @timestamp to point to "time" field
+        if log_config.logType == LogTypeEnum.WINDOWS_EVENT:
+            key = log_config.timeKey if log_config.timeKey else "time"
+            properties[key] = {"type": "date"}
+            if key != "@timestamp":
+                properties["@timestamp"] = {"type": "alias", "path": key}
+
         mappings = {"properties": properties}
 
     template = {

@@ -153,7 +153,7 @@ def ddb_client():
                     "params": [
                         {
                             "paramKey": "logBucketName",
-                            "paramValue": "centralizedlogging-clloggingbucket5f34e4eb-1cjj6bau3qwtp",
+                            "paramValue": "amzn-s3-demo-logging-bucket",
                         },
                         {
                             "paramKey": "logBucketPrefix",
@@ -173,7 +173,7 @@ def ddb_client():
                         },
                         {
                             "paramKey": "logBucketName",
-                            "paramValue": "centralizedlogging-clloggingbucket5f34e4eb-1cjj6bau3qwtp",
+                            "paramValue": "amzn-s3-demo-logging-bucket",
                         },
                     ],
                     "roleArn": "arn:aws:iam::123456789012:role/CL-buffer-access-2be18e2e-2fcf-4cbb-af32-872090a35bc3",

@@ -25,7 +25,6 @@ import { handleErrorMessage } from "assets/js/alert";
 import Button from "components/Button";
 import { buildCrossAccountTemplateLink, defaultStr } from "assets/js/utils";
 import { updateSubAccountLink } from "graphql/mutations";
-import cloneDeep from "lodash.clonedeep";
 import { AmplifyConfigType } from "types";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "reducer/reducers";
@@ -45,7 +44,6 @@ const CrossAccountDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   // const [curAccount, setCurAccount] = useState<SubAccountLink>();
-  const [copyAccount, setCopyAccount] = useState<SubAccountLink>();
   const [loadingData, setLoadingData] = useState(true);
   const [loadingSave, setLoadingSave] = useState(false);
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -71,10 +69,6 @@ const CrossAccountDetail: React.FC = () => {
       JSON.stringify(memberAccount.data)
     );
     console.info("toTrimObj:", toTrimObj);
-    toTrimObj.subAccountFlbConfUploadingEventTopicArn =
-      toTrimObj.subAccountFlbConfUploadingEventTopicArn
-        ?.trim()
-        ?.replace(/[\t\r]/g, "");
 
     try {
       setLoadingSave(true);
@@ -102,7 +96,6 @@ const CrossAccountDetail: React.FC = () => {
       const dataAccount: SubAccountLink = resData.data.getSubAccountLink;
       console.info("dataAccount:", dataAccount);
       dispatch(setAccountData(dataAccount));
-      setCopyAccount(cloneDeep(dataAccount));
       setLoadingData(false);
     } catch (error: any) {
       setLoadingData(false);
@@ -120,49 +113,45 @@ const CrossAccountDetail: React.FC = () => {
       <div className="m-w-800">
         <PagePanel title={defaultStr(memberAccount.data?.subAccountName)}>
           <HeaderPanel title={t("resource:crossAccount.detail")}>
-            <>
-              {!copyAccount?.subAccountFlbConfUploadingEventTopicArn && (
-                <div className="cross-account mb-10">
-                  <Alert
-                    content={t(
-                      "resource:crossAccount.link.stepOneUpdateTipsDesc"
+            <div className="cross-account mb-10">
+              <Alert
+                content={t(
+                  "resource:crossAccount.link.stepOneUpdateTipsDesc"
+                )}
+                type={AlertType.Normal}
+              />
+              <div className="deploy-steps">
+                <div>{t("resource:crossAccount.link.stepOne1")}</div>
+                <div>{`${t("resource:crossAccount.link.stepOne2")} ${
+                  amplifyConfig.aws_project_region
+                }`}</div>
+                <div>{t("resource:crossAccount.link.stepOne3Update")}</div>
+                <div className="pl-20">
+                  <CopyText
+                    text={buildCrossAccountTemplateLink(
+                      amplifyConfig.solution_version,
+                      amplifyConfig.solution_name,
+                      amplifyConfig.template_base_url
                     )}
-                    type={AlertType.Normal}
-                  />
-                  <div className="deploy-steps">
-                    <div>{t("resource:crossAccount.link.stepOne1")}</div>
-                    <div>{`${t("resource:crossAccount.link.stepOne2")} ${
-                      amplifyConfig.aws_project_region
-                    }`}</div>
-                    <div>{t("resource:crossAccount.link.stepOne3Update")}</div>
-                    <div className="pl-20">
-                      <CopyText
-                        text={buildCrossAccountTemplateLink(
-                          amplifyConfig.solution_version,
-                          amplifyConfig.solution_name,
-                          amplifyConfig.template_base_url
-                        )}
-                      >
-                        {""}
-                      </CopyText>
-                      <pre className="ml-20">
-                        <code>
-                          {buildCrossAccountTemplateLink(
-                            amplifyConfig.solution_version,
-                            amplifyConfig.solution_name,
-                            amplifyConfig.template_base_url
-                          )}
-                        </code>
-                      </pre>
-                    </div>
-                    <div className="mt-m10">
-                      {t("resource:crossAccount.link.stepOne4")}
-                    </div>
-                    <div>{t("resource:crossAccount.link.stepOne5")}</div>
-                  </div>
+                  >
+                    {""}
+                  </CopyText>
+                  <pre className="ml-20">
+                    <code>
+                      {buildCrossAccountTemplateLink(
+                        amplifyConfig.solution_version,
+                        amplifyConfig.solution_name,
+                        amplifyConfig.template_base_url
+                      )}
+                    </code>
+                  </pre>
                 </div>
-              )}
-            </>
+                <div className="mt-m10">
+                  {t("resource:crossAccount.link.stepOne4")}
+                </div>
+                <div>{t("resource:crossAccount.link.stepOne5")}</div>
+              </div>
+            </div>
             <LinkAccountComp isEdit />
           </HeaderPanel>
           <div className="button-action text-right">

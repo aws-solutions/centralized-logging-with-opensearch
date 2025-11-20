@@ -26,7 +26,7 @@ def default_environment_variables():
     os.environ["OIDC_CUSTOMER_DOMAIN"] = ""
     os.environ["AUTHENTICATION_TYPE"] = "AMAZON_COGNITO_USER_POOLS"
     os.environ["CLOUDFRONT_URL"] = "solution.cloudfront.net"
-    os.environ["DEFAULT_LOGGING_BUCKET"] = "solution-bucket"
+    os.environ["DEFAULT_LOGGING_BUCKET"] = "amzn-s3-demo-bucket1"
     os.environ["ACCESS_LOGGING_BUCKET"] = "solution-logging-bucket"
     os.environ["OPENSEARCH_MASTER_ROLE_ARN"] = "OPENSEARCH_MASTER_ROLE_ARN"
     os.environ["ACCESS_LOGGING_BUCKET"] = "solution-logging-bucket"

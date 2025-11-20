@@ -1060,7 +1060,6 @@ export const listSubAccountLinks = /* GraphQL */ `
         subAccountVpcId
         subAccountPublicSubnetIds
         subAccountIamInstanceProfileArn
-        subAccountFlbConfUploadingEventTopicArn
         createdAt
         status
         tags {
@@ -1094,7 +1093,6 @@ export const getSubAccountLink = /* GraphQL */ `
       subAccountVpcId
       subAccountPublicSubnetIds
       subAccountIamInstanceProfileArn
-      subAccountFlbConfUploadingEventTopicArn
       createdAt
       status
       tags {

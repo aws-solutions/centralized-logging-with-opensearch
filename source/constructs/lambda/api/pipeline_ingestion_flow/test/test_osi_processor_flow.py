@@ -41,7 +41,7 @@ pipeline_info_1 = {
         {"parameterKey": "engineType", "parameterValue": "OpenSearch"},
         {
             "parameterKey": "logBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "logBucketPrefix",
@@ -71,7 +71,7 @@ pipeline_info_1 = {
         {"parameterKey": "refreshInterval", "parameterValue": "1s"},
         {
             "parameterKey": "backupBucketName",
-            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+            "parameterValue": "amzn-s3-demo-logging-bucket",
         },
         {
             "parameterKey": "defaultCmkArnParam",

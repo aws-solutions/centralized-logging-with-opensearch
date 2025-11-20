@@ -410,43 +410,52 @@ export class OpenSearchInitStack extends Construct {
         Fn.conditionEquals(props.backupBucketName || '', '')
       ),
     });
-    this.logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          's3:DeleteObject*',
-          's3:PutObject',
-          's3:PutObjectLegalHold',
-          's3:PutObjectRetention',
-          's3:PutObjectTagging',
-          's3:PutObjectVersionTagging',
-          's3:Abort*',
+
+    const s3BackupBucketPolicy = new iam.Policy(
+      this,
+      'logProcessorBackupBucketPolicy',
+      {
+        policyName: `${Aws.STACK_NAME}-backupBucketPolicy`,
+        statements: [
+          new iam.PolicyStatement({
+            actions: [
+              's3:DeleteObject*',
+              's3:PutObject',
+              's3:PutObjectLegalHold',
+              's3:PutObjectRetention',
+              's3:PutObjectTagging',
+              's3:PutObjectVersionTagging',
+              's3:Abort*',
+            ],
+            effect: iam.Effect.ALLOW,
+            resources: [
+              `arn:${Aws.PARTITION}:s3:::${props.backupBucketName}`,
+              `arn:${Aws.PARTITION}:s3:::${props.backupBucketName}/*`,
+            ],
+          }),
         ],
-        effect: iam.Effect.ALLOW,
-        resources: [
-          `arn:${Aws.PARTITION}:s3:::fake-cl-bucket`,
-          Fn.conditionIf(
-            hasBackupBucket.logicalId,
-            `arn:${Aws.PARTITION}:s3:::${props.backupBucketName}`,
-            Aws.NO_VALUE
-          ).toString(),
-          Fn.conditionIf(
-            hasBackupBucket.logicalId,
-            `arn:${Aws.PARTITION}:s3:::${props.backupBucketName}/*`,
-            Aws.NO_VALUE
-          ).toString(),
-        ],
-      })
+      }
     );
 
-    Aspects.of(this).add(new CfnGuardSuppressResourceList({
-      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
-      "AWS::IAM::Role": ["CFN_NO_EXPLICIT_RESOURCE_NAMES"]
-    }));
+    // Apply condition to the policy using CloudFormation condition
+    const cfnS3BackupPolicy = s3BackupBucketPolicy.node
+      .defaultChild as iam.CfnPolicy;
+    cfnS3BackupPolicy.cfnOptions.condition = hasBackupBucket;
+
+    // Attach policy to role conditionally
+    this.logProcessorFn.role!.attachInlinePolicy(s3BackupBucketPolicy);
+
+    Aspects.of(this).add(
+      new CfnGuardSuppressResourceList({
+        'AWS::Logs::LogGroup': ['CLOUDWATCH_LOG_GROUP_ENCRYPTED'], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+        'AWS::IAM::Role': ['CFN_NO_EXPLICIT_RESOURCE_NAMES'],
+      })
+    );
   }
 }
 
 class InjectCustomerResourceConfig implements IAspect {
-  public constructor(private isInstallLatestAwsSdk: string) { }
+  public constructor(private readonly isInstallLatestAwsSdk: string) {}
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource && node.cfnResourceType === 'Custom::AWS') {

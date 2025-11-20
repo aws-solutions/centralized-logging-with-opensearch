@@ -2941,7 +2941,7 @@ class TestAthenaClient:
             == "CREATE DATABASE IF NOT EXISTS centralized;"
         )
         assert response["QueryExecution"]["ResultConfiguration"] == {
-            "OutputLocation": "s3://staging-bucket/athena-results/"
+            "OutputLocation": "s3://amzn-s3-demo-bucket1/athena-results/"
         }
         assert response["QueryExecution"]["WorkGroup"] == "Primary"
         assert response["QueryExecution"]["Status"]["State"] in (
@@ -2960,7 +2960,7 @@ class TestAthenaClient:
             == "SELECT * FROM centralized.aws_apigateway_logs_parquet limit 10;"
         )
         assert response["QueryExecution"]["ResultConfiguration"] == {
-            "OutputLocation": "s3://staging-bucket/athena-results/"
+            "OutputLocation": "s3://amzn-s3-demo-bucket1/athena-results/"
         }
         assert response["QueryExecution"]["WorkGroup"] == "Primary"
         assert response["QueryExecution"]["Status"]["State"] in (
@@ -3081,7 +3081,7 @@ class TestAthenaClient:
         )
         assert response["QueryExecution"]["Query"] == DML_SELECT
         assert response["QueryExecution"]["ResultConfiguration"] == {
-            "OutputLocation": "s3://staging-bucket/athena-results"
+            "OutputLocation": "s3://amzn-s3-demo-bucket1/athena-results"
         }
         assert response["QueryExecution"]["WorkGroup"] == "Primary"
         assert response["QueryExecution"]["Status"]["State"] in (
@@ -3152,7 +3152,7 @@ class TestAthenaClient:
         )
         assert response["QueryExecution"]["Query"] == FAILED_DML_SELECT
         assert response["QueryExecution"]["ResultConfiguration"] == {
-            "OutputLocation": "s3://staging-bucket/athena-results"
+            "OutputLocation": "s3://amzn-s3-demo-bucket1/athena-results"
         }
         assert response["QueryExecution"]["WorkGroup"] == "Primary"
         assert response["QueryExecution"]["Status"]["State"] in (
@@ -3632,7 +3632,7 @@ class TestIamClient:
             "Action": [
                 "s3:GetObject",
             ],
-            "Resource": [f"arn:aws:s3:::staging-bucket/*"],
+            "Resource": [f"arn:aws:s3:::amzn-s3-demo-bucket1/*"],
             "Effect": "Allow",
         }
 
@@ -3653,7 +3653,7 @@ class TestIamClient:
                 "Action": [
                     "s3:GetObject",
                 ],
-                "Resource": [f"arn:aws:s3:::staging-bucket/*"],
+                "Resource": [f"arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                 "Effect": "Allow",
             }
         ]
@@ -3702,7 +3702,7 @@ class TestIamClient:
                 "Action": [
                     "s3:GetObject",
                 ],
-                "Resource": [f"arn:aws:s3:::staging-bucket/*"],
+                "Resource": [f"arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                 "Effect": "Allow",
             },
         ]
@@ -3887,7 +3887,7 @@ class TestIamClient:
             "Action": [
                 "s3:GetObject",
             ],
-            "Resource": [f"arn:aws:s3:::staging-bucket/*"],
+            "Resource": [f"arn:aws:s3:::amzn-s3-demo-bucket1/*"],
             "Effect": "Allow",
         }
         iam_client.update_policy_document(
@@ -3922,7 +3922,7 @@ class TestIamClient:
                 "Action": [
                     "s3:GetObject",
                 ],
-                "Resource": [f"arn:aws:s3:::staging-bucket/*"],
+                "Resource": [f"arn:aws:s3:::amzn-s3-demo-bucket1/*"],
                 "Effect": "Allow",
             },
         ]
@@ -4037,7 +4037,7 @@ class TestIamClient:
                         "s3:GetObject",
                     ],
                     "Resource": [
-                        f"arn:aws:s3:::staging-bucket",
+                        f"arn:aws:s3:::amzn-s3-demo-bucket1",
                     ],
                     "Effect": "Allow",
                 }
@@ -4094,7 +4094,7 @@ class TestIamClient:
                         "s3:GetObject",
                     ],
                     "Resource": [
-                        f"arn:aws:s3:::staging-bucket",
+                        f"arn:aws:s3:::amzn-s3-demo-bucket1",
                     ],
                     "Effect": "Allow",
                 }
@@ -4499,8 +4499,8 @@ class TestSchedulerClient:
             pipeline_id="test",
             source_type="WAF",
             table_name="tableName",
-            staging_location="s3://staging-bucket/WAFLogs",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            staging_location="s3://amzn-s3-demo-bucket1/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             statements=statements,
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
@@ -4519,7 +4519,7 @@ class TestSchedulerClient:
         assert response["Target"]["Arn"] == s3_objects_scanning_function_arn
         assert (
             response["Target"]["Input"]
-            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogProcessor",\n        "enrichmentPlugins": [],\n        "s3": {\n            "srcPath": "s3://staging-bucket/WAFLogs",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "tableName": "tableName",\n            "statements": {\n                "create": "create",\n                "drop": "drop",\n                "insert": "insert",\n                "aggregate": [\n                    "aggregate"\n                ]\n            }\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
+            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogProcessor",\n        "enrichmentPlugins": [],\n        "s3": {\n            "srcPath": "s3://amzn-s3-demo-bucket1/WAFLogs",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "tableName": "tableName",\n            "statements": {\n                "create": "create",\n                "drop": "drop",\n                "insert": "insert",\n                "aggregate": [\n                    "aggregate"\n                ]\n            }\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
         )
         assert response["Target"]["RoleArn"] == s3_objects_scanning_role_arn
 
@@ -4546,7 +4546,7 @@ class TestSchedulerClient:
             partition_info={},
             age=10,
             database="centralized",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
             sfn_arn=s3_objects_scanning_function_arn,
@@ -4567,7 +4567,7 @@ class TestSchedulerClient:
         assert response["Target"]["Arn"] == s3_objects_scanning_function_arn
         assert (
             response["Target"]["Input"]
-            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogMerger",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "partitionInfo": {},\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
+            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogMerger",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "partitionInfo": {},\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
         )
         assert response["Target"]["RoleArn"] == s3_objects_scanning_role_arn
 
@@ -4594,7 +4594,7 @@ class TestSchedulerClient:
             table_location="s3://centralized-bucket/centralized/waf",
             age=10,
             database="centralized",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
             sfn_arn=s3_objects_scanning_function_arn,
@@ -4615,7 +4615,7 @@ class TestSchedulerClient:
         assert response["Target"]["Arn"] == s3_objects_scanning_function_arn
         assert (
             response["Target"]["Input"]
-            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogArchive",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
+            == '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogArchive",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}'
         )
         assert response["Target"]["RoleArn"] == s3_objects_scanning_role_arn
 
@@ -4852,8 +4852,8 @@ class TestEventsClient:
             name="NewLogProcessor",
             source_type="WAF",
             table_name="tableName",
-            staging_location="s3://staging-bucket/WAFLogs",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            staging_location="s3://amzn-s3-demo-bucket1/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             statements=statements,
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
@@ -4883,7 +4883,7 @@ class TestEventsClient:
                 "Id": "test",
                 "Arn": s3_objects_scanning_function_arn,
                 "RoleArn": s3_objects_scanning_role_arn,
-                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogProcessor",\n        "enrichmentPlugins": [],\n        "s3": {\n            "srcPath": "s3://staging-bucket/WAFLogs",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "tableName": "tableName",\n            "statements": {\n                "create": "create",\n                "drop": "drop",\n                "insert": "insert",\n                "aggregate": [\n                    "aggregate"\n                ]\n            }\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
+                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogProcessor",\n        "enrichmentPlugins": [],\n        "s3": {\n            "srcPath": "s3://amzn-s3-demo-bucket1/WAFLogs",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "tableName": "tableName",\n            "statements": {\n                "create": "create",\n                "drop": "drop",\n                "insert": "insert",\n                "aggregate": [\n                    "aggregate"\n                ]\n            }\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
             }
         ]
 
@@ -4915,7 +4915,7 @@ class TestEventsClient:
             partition_info={},
             age=10,
             database="centralized",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
             sfn_arn=s3_objects_scanning_function_arn,
@@ -4944,7 +4944,7 @@ class TestEventsClient:
                 "Id": "test",
                 "Arn": s3_objects_scanning_function_arn,
                 "RoleArn": s3_objects_scanning_role_arn,
-                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogMerger",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "partitionInfo": {},\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
+                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogMerger",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "partitionInfo": {},\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
             }
         ]
 
@@ -4974,7 +4974,7 @@ class TestEventsClient:
             table_location="s3://centralized-bucket/centralized/waf",
             age=10,
             database="centralized",
-            archive_location="s3:/staging-bucket/archive/WAFLogs",
+            archive_location="s3:/amzn-s3-demo-bucket1/archive/WAFLogs",
             service="SES",
             recipients=["alejandro_rosalez@example.com"],
             sfn_arn=s3_objects_scanning_function_arn,
@@ -5003,7 +5003,7 @@ class TestEventsClient:
                 "Id": "test",
                 "Arn": s3_objects_scanning_function_arn,
                 "RoleArn": s3_objects_scanning_role_arn,
-                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogArchive",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/staging-bucket/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
+                "Input": '{\n    "metadata": {\n        "pipelineId": "test",\n        "sourceType": "WAF",\n        "scheduleType": "LogArchive",\n        "s3": {\n            "srcPath": "s3://centralized-bucket/centralized/waf",\n            "archivePath": "s3:/amzn-s3-demo-bucket1/archive/WAFLogs"\n        },\n        "athena": {\n            "firstPartitionKey": "event_hour",\n            "intervalDays": -10,\n            "database": "centralized",\n            "tableName": "tableName"\n        },\n        "notification": {\n            "service": "SES",\n            "recipients": [\n                "alejandro_rosalez@example.com"\n            ]\n        }\n    }\n}',
             }
         ]
 
@@ -5088,7 +5088,7 @@ class TestEventsClient:
             "Name": f"S3EventDriver-{rule_id}",
             "Arn": f"arn:aws:events:{aws_region}:{account_id}:rule/S3EventDriver-{rule_id}",
             "State": "ENABLED",
-            "EventPattern": '{"detail-type": ["Object Created"], "source": ["aws.s3", "clo.aws.s3"], "detail": {"bucket": {"name": ["staging-bucket"]}, "object": {"key": [{"prefix": "AWSLogs/123456789012"}]}}}',
+            "EventPattern": '{"detail-type": ["Object Created"], "source": ["aws.s3", "clo.aws.s3"], "detail": {"bucket": {"name": ["amzn-s3-demo-bucket1"]}, "object": {"key": [{"prefix": "AWSLogs/123456789012"}]}}}',
             "EventBusName": "default",
         }
         response = events_client._events_client.list_targets_by_rule(
@@ -5116,7 +5116,7 @@ class TestEventsClient:
             "Name": rule_id,
             "Arn": f"arn:aws:events:{aws_region}:{account_id}:rule/{rule_id}",
             "State": "ENABLED",
-            "EventPattern": '{"detail-type": ["Object Created"], "source": ["aws.s3", "clo.aws.s3"], "detail": {"bucket": {"name": ["staging-bucket"]}, "object": {"key": [{"prefix": "AWSLogs/123456789012"}]}}}',
+            "EventPattern": '{"detail-type": ["Object Created"], "source": ["aws.s3", "clo.aws.s3"], "detail": {"bucket": {"name": ["amzn-s3-demo-bucket1"]}, "object": {"key": [{"prefix": "AWSLogs/123456789012"}]}}}',
             "EventBusName": "default",
         }
 

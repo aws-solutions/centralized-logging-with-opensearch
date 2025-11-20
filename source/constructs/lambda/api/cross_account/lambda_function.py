@@ -58,7 +58,6 @@ def update_sub_account_link(**args):
 
     account_id = args.pop("subAccountId", "")
     region = args.pop("region", "")
-    uploading_event_topic_arn = args.pop("subAccountFlbConfUploadingEventTopicArn")
     windows_agent_install_doc = args.pop("windowsAgentInstallDoc")
     windows_agent_conf_doc = args.pop("windowsAgentConfDoc")
     agent_status_check_doc = args.pop("agentStatusCheckDoc")
@@ -67,7 +66,6 @@ def update_sub_account_link(**args):
     return acc_helper.update_link_account(
         account_id,
         region,
-        uploading_event_topic_arn,
         windows_agent_install_doc,
         windows_agent_conf_doc,
         agent_status_check_doc,

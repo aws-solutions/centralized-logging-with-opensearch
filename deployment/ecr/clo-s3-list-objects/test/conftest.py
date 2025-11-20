@@ -18,7 +18,7 @@ def default_environment_variables():
     os.environ["VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
 
-    os.environ["BUCKET_NAME"] = "solution-bucket"
+    os.environ["BUCKET_NAME"] = "amzn-s3-demo-bucket1"
     os.environ["QUEUE_NAME"] = "my-queue"
     os.environ["KEY_PREFIX"] = ""
     os.environ["QUEUE_URL"] = "http://queue.amazonaws.com"

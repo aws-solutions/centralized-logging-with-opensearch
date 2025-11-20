@@ -1789,6 +1789,7 @@ own-keys under the MIT license.
 wsl-utils under the MIT license.
 baseline-browser-mapping under the Apache-2.0 license.
 @babel/helper-globals under the Apache-2.0 license.
+docker/library/alpine under the MIT license.
 
 ********************
 OPEN SOURCE LICENSES

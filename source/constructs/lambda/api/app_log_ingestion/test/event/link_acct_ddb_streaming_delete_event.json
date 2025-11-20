@@ -45,7 +45,7 @@
                       "S": "magic-us-east-1"
                   },
                   "subAccountBucketName": {
-                      "S": "james-test-clloggingbucket5f34e4eb-1rzm4xgmgduu1"
+                      "S": "amzn-s3-demo-logging-bucket"
                   },
                   "subAccountStackId": {
                       "S": "arn:aws:cloudformation:us-east-1:111111111111:stack/james-test/d90a6d40-4bbf-11ee-aef1-0a4a3e875f8d"

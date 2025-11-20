@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - 2025-11-20
+
+### Added
+
+- Added support for EKS 1.34
+
+### Fixed
+
+- Issue with creating Instance group for Member accounts by removing obsolete `subAccountFlbConfUploadingEventTopicArn` parameter from GraphQL schema and related code
+- OpenSearch index pattern error for WindowsEvent logs by adding @timestamp alias field that maps to the existing time field, resolving dashboard visualization errors.
+
+### Security
+
+- Updated pip version to `25.3` to address [CVE-2025-8869](https://avd.aquasec.com/nvd/2025/cve-2025-8869/)
+- Updated AWS Lambda container base image to address CVEs in go/stdlib, coreutils-single, pip, lz4-libs
+, libcap, openssl-fips-provider-latest & openssl-snapsafe-libs packages.
+- Updated aws-for-fluent-bit image version to address CVEs for pip and setuptools packages
+- Updated js-yaml to address [CVE-2025-64718](https://avd.aquasec.com/nvd/2025/cve-2025-64718/)
+- Updated glob to address [CVE-2025-64756](https://avd.aquasec.com/nvd/2025/cve-2025-64756/)
+
 ## [2.4.4] - 2025-09-24
 
 ### Security

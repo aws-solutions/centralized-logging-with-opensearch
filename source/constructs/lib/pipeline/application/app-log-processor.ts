@@ -4,7 +4,6 @@
 import {
   Aws,
   RemovalPolicy,
-  aws_s3 as s3,
   aws_lambda as lambda,
   aws_logs as logs,
   Aspects,
@@ -114,9 +113,11 @@ export class AppLogProcessor extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    Aspects.of(this).add(new CfnGuardSuppressResourceList({
-      "AWS::Logs::LogGroup": ["CLOUDWATCH_LOG_GROUP_ENCRYPTED"] // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
-    }))
+    Aspects.of(this).add(
+      new CfnGuardSuppressResourceList({
+        'AWS::Logs::LogGroup': ['CLOUDWATCH_LOG_GROUP_ENCRYPTED'], // Using service default encryption https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/data-protection.html
+      })
+    );
 
     constructFactory(CWLMetricStack)(this, 'cwlMetricStack', {
       metricSourceType: MetricSourceType.LOG_PROCESSOR_APP,
@@ -161,12 +162,5 @@ export class AppLogProcessor extends Construct {
       osProps
     );
     this.logProcessorFn = osInitStack.logProcessorFn;
-
-    const backupBucket = s3.Bucket.fromBucketName(
-      this,
-      'backupBucket',
-      props.backupBucketName
-    );
-    backupBucket.grantWrite(this.logProcessorFn);
   }
 }

@@ -9,19 +9,19 @@ export interface BucketProps {
 export const BucketList: BucketProps[] = [
   {
     id: "1001",
-    bucketName: "bucket-abc",
+    bucketName: "amzn-s3-demo-bucket1",
     bucketRegion: "us-east-1",
     creationDate: "2021-10-10 19:34:22",
   },
   {
     id: "1002",
-    bucketName: "bucket-human",
+    bucketName: "amzn-s3-demo-bucket2",
     bucketRegion: "us-east-2",
     creationDate: "2021-6-10 19:34:22",
   },
   {
     id: "1003",
-    bucketName: "bucket-animal",
+    bucketName: "amzn-s3-demo-bucket3",
     bucketRegion: "us-east-5",
     creationDate: "2021-8-10 19:34:22",
   },
