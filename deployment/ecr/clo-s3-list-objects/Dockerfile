@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.12.2025.11.20.16 AS builder
+FROM public.ecr.aws/lambda/python:3.12.2025.12.05.08 AS builder
 
 WORKDIR /build
 
@@ -14,7 +14,7 @@ RUN python -m venv .venv && \
     cd common-lib && \
     poetry build
 
-FROM public.ecr.aws/lambda/python:3.12.2025.11.20.16
+FROM public.ecr.aws/lambda/python:3.12.2025.12.05.08
 
 WORKDIR /ws
 

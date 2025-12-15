@@ -135,7 +135,7 @@ export class PortalStack extends Construct {
                   override: true,
                 },
                 strictTransportSecurity: {
-                  accessControlMaxAge: Duration.seconds(600),
+                  accessControlMaxAge: Duration.seconds(47304000),
                   includeSubdomains: true,
                   override: true,
                 },
