@@ -4,6 +4,9 @@ on:
   discussion:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   discussion-created:
     runs-on: ubuntu-latest
