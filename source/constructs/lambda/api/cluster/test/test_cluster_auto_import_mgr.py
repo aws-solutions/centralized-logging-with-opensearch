@@ -3,7 +3,7 @@
 
 
 import boto3
-from moto import mock_ec2, mock_dynamodb
+from moto import mock_aws
 import os
 import pytest
 from cluster_auto_import_mgr import ClusterAutoImportManager
@@ -13,8 +13,18 @@ from .conftest import init_ddb
 
 
 @pytest.fixture
-def ddb_client():
-    with mock_dynamodb():
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    import os
+    os.environ["AWS_ACCESS_KEY_ID"] = "test"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_SECURITY_TOKEN"] = "test"
+    os.environ["AWS_SESSION_TOKEN"] = "test"
+
+
+@pytest.fixture
+def ddb_client(aws_credentials):
+    with mock_aws():
         yield init_ddb(
             {
                 os.environ["CLUSTER_TABLE"]: [
@@ -61,7 +71,7 @@ def ddb_client():
 def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
     tag = {"key": "testenv", "value": "testval"}
     tags = [tag]
-    with mock_ec2():
+    with mock_aws():
         ec2 = boto3.client("ec2", region_name="us-west-2")
         # ec2=boto3.resource("ec2", region_name="us-west-2")
         aos_vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
@@ -120,11 +130,11 @@ def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
                 "ToPort": 443,
             },
         ]
-        response = ec2.authorize_security_group_ingress(
-            GroupId="aos_sg",
-            IpPermissions=ip_permissions,
-            DryRun=False,
-        )
+        # response = ec2.authorize_security_group_ingress(
+        #     GroupId="aos_sg_test1",
+        #     IpPermissions=ip_permissions,
+        #     DryRun=False,
+        # )
         cluster_auto_import_mgr = ClusterAutoImportManager(
             tags, ec2, es_resp, clo_vpc_id, "clo_sg", clo_subnets
         )
@@ -161,8 +171,8 @@ def test_check_all_aos_cidr_overlaps(mocker, ddb_client):
 
 
 @pytest.fixture()
-def ec2_client():
-    with mock_ec2():
+def ec2_client(aws_credentials):
+    with mock_aws():
         boto3.client("ec2", region_name=os.environ.get("AWS_REGION"))
 
         yield

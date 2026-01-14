@@ -11,7 +11,7 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 boto3 = "^1.36.1"
-moto = {version = "~4.2.13", extras = ["awslambda"]}
+moto = {version = "^5.0.0", extras = ["awslambda"]}
 pytest = "^8.3.4"
 pyyaml = "^6.0.2"
 pytest-cov = "^6.0.0"

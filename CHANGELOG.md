@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.7] - 2026-01-14
+
+### Security
+
+- Updated urllib3 package to address [CVE-2026-21441](https://avd.aquasec.com/nvd/2026/cve-2026-21441/)
+- Updated werkzeug package to address [CVE-2026-21860](https://avd.aquasec.com/nvd/2026/cve-2026-21860/)
+- Updated @remix-run/router package to address [CVE-2026-22029](https://avd.aquasec.com/nvd/2026/cve-2026-22029/)
+- Updated react-router package to address [CVE-2025-68470](https://avd.aquasec.com/nvd/2025/cve-2025-68470/)
+
 ## [2.4.6] - 2025-12-15
 
 ### Security
@@ -14,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated werkzeug package to address [CVE-2025-66221](https://avd.aquasec.com/nvd/2025/cve-2025-66221)
 - Updated urllib3 package to address [CVE-2025-66418](https://avd.aquasec.com/nvd/2025/cve-2025-66418) and [CVE-2025-66471](https://avd.aquasec.com/nvd/2025/cve-2025-66471)
 - Updated CloudFront HTTP Strict Transport Security max-age from 600 seconds to 47304000 seconds
+- Updated aws-for-fluent-bit image version to address CVEs for libcap, libcurl and curl packages
 
 ## [2.4.5] - 2025-11-20
 
