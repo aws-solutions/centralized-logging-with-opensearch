@@ -6,14 +6,7 @@ import sys
 import json
 import boto3
 import pytest
-from moto import (
-    mock_dynamodb,
-    mock_stepfunctions,
-    mock_es,
-    mock_ec2,
-    mock_cloudwatch,
-    mock_sts,
-)
+from moto import mock_aws
 from .conftest import init_ddb, make_graphql_lambda_event
 
 from commonlib.model import DomainStatusCheckItem, DomainStatusCheckType
@@ -24,8 +17,18 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 @pytest.fixture
-def sfn_client():
-    with mock_stepfunctions():
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    import os
+    os.environ["AWS_ACCESS_KEY_ID"] = "test"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_SECURITY_TOKEN"] = "test"
+    os.environ["AWS_SESSION_TOKEN"] = "test"
+
+
+@pytest.fixture
+def sfn_client(aws_credentials):
+    with mock_aws():
         sfn = boto3.client("stepfunctions", region_name=os.environ.get("AWS_REGION"))
         response = sfn.create_state_machine(
             name="SolutionAOSProxy",
@@ -46,22 +49,22 @@ def sfn_client():
 
 
 @pytest.fixture
-def sts_client():
-    with mock_sts():
+def sts_client(aws_credentials):
+    with mock_aws():
         boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         yield
 
 
 @pytest.fixture
-def cw_client():
-    with mock_cloudwatch():
+def cw_client(aws_credentials):
+    with mock_aws():
         boto3.client("cloudwatch", region_name=os.environ.get("AWS_REGION"))
         yield
 
 
 @pytest.fixture()
-def ec2_client():
-    with mock_ec2():
+def ec2_client(aws_credentials):
+    with mock_aws():
         ec2 = boto3.client("ec2", region_name=os.environ.get("AWS_REGION"))
 
         # Mock the solution vpc
@@ -88,8 +91,8 @@ def ec2_client():
 
 
 @pytest.fixture
-def ddb_client(ec2_client):
-    with mock_dynamodb():
+def ddb_client(aws_credentials, ec2_client):
+    with mock_aws():
         yield init_ddb(
             {
                 os.environ["CLUSTER_TABLE"]: [
@@ -156,8 +159,8 @@ def ddb_client(ec2_client):
 
 
 @pytest.fixture
-def es_client():
-    with mock_es():
+def es_client(aws_credentials):
+    with mock_aws():
         es_client = boto3.client("es", region_name=os.environ.get("AWS_REGION"))
         es = es_client.create_elasticsearch_domain(
             DomainName="solution-aos",

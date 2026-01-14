@@ -11,20 +11,24 @@ import boto3
 from commonlib.model import PipelineType, PipelineAlarmType
 
 
-from moto import (
-    mock_sts,
-    mock_dynamodb,
-    mock_logs,
-    mock_cloudwatch,
-    mock_sns,
-)
+from moto import mock_aws
 
 from .conftest import init_table, make_graphql_lambda_event
 
 
 @pytest.fixture
-def ddb_client():
-    with mock_dynamodb():
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    import os
+    os.environ["AWS_ACCESS_KEY_ID"] = "test"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_SECURITY_TOKEN"] = "test"
+    os.environ["AWS_SESSION_TOKEN"] = "test"
+
+
+@pytest.fixture
+def ddb_client(aws_credentials):
+    with mock_aws():
         ddb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION"))
 
         # Mock Service Pipeline Table
@@ -501,10 +505,6 @@ def ddb_client():
         yield
 
 
-@mock_sts
-@mock_cloudwatch
-@mock_logs
-@mock_sns
 def test_service_pipeline_alarm_api(ddb_client):
     import lambda_function
     
@@ -844,10 +844,6 @@ def test_service_pipeline_alarm_api(ddb_client):
     }
     
 
-@mock_sts
-@mock_cloudwatch
-@mock_logs
-@mock_sns
 def test_app_pipeline_alarm_api(ddb_client):
     import lambda_function
     
@@ -1015,4 +1011,3 @@ def test_app_pipeline_alarm_api(ddb_client):
     response = metadata_table.get_item(Key={'metaName': light_engine_app_pipeline_id})
     assert response['Item']['data']['notification']['recipients'] == ''
     assert response['Item']['data']['notification']['service'] == 'SNS'
-    
