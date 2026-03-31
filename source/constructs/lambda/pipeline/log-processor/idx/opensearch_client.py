@@ -269,7 +269,11 @@ class OpenSearchUtil:
             path, "get_index_pattern", action="GET", headers=headers, timeout=90
         )
         if response.status_code == 200:
-            payload["version"] = response.json()["version"]
+            resp_json = response.json()
+            payload["version"] = resp_json["version"]
+            existing_time_field = resp_json.get("attributes", {}).get("timeFieldName")
+            if existing_time_field:
+                payload["attributes"]["timeFieldName"] = existing_time_field
             action = "PUT"
 
         fields = self._request(

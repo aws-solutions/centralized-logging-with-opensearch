@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.9] - 2026-03-31
+
+### Added
+
+- Added support for EKS kubectl 1.35
+
+### Fixed
+
+- Issue with OpenSearch index pattern update logic to preserve the existing `timeFieldName` attribute, preventing overwrite of previously set time field configuration and avoiding potential issues with time-based queries and visualizations
+
+### Security
+
+- Updated aws-for-fluent-bit image version to address CVEs for libxml2 and libssh package
+- Updated aws lambda python image version to address CVEs for libxml2
+- Updated flatted package to address [CVE-2026-32141](https://avd.aquasec.com/nvd/cve-2026-32141)
+- Updated minimatch package to address [CVE-2026-27903](https://avd.aquasec.com/nvd/cve-2026-27903)
+- Updated aws-cdk-lib and aws-cdk
+- Updated Prototype Pollution package to address [CVE-2026-29063](https://avd.aquasec.com/nvd/cve-2026-29063)
+- Updated SVGO package to address [CVE-2026-29074](https://avd.aquasec.com/nvd/cve-2026-29074)
+- Updated pyopenssl to address [CVE-2026-27459](https://avd.aquasec.com/nvd/cve-2026-27459)
+
 ## [2.4.8] - 2026-03-03
 
 ### Security

@@ -168,6 +168,6 @@ fs.readdirSync(global_s3_assets).forEach(file => {
 
 
   // Output modified template file
-  const output_template = JSON.stringify(template, null, 2);
+  const output_template = JSON.stringify(template, null, 1);
   fs.writeFileSync(`${global_s3_assets}/${file}`, output_template);
 });
