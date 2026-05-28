@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.11] - 2026-05-28
+
+### Security
+
+- Updated webpack-dev-server package to address [GHSA-79cf-xcqc-c78w](https://github.com/advisories/GHSA-79cf-xcqc-c78w)
+- Updated brace-expansion package to address [GHSA-jxxr-4gwj-5jf2](https://github.com/advisories/GHSA-jxxr-4gwj-5jf2)
+- Updated @typescript-eslint packages to address [GHSA-jxxr-4gwj-5jf2](https://github.com/advisories/GHSA-jxxr-4gwj-5jf2)
+- Updated aws-for-fluent-bit image version to 3.3.2 to address CVEs
+- Updated AWS Lambda container base image to python:3.11 to address CVEs
+- Updated ws package to address [CVE-2026-44431](https://avd.aquasec.com/nvd/cve-2026-44431) and [CVE-2026-44432](https://avd.aquasec.com/nvd/cve-2026-44432)
+- Updated requests package to address [CVE-2026-25645](https://avd.aquasec.com/nvd/cve-2026-25645)
+- Updated urllib3 package to address [GHSA-38jv-5279-wg99](https://github.com/advisories/GHSA-38jv-5279-wg99), [GHSA-mf9v-mfxr-j63j](https://github.com/advisories/GHSA-mf9v-mfxr-j63j), [GHSA-qccp-gfcp-xxvc](https://github.com/advisories/GHSA-qccp-gfcp-xxvc), [CVE-2026-44431](https://avd.aquasec.com/nvd/cve-2026-44431), and [CVE-2026-44432](https://avd.aquasec.com/nvd/cve-2026-44432)
+- Updated pygments package to address [CVE-2026-4539](https://avd.aquasec.com/nvd/cve-2026-4539)
+- Updated aws-cdk-lib from 2.250.0 to 2.256.1
+- Updated uuid package to address [CVE-2026-41907](https://avd.aquasec.com/nvd/cve-2026-41907)
+- Updated qs package to address [CVE-2026-8723](https://avd.aquasec.com/nvd/cve-2026-8723)
+
 ## [2.4.10] - 2026-04-20
 
 ### Security
