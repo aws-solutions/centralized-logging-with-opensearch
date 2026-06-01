@@ -23,6 +23,7 @@ pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
 cryptography = ">=46.0.7"
+pygments = ">=2.20.0"
 
 [tool.poetry]
 exclude = ["test*"]
