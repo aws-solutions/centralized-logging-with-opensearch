@@ -522,6 +522,7 @@ fast-base64-decode under the MIT license
 @jest/transform under the MIT license
 @jest/types under the MIT license
 @jridgewell/gen-mapping under the MIT license
+@jridgewell/remapping under the MIT license
 @jridgewell/resolve-uri under the MIT license
 @jridgewell/set-array under the MIT license
 @jridgewell/source-map under the MIT license

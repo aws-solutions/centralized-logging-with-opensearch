@@ -1,7 +1,7 @@
 {
   "name": "centralized-logging-with-opensearch",
   "description": "Centralized logging with opensearch (SO8025)",
-  "version": "2.4.12",
+  "version": "2.4.13",
   "license": "Apache-2.0",
   "author": {
     "name": "Amazon Web Services",
@@ -59,6 +59,7 @@
     "minimatch@9.x": "9.0.7",
     "minimatch@5.x": "5.1.8",
     "minimatch@10.x": "10.2.5",
-    "brace-expansion@5.x": "5.0.6"
+    "brace-expansion@5.x": "5.0.6",
+    "js-yaml": "4.2.0"
   }
 }

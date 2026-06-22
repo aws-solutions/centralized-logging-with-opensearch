@@ -18,5 +18,5 @@ moto = "~4.2.13"
 pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
 pytest-httpserver = "^1.1.0"
-cryptography = ">=46.0.7"
+cryptography = ">=49.0.0"
 
