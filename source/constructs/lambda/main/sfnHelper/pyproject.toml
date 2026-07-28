@@ -18,5 +18,5 @@ pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
 pyyaml = "^6.0.2"
 docker = "^7.1.0"
-cryptography = ">=46.0.7"
+cryptography = ">=49.0.0"
 

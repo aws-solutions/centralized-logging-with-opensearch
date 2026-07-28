@@ -16,7 +16,7 @@ pyyaml = "^6.0.2"
 docker = "^7.1.0"
 openapi-spec-validator = "^0.7.1"
 jsonschema = "4.19.0"
-cryptography = ">=46.0.7"
+cryptography = ">=49.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

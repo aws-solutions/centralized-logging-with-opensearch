@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.14] - 2026-07-28
+
+### Security
+
+- Updated aws-for-fluent-bit image version to 3.4.10 to address CVEs
+- Updated AWS Lambda container base image to python:3.12.2026.07.27.13 to address CVEs
+- Updated aws-cdk-lib package to 2.262.1 to address [GHSA-vcrf-j523-4mrf](https://github.com/advisories/GHSA-vcrf-j523-4mrf)
+- Updated body-parser package to address [GHSA-v422-hmwv-36x6](https://github.com/advisories/GHSA-v422-hmwv-36x6)
+- Updated http-proxy-middleware package to address [GHSA-64mm-vxmg-q3vj](https://github.com/advisories/GHSA-64mm-vxmg-q3vj)
+- Updated shell-quote package to address [GHSA-395f-4hp3-45gv](https://github.com/advisories/GHSA-395f-4hp3-45gv)
+- Updated js-yaml package to address [GHSA-52cp-r559-cp3m](https://github.com/advisories/GHSA-52cp-r559-cp3m)
+- Updated brace-expansion package to address [GHSA-3jxr-9vmj-r5cp](https://github.com/advisories/GHSA-3jxr-9vmj-r5cp) and [GHSA-jxxr-4gwj-5jf2](https://github.com/advisories/GHSA-jxxr-4gwj-5jf2)
+- Updated fast-uri package to address [GHSA-v2hh-gcrm-f6hx](https://github.com/advisories/GHSA-v2hh-gcrm-f6hx) and [GHSA-4c8g-83qw-93j6](https://github.com/advisories/GHSA-4c8g-83qw-93j6)
+
+## [2.4.13] - 2026-06-22
+
+### Security
+
+- Updated cryptography package to address [GHSA-537c-gmf6-5ccf](https://github.com/advisories/GHSA-537c-gmf6-5ccf)
+- Updated js-cookie package to address [CVE-2026-46625](https://nvd.nist.gov/vuln/detail/CVE-2026-46625)
+- Updated shell-quote package to address [CVE-2026-9277](https://nvd.nist.gov/vuln/detail/CVE-2026-9277)
+- Updated ws package to address [CVE-2026-48779](https://nvd.nist.gov/vuln/detail/CVE-2026-48779)
+- Updated form-data package to address [CVE-2026-12143](https://nvd.nist.gov/vuln/detail/CVE-2026-12143)
+- Updated js-yaml package to address [CVE-2026-53550](https://nvd.nist.gov/vuln/detail/CVE-2026-53550)
+- Updated launch-editor package to address [CVE-2026-53632](https://nvd.nist.gov/vuln/detail/CVE-2026-53632)
+- Updated react-router-dom package to address [CVE-2026-40181](https://nvd.nist.gov/vuln/detail/CVE-2026-40181)
+- Updated webpack-dev-server package to address [CVE-2026-9595](https://nvd.nist.gov/vuln/detail/CVE-2026-9595)
+- Updated @babel/core package to address [CVE-2026-49356](https://nvd.nist.gov/vuln/detail/CVE-2026-49356)
+- Updated idna package to address [CVE-2026-45409](https://nvd.nist.gov/vuln/detail/CVE-2026-45409)
+- Updated pygments package to address [CVE-2026-4539](https://nvd.nist.gov/vuln/detail/CVE-2026-4539)
+
 ## [2.4.12] - 2026-06-01
 
 ### Security
@@ -25,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.4.11] - 2026-05-28
 
 ### Security
+
 - (Skipped) see v2.4.12
 
 ## [2.4.10] - 2026-04-20

@@ -4,7 +4,8 @@
 // allows you to do things like:
 // learn more: https://github.com/testing-library/jest-dom
 import "@testing-library/jest-dom";
-import { TextEncoder } from "node:util";
+import { TextEncoder, TextDecoder } from "node:util";
 
-global.TextEncoder = TextEncoder;
+globalThis.TextEncoder = TextEncoder;
+globalThis.TextDecoder = TextDecoder;
 jest.setTimeout(30000);

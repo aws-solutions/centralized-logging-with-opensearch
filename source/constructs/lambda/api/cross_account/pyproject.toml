@@ -13,7 +13,7 @@ boto3 = "^1.36.1"
 moto = "~4.2.13"
 pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
-cryptography = ">=46.0.7"
+cryptography = ">=49.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

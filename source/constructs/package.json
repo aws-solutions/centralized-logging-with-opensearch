@@ -1,7 +1,7 @@
 {
   "name": "centralized-logging-with-opensearch",
   "description": "Centralized logging with opensearch (SO8025)",
-  "version": "2.4.12",
+  "version": "2.4.14",
   "license": "Apache-2.0",
   "author": {
     "name": "Amazon Web Services",
@@ -41,11 +41,11 @@
   },
   "dependencies": {
     "@aws-cdk/aws-appsync-alpha": "2.59.0-alpha.0",
-    "@aws-cdk/aws-glue-alpha": "~2.192.0-alpha.0",
+    "@aws-cdk/aws-glue-alpha": "~2.262.1-alpha.0",
     "@aws-solutions-constructs/aws-cloudfront-s3": "~2.84.0",
     "@aws-solutions-constructs/aws-cloudfront-oai-s3": "~2.84.0",
-    "aws-cdk": "~2.1109.0",
-    "aws-cdk-lib": "~2.257.0",
+    "aws-cdk": "~2.1132.0",
+    "aws-cdk-lib": "~2.262.1",
     "constructs": "^10.4.2",
     "source-map-support": "0.5.21"
   },
@@ -55,10 +55,13 @@
   "overrides": {
     "diff": "4.0.4",
     "ajv": "8.18.0",
-    "minimatch@3.x": "3.1.4",
+    "minimatch@3.x": "3.1.5",
     "minimatch@9.x": "9.0.7",
     "minimatch@5.x": "5.1.8",
     "minimatch@10.x": "10.2.5",
-    "brace-expansion@5.x": "5.0.6"
+    "brace-expansion@2.x": "2.1.2",
+    "brace-expansion@5.x": "5.0.8",
+    "js-yaml": "4.3.0",
+    "fast-uri": "3.1.4"
   }
 }
