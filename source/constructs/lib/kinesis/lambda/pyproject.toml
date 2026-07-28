@@ -19,5 +19,5 @@ pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
 jsonschema = "4.19.0"
 openapi-spec-validator = "^0.7.1"
-cryptography = ">=46.0.7"
+cryptography = ">=49.0.0"
 

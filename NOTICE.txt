@@ -243,6 +243,10 @@ aws-observability/aws-for-fluent-bit under the Apache-2.0 license
 @aws-sdk/util-locate-window under the Apache-2.0 license 
 @aws-sdk/config-resolver under the Apache-2.0 license 
 @aws-sdk/signature-v4 under the Apache-2.0 license
+@aws/cloudformation-validate under the Apache-2.0 license
+@aws-sdk/signature-v4-multi-region under the Apache-2.0 license
+@smithy/util-waiter under the Apache-2.0 license
+anynum under the MIT license
 @aws-sdk/is-array-buffer under the Apache-2.0 license 
 @aws-sdk/util-hex-encoding under the Apache-2.0 license 
 @aws-sdk/util-uri-escape under the Apache-2.0 license 
@@ -522,6 +526,7 @@ fast-base64-decode under the MIT license
 @jest/transform under the MIT license
 @jest/types under the MIT license
 @jridgewell/gen-mapping under the MIT license
+@jridgewell/remapping under the MIT license
 @jridgewell/resolve-uri under the MIT license
 @jridgewell/set-array under the MIT license
 @jridgewell/source-map under the MIT license
