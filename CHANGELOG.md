@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.15] - 2026-08-25
+
+### Security
+
+- Updated brace-expansion package to address [CVE-2026-69152](https://avd.aquasec.com/nvd/cve-2026-69152)
+- Updated aws-cdk-lib package to 2.265.0 to address [CVE-2026-69152](https://avd.aquasec.com/nvd/cve-2026-69152) in its bundled brace-expansion dependency
+- Updated aws-for-fluent-bit image version to a newer version to address CVEs
+- Updated AWS Lambda container base image to a newer version to address CVEs
+- Updated fast-uri package to address [CVE-2026-18446](https://avd.aquasec.com/nvd/cve-2026-18446)
+- Updated cryptography package to address [CVE-2026-69247](https://avd.aquasec.com/nvd/cve-2026-69247)
+
 ## [2.4.14] - 2026-07-28
 
 ### Security

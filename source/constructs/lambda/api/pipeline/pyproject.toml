@@ -17,5 +17,5 @@ moto = "4.2.13"
 pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
 pyparsing = "^3.2.1"
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"
 

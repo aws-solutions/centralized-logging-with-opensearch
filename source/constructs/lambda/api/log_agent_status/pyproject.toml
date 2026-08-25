@@ -20,5 +20,5 @@ pyyaml = "^6.0.2"
 docker = "^7.1.0"
 boto3 = "^1.36.1"
 pytest-mock = "^3.14.0"
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"
 

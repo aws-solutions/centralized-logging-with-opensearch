@@ -16,5 +16,5 @@ build-backend = "poetry.core.masonry.api"
 moto = {version = "~4.2.13", extras = ["awslambda"]}
 pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"
 
