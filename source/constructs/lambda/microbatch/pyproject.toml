@@ -40,4 +40,4 @@ maxminddb = "^2.6.3"
 user-agents = "^2.2.0"
 cachetools = "^5.5.0"
 commonlib = { path = "../common-lib" }
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"

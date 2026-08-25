@@ -19,5 +19,5 @@ pytest = "^9.0.3"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"
 

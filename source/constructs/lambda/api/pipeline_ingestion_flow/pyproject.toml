@@ -20,7 +20,7 @@ jsonschema = "4.19.0"
 jinja2 = "^3.1.6"
 pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
-cryptography = ">=49.0.0"
+cryptography = ">=50.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
