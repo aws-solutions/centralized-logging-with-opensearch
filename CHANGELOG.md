@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.16] - 2026-09-28
+
+### Fixed
+
+- Fixed a ValueError in the log-processor failed-records backup export where CSV fieldnames were derived from the first record only, so records carrying fields absent from the first record crashed csv.DictWriter and were lost from the backup bucket. Fieldnames are now built from the union of keys across all records. [#356](https://github.com/aws-solutions/centralized-logging-with-opensearch/issues/356)
+
+### Security
+
+- Updated aws-for-fluent-bit image version to a newer version to address CVEs
+- Updated AWS Lambda container base image to a newer version to address CVEs
+- Updated setuptools package to 84.0.0 to address [CVE-2026-59890](https://avd.aquasec.com/nvd/cve-2026-59890)
+- Updated cryptography package in the S3 list-objects image to 50.0.1 to address [CVE-2026-69247](https://avd.aquasec.com/nvd/cve-2026-69247)
+- Updated aws-cdk-lib package to 2.270.0 and aws-cdk package to 2.1142.0 to address CVEs
+- Updated portal dependency js-yaml to 4.3.2 to address [GHSA-5p4m-2wfm-xmqj](https://github.com/advisories/GHSA-5p4m-2wfm-xmqj) and [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh)
+- Updated portal dependency qs to 6.16.0 to address [GHSA-x5fp-wj9c-mxmx](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx) and [GHSA-w7fw-mjwx-w883](https://github.com/advisories/GHSA-w7fw-mjwx-w883)
+- Updated portal dependency colord to 2.9.4 to address [GHSA-2wm5-q62r-hmrv](https://github.com/advisories/GHSA-2wm5-q62r-hmrv)
+- Updated portal dependency fflate to 0.7.5 to address [GHSA-px8p-9vwx-vf98](https://github.com/advisories/GHSA-px8p-9vwx-vf98)
+- Updated portal dependency baseline-browser-mapping to 2.11.0 to address [GHSA-w5vr-8v7q-w6rv](https://github.com/advisories/GHSA-w5vr-8v7q-w6rv)
+- Updated portal dependency fast-uri to 3.1.6 to address [CVE-2026-75931](https://avd.aquasec.com/nvd/cve-2026-75931), [CVE-2026-75975](https://avd.aquasec.com/nvd/cve-2026-75975), [CVE-2026-75899](https://avd.aquasec.com/nvd/cve-2026-75899) and [CVE-2026-76172](https://avd.aquasec.com/nvd/cve-2026-76172)
+- Updated portal dependency postcss to 8.5.19 to address [CVE-2026-69153](https://avd.aquasec.com/nvd/cve-2026-69153)
+- Updated portal dependency webpack-dev-server to 5.2.6 to address [CVE-2026-14631](https://avd.aquasec.com/nvd/cve-2026-14631) and [CVE-2026-14620](https://avd.aquasec.com/nvd/cve-2026-14620)
+
 ## [2.4.15] - 2026-08-25
 
 ### Security
