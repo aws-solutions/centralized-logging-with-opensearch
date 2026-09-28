@@ -83,13 +83,21 @@ class Restorer:
             str: csv file body
         """
         f = StringIO()
-        fieldnames = json_records[0].keys()
+        # Build fieldnames from the union of keys across ALL records, not just
+        # the first one. AWS periodically adds fields to service log formats
+        # (e.g. WAF's requestBodySize / requestBodySizeInspectedByWAF), and a
+        # record carrying a field absent from json_records[0] would otherwise
+        # make csv.DictWriter raise "dict contains fields not in fieldnames".
+        # dict.fromkeys preserves first-seen order so the CSV columns stay
+        # deterministic across invocations.
+        fieldnames = dict.fromkeys(
+            key for record in json_records for key in record.keys()
+        )
 
-        if plugin_modules:
-            for p in plugin_modules:
-                fieldnames = json_records[0].keys() | p.get_mapping().keys()
+        for p in plugin_modules:
+            fieldnames.update(dict.fromkeys(p.get_mapping().keys()))
 
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=list(fieldnames))
         writer.writeheader()
         for record in json_records:
             writer.writerow(record)

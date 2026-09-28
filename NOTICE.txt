@@ -1891,6 +1891,7 @@ tsyringe under the MIT license.
 pkijs under the BSD-3-Clause license.
 @noble/hashes under the MIT license.
 bytestreamjs under the BSD-3-Clause license.
+@humanfs/types under the Apache-2.0 license.
 
 ********************
 OPEN SOURCE LICENSES

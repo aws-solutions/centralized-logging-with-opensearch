@@ -121,7 +121,7 @@
     "word-wrap": "1.2.5",
     "express": "4.22.0",
     "follow-redirects": "1.16.0",
-    "postcss": "8.5.18",
+    "postcss": "8.5.19",
     "webpack-dev-middleware": "5.3.4",
     "webpack": "5.104.1",
     "ejs": "3.1.10",
@@ -140,13 +140,14 @@
     "prismjs": "1.30.0",
     "@babel/core": "7.29.6",
     "@babel/runtime": "7.26.10",
-    "webpack-dev-server": "5.2.5",
+    "webpack-dev-server": "5.2.6",
+    "fast-uri": "3.1.6",
     "form-data": "3.0.5",
     "on-headers": "1.1.0",
     "axios": "^1.15.0",
-    "js-yaml": "4.3.0",
+    "js-yaml": "4.3.2",
     "node-forge": "1.4.0",
-    "qs": "6.15.2",
+    "qs": "6.16.0",
     "js-cookie": "3.0.7",
     "amazon-cognito-identity-js": "6.3.17",
     "uuid": "14.0.0",
@@ -159,6 +160,9 @@
     "brace-expansion@5.x": "5.0.9",
     "@tootallnate/once": "3.0.1",
     "shell-quote": "1.10.0",
-    "launch-editor": "2.14.1"
+    "launch-editor": "2.14.1",
+    "colord": "2.9.4",
+    "fflate": "0.7.5",
+    "baseline-browser-mapping": "2.11.0"
   }
 }

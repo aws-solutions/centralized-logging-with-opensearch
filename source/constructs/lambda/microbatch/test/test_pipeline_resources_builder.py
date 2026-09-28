@@ -849,7 +849,7 @@ class TestParameter:
         waf_pipeline_info_copy = copy.deepcopy(waf_pipeline_info)
         waf_pipeline_info_copy["data"]["destination"]["table"]["schema"] = (
             base64.b64encode(
-                gzip.compress(bytes(json.dumps(table_schema), encoding="utf-8"))
+                gzip.compress(bytes(json.dumps(table_schema), encoding="utf-8"), mtime=0)
             ).decode("utf-8")
         )
         waf_pipeline_info_copy["data"]["destination"]["metrics"][
@@ -857,7 +857,7 @@ class TestParameter:
         ] = "aws_waf_logs_metrics"
         waf_pipeline_info_copy["data"]["destination"]["metrics"]["schema"] = (
             base64.b64encode(
-                gzip.compress(bytes(json.dumps(metrics_schema), encoding="utf-8"))
+                gzip.compress(bytes(json.dumps(metrics_schema), encoding="utf-8"), mtime=0)
             ).decode("utf-8")
         )
         waf_pipeline_info_copy["data"]["destination"][
@@ -1010,7 +1010,7 @@ class TestParameter:
         assert param._parse_table_schema(input_string=input_string) == input_string
 
         input_string = base64.b64encode(
-            gzip.compress(bytes('{"key": "value"}', encoding="utf-8"))
+            gzip.compress(bytes('{"key": "value"}', encoding="utf-8"), mtime=0)
         ).decode("utf-8")
         assert (
             param._parse_table_schema(input_string=input_string) == '{"key": "value"}'
@@ -1042,7 +1042,7 @@ class TestParameter:
 
         input_string = "abc"
         new_input_string = base64.b64encode(
-            gzip.compress(bytes(input_string, encoding="utf-8"))
+            gzip.compress(bytes(input_string, encoding="utf-8"), mtime=0)
         ).decode("utf-8")
         with pytest.raises(Exception) as exception_info:
             param._parse_table_schema(input_string=new_input_string)
@@ -1422,17 +1422,17 @@ class TestParameter:
                 "table": {
                     "name": "test{}",
                     "schema": base64.b64encode(
-                        gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"))
+                        gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"), mtime=0)
                     ).decode("utf-8"),
                     "dataFormat": "regex",
                     "tableProperties": base64.b64encode(
-                        gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"))
+                        gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"), mtime=0)
                     ).decode("utf-8"),
                     "serializationProperties": json.dumps(
                         {
                             "input.regex": base64.b64encode(
                                 gzip.compress(
-                                    bytes(json.dumps(raw_schema), encoding="utf-8")
+                                    bytes(json.dumps(raw_schema), encoding="utf-8"), mtime=0
                                 )
                             ).decode("utf-8")
                         }
@@ -1449,7 +1449,7 @@ class TestParameter:
             assert source.table.table_properties == raw_schema
             assert source.table.serialization_properties == {
                 "input.regex": base64.b64encode(
-                    gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"))
+                    gzip.compress(bytes(json.dumps(raw_schema), encoding="utf-8"), mtime=0)
                 ).decode("utf-8")
             }
 
