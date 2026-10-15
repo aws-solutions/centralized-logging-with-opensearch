@@ -323,7 +323,7 @@ export class AppLogIngestionStack extends Construct {
           SOLUTION_ID: props.solutionId,
           FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
           FLUENT_BIT_IMAGE:
-            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.2.20241008',
+            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.34.3.20261001',
           FLUENT_BIT_EKS_CLUSTER_NAME_SPACE: 'logging',
           EC2_IAM_INSTANCE_PROFILE_ARN:
             props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
@@ -583,7 +583,7 @@ export class AppLogIngestionStack extends Construct {
           STACK_PREFIX: props.stackPrefix,
           FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
           FLUENT_BIT_IMAGE:
-            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.2.20241008',
+            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.34.3.20261001',
           FLB_S3_ADDR: flb_s3_addr,
         },
         description: `${Aws.STACK_NAME} - AppLogIngestion APIs Resolver`,

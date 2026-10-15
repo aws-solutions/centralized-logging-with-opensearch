@@ -46,7 +46,7 @@ cwl_monitor_role_arn = os.environ.get("CWL_MONITOR_ROLE_ARN")
 stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 fluent_bit_image = os.environ.get(
     "FLUENT_BIT_IMAGE",
-    "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.2.20241008",
+    "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.34.3.20261001",
 )
 fluent_bit_log_group_name = os.environ["FLUENT_BIT_LOG_GROUP_NAME"]
 

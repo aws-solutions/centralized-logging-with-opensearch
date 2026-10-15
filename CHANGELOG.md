@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.17] - 2026-10-15
+
+### Security
+
+- Updated aws-for-fluent-bit image version to a newer version to address CVEs
+- Updated AWS Lambda container base image to a newer version to address CVEs
+- Updated urllib3 to 2.8.0 in the shipped Python layers and the clo-s3-list-objects image to address [CVE-2026-97687](https://avd.aquasec.com/nvd/cve-2026-97687), [CVE-2026-97688](https://avd.aquasec.com/nvd/cve-2026-97688) and [CVE-2026-97689](https://avd.aquasec.com/nvd/cve-2026-97689)
+- Updated moment to 2.31.0 in the web console to address [CVE-2026-17495](https://avd.aquasec.com/nvd/cve-2026-17495)
+- Updated axios to 1.20.0 in the web console to address [CVE-2026-101907](https://avd.aquasec.com/nvd/cve-2026-101907)
+- Updated shell-quote to 1.12.0 in the web console build dependencies to address [CVE-2026-102422](https://avd.aquasec.com/nvd/cve-2026-102422)
+- Updated postcss-selector-parser to 7.1.6 in the web console build dependencies to address [CVE-2026-104844](https://avd.aquasec.com/nvd/cve-2026-104844)
+- Updated browserslist to 4.28.7 in the web console build dependencies to address [CVE-2026-73089](https://avd.aquasec.com/nvd/cve-2026-73089)
+- Updated svgo to 2.8.4 in the web console build dependencies to address [CVE-2026-73650](https://avd.aquasec.com/nvd/cve-2026-73650)
+- Updated compression to 1.8.2 in the web console build dependencies to address [CVE-2026-87776](https://avd.aquasec.com/nvd/cve-2026-87776)
+- Updated proxy-addr to 2.0.8 in the web console build dependencies to address [CVE-2026-90711](https://avd.aquasec.com/nvd/cve-2026-90711)
+- Updated source-map-js to 1.2.2 in the web console build dependencies to address [CVE-2026-93749](https://avd.aquasec.com/nvd/cve-2026-93749)
+- Updated werkzeug to 3.1.9 in the Python test dependencies to address [CVE-2026-102598](https://avd.aquasec.com/nvd/cve-2026-102598)
+- Updated fast-uri to 3.1.8 across the web console and CDK dependencies to address its CVEs
+- Updated brace-expansion to 1.1.21 and 2.1.7 across the web console and CDK dependencies to address its denial-of-service CVEs
+- Updated the EC2 and EKS log agent aws-for-fluent-bit image to 2.34.3.20261001 to address CVEs in its bundled OS packages
+
 ## [2.4.16] - 2026-09-28
 
 ### Fixed

@@ -1,4 +1,23 @@
-FROM public.ecr.aws/lambda/python:3.12.2026.09.25.12 AS builder
+FROM public.ecr.aws/lambda/python:3.12 AS builder
+
+# Fix OS-level CVEs - AL2023 repos are version-locked, need --releasever=latest to get security patches
+RUN microdnf update -y --releasever=latest \
+    openssl-fips-provider-latest \
+    openssl-snapsafe-libs \
+    libnghttp2 \
+    glibc glibc-common \
+    libsolv \
+    libacl \
+    glib2 \
+    gawk \
+    rpm-libs \
+    rpm \
+    pcre2 \
+    pcre2-syntax \
+    libcurl-minimal \
+    curl-minimal \
+    libxml2 \
+    && microdnf clean all
 
 WORKDIR /build
 
@@ -14,7 +33,26 @@ RUN python -m venv .venv && \
     cd common-lib && \
     poetry build
 
-FROM public.ecr.aws/lambda/python:3.12.2026.09.25.12
+FROM public.ecr.aws/lambda/python:3.12
+
+# Fix OS-level CVEs - AL2023 repos are version-locked, need --releasever=latest to get security patches
+RUN microdnf update -y --releasever=latest \
+    openssl-fips-provider-latest \
+    openssl-snapsafe-libs \
+    libnghttp2 \
+    glibc glibc-common \
+    libsolv \
+    libacl \
+    glib2 \
+    gawk \
+    rpm-libs \
+    rpm \
+    pcre2 \
+    pcre2-syntax \
+    libcurl-minimal \
+    curl-minimal \
+    libxml2 \
+    && microdnf clean all
 
 WORKDIR /ws
 
