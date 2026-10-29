@@ -27,7 +27,7 @@ numpy = "^2.2.1"
 
 [tool.poetry.group.utils.dependencies]
 binaryornot = "^0.4.4"
-certifi = "^2024.12.14"
+certifi = ">=2026.10.19"
 chardet = "^5.2.0"
 charset-normalizer = "^3.4.1"
 idna = "^3.15"

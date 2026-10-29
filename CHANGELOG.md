@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.18] - 2026-10-29
+
+### Security
+
+- Updated aws-for-fluent-bit image version to a newer version to address CVEs
+- Updated certifi to 2026.10.19 in the shipped Python Lambda dependencies to address the bundled emSign root CA with compromised intermediate CA keys ([GHSA-6q48-6c7w-9gw2](https://github.com/advisories/GHSA-6q48-6c7w-9gw2))
+- Updated launch-editor to 2.14.2 in the web console build dependencies to address [CVE-2026-112944](https://avd.aquasec.com/nvd/cve-2026-112944)
+- Updated follow-redirects to 1.16.1 in the web console dependencies to address [CVE-2026-111755](https://avd.aquasec.com/nvd/cve-2026-111755)
+- Updated fast-uri to 3.1.9 in the web console build dependencies to address [CVE-2026-110725](https://avd.aquasec.com/nvd/cve-2026-110725), [CVE-2026-110306](https://avd.aquasec.com/nvd/cve-2026-110306), [CVE-2026-110180](https://avd.aquasec.com/nvd/cve-2026-110180) and [CVE-2026-110095](https://avd.aquasec.com/nvd/cve-2026-110095)
+- Updated body-parser to 1.20.9 in the web console build dependencies to address [CVE-2026-111181](https://avd.aquasec.com/nvd/cve-2026-111181)
+- Updated serialize-javascript to 7.1.3 in the web console build dependencies to address the cross-site scripting advisory [CVE-2026-115754](https://avd.aquasec.com/nvd/cve-2026-115754)
+- Updated qs to 6.16.1 in the web console build dependencies to address [CVE-2026-110816](https://avd.aquasec.com/nvd/cve-2026-110816)
+
 ## [2.4.17] - 2026-10-15
 
 ### Security
