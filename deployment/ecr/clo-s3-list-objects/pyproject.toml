@@ -4,7 +4,7 @@ description = ""
 requires-python = ">=3.10"
 dependencies = [
     "boto3 (==1.39.14)",
-    "setuptools (>=83.0.0)",
+    "setuptools (>=84.1.0)",
     "urllib3 (>=2.8.0)"
 ]
 

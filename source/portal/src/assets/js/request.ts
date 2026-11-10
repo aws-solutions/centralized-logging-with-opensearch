@@ -60,7 +60,7 @@ const buildAppsyncLink = () => {
     : {};
 
   function getOIDCUser() {
-    const oidcStorage = localStorage.getItem(
+    const oidcStorage = sessionStorage.getItem(
       `oidc.user:${configJSONObj.aws_oidc_provider}:${configJSONObj.aws_oidc_client_id}`
     );
     if (!oidcStorage) {

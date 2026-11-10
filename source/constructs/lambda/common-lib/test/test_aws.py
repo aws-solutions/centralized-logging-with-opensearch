@@ -217,7 +217,7 @@ def test_ddb_utils_get_item(ddb_client):
         "age": 30,
     }
 
-    with pytest.raises(Exception, match="Can not find item"):
+    with pytest.raises(Exception, match="Item is not found"):
         u.get_item({"id": "not-found"}, raise_if_not_found=True)
 
 

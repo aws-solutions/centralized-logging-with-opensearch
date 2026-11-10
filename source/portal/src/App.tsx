@@ -27,6 +27,7 @@ import { WebStorageStateStore } from "oidc-client-ts";
 import { useTranslation } from "react-i18next";
 import "@aws-amplify/ui-react/styles.css";
 import { defaultStr } from "assets/js/utils";
+import { removeAuthTokensFromLocalStorage } from "assets/js/authStorage";
 import OIDCAppRouter from "router/OIDCAppRouter";
 import AmplifyAppRouter from "router/AmplifyAppRouter";
 
@@ -60,7 +61,7 @@ const App: React.FC = () => {
     setAuthType(configData.aws_appsync_authenticationType);
     if (configData.aws_appsync_authenticationType === AppSyncAuthType.OPEN_ID) {
       const settings = {
-        userStore: new WebStorageStateStore({ store: window.localStorage }),
+        userStore: new WebStorageStateStore({ store: globalThis.sessionStorage }),
         authority: configData.aws_oidc_provider,
         scope: "openid email profile",
         automaticSilentRenew: true,
@@ -71,7 +72,11 @@ const App: React.FC = () => {
       };
       setOidcConfig(settings);
     } else {
-      Amplify.configure(configData);
+      // Keep Cognito tokens in session storage so they are cleared when the browser session ends
+      Amplify.configure({
+        ...configData,
+        Auth: { storage: globalThis.sessionStorage },
+      });
     }
   };
 
@@ -109,6 +114,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     document.title = t("title");
+    removeAuthTokensFromLocalStorage();
     if (window.performance) {
       if (performance.getEntriesByType("navigation")?.[0]?.type === "reload") {
         setLoadingConfig(true);

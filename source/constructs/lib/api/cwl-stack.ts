@@ -20,6 +20,10 @@ import {
   MetricSourceType,
 } from '../pipeline/common/cwl-metric-stack';
 import { constructFactory } from '../util/stack-helper';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+} from './resolver-error';
 
 export interface CloudWatchStackProps {
   /**
@@ -129,22 +133,22 @@ export class CloudWatchStack extends Construct {
     cwlLambdaDS.createResolver('QueryListLogStreamsResolver', {
       typeName: 'Query',
       fieldName: 'listLogStreams',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     cwlLambdaDS.createResolver('QueryGetLogEventsResolver', {
       typeName: 'Query',
       fieldName: 'getLogEvents',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     cwlLambdaDS.createResolver('QueryGetMetricHistoryDataResolver', {
       typeName: 'Query',
       fieldName: 'getMetricHistoryData',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

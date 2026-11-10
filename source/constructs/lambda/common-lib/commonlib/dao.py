@@ -35,6 +35,9 @@ from commonlib.model import (
     LogSourceTypeEnum,
 )
 from commonlib.utils import get_kv_from_buffer_param
+from commonlib.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def rekey(d: dict, prefix: str = ":"):
@@ -477,7 +480,8 @@ class AppPipelineDao:
             & Attr("aosParams.domainName").eq(domain_name)
         )
         if len(pipelines) > 0:
-            msg = f"Duplicate index prefix: {index_prefix}"
+            logger.info("Duplicate index prefix: %s", index_prefix)
+            msg = "The index prefix is already used by an application pipeline on this domain."
             inactive_pipelines = list(
                 filter(lambda x: x.status == StatusEnum.INACTIVE, pipelines)
             )
@@ -503,7 +507,13 @@ class AppPipelineDao:
                 fnmatchcase(index_prefix, the_index_prefix + "*")
                 or fnmatchcase(the_index_prefix, index_prefix + "*")
             ):
-                msg = f'Index prefix "{index_prefix}" overlaps "{the_index_prefix}" of app pipeline {p.pipelineId}'
+                logger.info(
+                    'Index prefix "%s" overlaps "%s" of app pipeline %s',
+                    index_prefix,
+                    the_index_prefix,
+                    p.pipelineId,
+                )
+                msg = "The index prefix overlaps the index prefix of an existing application pipeline on this domain."
                 if status == "INACTIVE":
                     raise APIException(
                         ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX, msg
@@ -521,8 +531,8 @@ class AppPipelineDao:
         if missing_params:
             raise APIException(
                 ErrorCode.INVALID_BUFFER_PARAMETERS,
-                "Missing buffer parameters %s for buffer type %s"
-                % (",".join(missing_params), buffer_type),
+                "Missing buffer parameters %s for the selected bufferType"
+                % ",".join(missing_params),
             )
 
     def _get_required_params(self, buffer_type: str) -> list:

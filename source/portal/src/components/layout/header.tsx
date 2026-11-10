@@ -53,7 +53,7 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
         client_id: configJSONObj.aws_oidc_client_id,
         id_token_hint:
           User.fromStorageString(
-            localStorage.getItem(
+            sessionStorage.getItem(
               `oidc.user:${configJSONObj.aws_oidc_provider}:${configJSONObj.aws_oidc_client_id}`
             ) ?? ""
           )?.id_token ?? "",

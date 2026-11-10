@@ -69,6 +69,7 @@ class ErrorCode(Enum):
     S3_BUCKET_CHECK_FAILED = (
         "Failed to detect S3 storage bucket, please check if it is correct"
     )
+    RESOURCE_LOGGING_FAILED = "Unable to configure logging for the resource"
 
 
 class APIException(Exception):
@@ -105,19 +106,22 @@ class InvalidElement(metaclass=Issue):
 class InvalidResource(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "INVALID_RESOURCE"
-    DETAILS = "The resource {resource} is not found."
+    DETAILS = "The resource for {key} is not found."
 
 
 class InvalidResourceStatus(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "INVALID_RESOURCE_STATUS"
-    DETAILS = "The resource {resource} current status does not allow pipeline creation, please check the resource's status."
+    DETAILS = (
+        "The current status of the resource for {key} does not allow pipeline creation, "
+        "please check the resource's status."
+    )
 
 
 class InvalidBucket(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "INVALID_BUCKET"
-    DETAILS = "The bucket {bucket} is not exists or is not in the region where the Solution is deployed."
+    DETAILS = "The bucket does not exist or is not in the region where the Solution is deployed."
 
 
 class BucketNotificationOverlap(metaclass=Issue):
@@ -129,14 +133,14 @@ class BucketNotificationOverlap(metaclass=Issue):
 class InvalidValue(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "INVALID_VALUE"
-    DETAILS = "The Value {value} is not valid for the {key}."
+    DETAILS = "The value is not valid for the {key}."
 
 
 class InvalidEnum(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "INVALID_ENUM"
     DETAILS = (
-        "The Value {value} is not valid for the {enum}, Supported values: {values}."
+        "The value is not valid for the {enum}, Supported values: {values}."
     )
 
 
@@ -151,7 +155,7 @@ class MissingElement(metaclass=Issue):
 class MismatchDataType(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "MISMATCH_DATA_TYPE"
-    DETAILS = "The value {value} does not match the expected data type {data_type}."
+    DETAILS = "The value does not match the expected data type {data_type}."
 
 
 class MissingVersion(metaclass=Issue):
@@ -163,7 +167,10 @@ class MissingVersion(metaclass=Issue):
 class HTTPRequestError(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "HTTP_REQUEST_ERROR"
-    DETAILS = "{msg}"
+    DETAILS = (
+        "The index template check on the OpenSearch domain failed, "
+        "please check the indexPrefix and the domain status."
+    )
 
 
 class UnsupportedLogSource(metaclass=Issue):
@@ -175,7 +182,7 @@ class UnsupportedLogSource(metaclass=Issue):
 class OpenSearchIndexOverlap(metaclass=Issue):
     TYPE = "ERROR"
     CODE = "OPENSEARCH_INDEX_OVERLAP"
-    DETAILS = "{msg}"
+    DETAILS = "The index prefix overlaps the index prefix of an existing application pipeline on this domain."
 
 
 class IssueCode:

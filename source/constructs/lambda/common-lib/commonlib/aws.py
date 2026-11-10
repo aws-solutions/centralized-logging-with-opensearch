@@ -260,9 +260,8 @@ class DynamoDBUtil:
         resp = self._table.get_item(Key=key)
         item = resp.get("Item")
         if raise_if_not_found and not item:
-            raise APIException(
-                ErrorCode.ITEM_NOT_FOUND, f"Can not find item with key: {key}"
-            )
+            logger.info("Can not find item with key: %s", key)
+            raise APIException(ErrorCode.ITEM_NOT_FOUND)
         return item
 
     def list_items(

@@ -13,6 +13,7 @@ import { Construct } from 'constructs';
 
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
+import { lambdaResultWithErrorHandling } from './resolver-error';
 
 export interface CommonResourceStackProps {
   /**
@@ -184,7 +185,7 @@ export class CommonResourceStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/resource/ListResources.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     resourceLambdaDS.createResolver('getResourceLoggingBucket', {
@@ -196,7 +197,7 @@ export class CommonResourceStack extends Construct {
           '../../graphql/vtl/resource/GetResourceLoggingBucket.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     resourceLambdaDS.createResolver('putResourceLoggingBucket', {
@@ -208,7 +209,7 @@ export class CommonResourceStack extends Construct {
           '../../graphql/vtl/resource/PutResourceLoggingBucket.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     resourceLambdaDS.createResolver('getResourceLogConfigs', {
@@ -220,7 +221,7 @@ export class CommonResourceStack extends Construct {
           '../../graphql/vtl/resource/GetResourceLogConfig.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     resourceLambdaDS.createResolver('putResourceLogConfig', {
@@ -232,7 +233,7 @@ export class CommonResourceStack extends Construct {
           '../../graphql/vtl/resource/PutResourceLogConfig.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

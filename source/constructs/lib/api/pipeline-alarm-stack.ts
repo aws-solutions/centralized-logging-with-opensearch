@@ -11,6 +11,10 @@ import { Construct } from 'constructs';
 import { CloudWatchAlarmManagerSingleton } from './lambda-construct';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+} from './resolver-error';
 
 export interface PipelineAlarmStackProps {
   /**
@@ -126,29 +130,29 @@ export class PipelineAlarmStack extends Construct {
     centralAlarmLambdaDS.createResolver('GetPipelineAlarmDataResolver', {
       typeName: 'Query',
       fieldName: 'getPipelineAlarm',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     centralAlarmLambdaDS.createResolver('CreatePipelineAlarmResolver', {
       typeName: 'Mutation',
       fieldName: 'createPipelineAlarm',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     centralAlarmLambdaDS.createResolver('UpdatePipelineAlarmResolver', {
       typeName: 'Mutation',
       fieldName: 'updatePipelineAlarm',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     centralAlarmLambdaDS.createResolver('DeletePipelineAlarmResolver', {
       typeName: 'Mutation',
       fieldName: 'deletePipelineAlarm',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

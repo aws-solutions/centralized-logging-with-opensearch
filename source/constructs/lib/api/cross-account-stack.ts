@@ -14,6 +14,10 @@ import {
 import { Construct } from 'constructs';
 
 import { SharedPythonLayer } from '../layer/layer';
+import {
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface CrossAccountStackProps {
   readonly encryptionKey: kms.IKey;
@@ -194,7 +198,7 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/ListSubAccountLinks.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/cross_account/ListSubAccountLinksResp.vtl'
@@ -211,7 +215,7 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/GetSubAccountLink.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/cross_account/GetSubAccountLinkResp.vtl'
@@ -228,7 +232,7 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/UpdateSubAccountLink.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     crossAccountLambdaDS.createResolver('createSubAccountLink', {
@@ -240,7 +244,7 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/CreateSubAccountLink.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
     crossAccountLambdaDS.createResolver('deleteSubAccountLink', {
       typeName: 'Mutation',
@@ -251,7 +255,7 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/DeleteSubAccountLink.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }
