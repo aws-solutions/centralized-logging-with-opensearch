@@ -11,6 +11,11 @@ import {
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { SharedPythonLayer } from '../layer/layer';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface LogConfStackProps {
   /**
@@ -65,7 +70,7 @@ export class LogConfStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/log_conf/CreateLogConfig.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogConfLambdaDS.createResolver('updateLogConfig', {
@@ -74,21 +79,21 @@ export class LogConfStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/log_conf/UpdateLogConfig.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogConfLambdaDS.createResolver('deleteLogConfig', {
       typeName: 'Mutation',
       fieldName: 'deleteLogConfig',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogConfLambdaDS.createResolver('getLogConfig', {
       typeName: 'Query',
       fieldName: 'getLogConfig',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(__dirname, '../../graphql/vtl/log_conf/GetLogConfigResp.vtl')
       ),
     });
@@ -102,7 +107,7 @@ export class LogConfStack extends Construct {
           '../../graphql/vtl/log_conf/ListLogConfigVersions.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogConfLambdaDS.createResolver('listLogConfigs', {
@@ -111,7 +116,7 @@ export class LogConfStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/log_conf/ListLogConfigs.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/log_conf/ListLogConfigsResp.vtl'
@@ -122,8 +127,8 @@ export class LogConfStack extends Construct {
     LogConfLambdaDS.createResolver('checkTimeFormat', {
       typeName: 'Query',
       fieldName: 'checkTimeFormat',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

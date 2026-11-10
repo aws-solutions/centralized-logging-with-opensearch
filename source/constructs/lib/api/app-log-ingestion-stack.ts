@@ -28,6 +28,11 @@ import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface AppLogIngestionStackProps {
   /**
@@ -677,8 +682,8 @@ export class AppLogIngestionStack extends Construct {
     appLogIngestionLambdaDS.createResolver('listAppLogIngestions', {
       typeName: 'Query',
       fieldName: 'listAppLogIngestions',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/app_log_ingestion/ListAppLogIngestionsResp.vtl'
@@ -690,8 +695,8 @@ export class AppLogIngestionStack extends Construct {
       {
         typeName: 'Query',
         fieldName: 'getK8sDeploymentContentWithSidecar',
-        requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-        responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        requestMappingTemplate: lambdaRequestWithErrorHandling(),
+        responseMappingTemplate: lambdaResultWithErrorHandling(),
       }
     );
 
@@ -700,16 +705,16 @@ export class AppLogIngestionStack extends Construct {
       {
         typeName: 'Query',
         fieldName: 'getK8sDeploymentContentWithDaemonSet',
-        requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-        responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        requestMappingTemplate: lambdaRequestWithErrorHandling(),
+        responseMappingTemplate: lambdaResultWithErrorHandling(),
       }
     );
 
     appLogIngestionLambdaDS.createResolver('getAppLogIngestion', {
       typeName: 'Query',
       fieldName: 'getAppLogIngestion',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/app_log_ingestion/GetAppLogIngestionResp.vtl'
@@ -726,14 +731,14 @@ export class AppLogIngestionStack extends Construct {
           '../../graphql/vtl/app_log_ingestion/CreateAppLogIngestion.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appLogIngestionLambdaDS.createResolver('deleteAppLogIngestion', {
       typeName: 'Mutation',
       fieldName: 'deleteAppLogIngestion',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appLogIngestionLambdaDS.createResolver('refreshAppLogIngestion', {
@@ -745,7 +750,7 @@ export class AppLogIngestionStack extends Construct {
           '../../graphql/vtl/app_log_ingestion/RefreshAppLogIngestion.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     const ec2IngestionDistributionEventHandler = new lambda.Function(
@@ -870,7 +875,7 @@ export class AppLogIngestionStack extends Construct {
           '../../graphql/vtl/app_log_ingestion/GetASGConf.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

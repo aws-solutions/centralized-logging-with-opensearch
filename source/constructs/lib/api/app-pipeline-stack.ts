@@ -22,6 +22,11 @@ import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { AppPipelineFlowStack } from './app-pipeline-flow';
 import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 export interface AppPipelineStackProps {
   readonly vpc: IVpc;
 
@@ -357,7 +362,7 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/ListAppPipelines.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/app_log_pipeline/ListAppPipelinesResp.vtl'
@@ -368,8 +373,8 @@ export class AppPipelineStack extends Construct {
     appPipeLambdaDS.createResolver('createAppPipeline', {
       typeName: 'Mutation',
       fieldName: 'createAppPipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('resumePipeline', {
@@ -381,7 +386,7 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/ResumePipeline.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('updateAppPipeline', {
@@ -393,28 +398,28 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/UpdateAppPipeline.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('createLightEngineAppPipeline', {
       typeName: 'Mutation',
       fieldName: 'createLightEngineAppPipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('deleteAppPipeline', {
       typeName: 'Mutation',
       fieldName: 'deleteAppPipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('getAppPipeline', {
       typeName: 'Query',
       fieldName: 'getAppPipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/app_log_pipeline/GetAppPipelineResp.vtl'
@@ -431,7 +436,7 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/GetLightEngineAppPipelineDetail.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('getLightEngineAppPipelineExecutionLogs', {
@@ -443,21 +448,21 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/GetLightEngineAppPipelineExecutionLogs.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('checkOSIAvailability', {
       typeName: 'Query',
       fieldName: 'checkOSIAvailability',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('getAccountUnreservedConurrency', {
       typeName: 'Query',
       fieldName: 'getAccountUnreservedConurrency',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('batchExportAppPipelines', {
@@ -469,7 +474,7 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/BatchExportAppPipelines.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     appPipeLambdaDS.createResolver('batchImportAppPipelinesAnalyzer', {
@@ -481,7 +486,7 @@ export class AppPipelineStack extends Construct {
           '../../graphql/vtl/app_log_pipeline/BatchImportAppPipelinesAnalyzer.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

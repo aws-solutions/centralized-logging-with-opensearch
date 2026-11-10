@@ -20,6 +20,11 @@ import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { ClusterFlowStack } from './cluster-flow';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface ClusterStackProps {
   /**
@@ -267,14 +272,14 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/cluster/ListDomainNames.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('listImportedDomains', {
       typeName: 'Query',
       fieldName: 'listImportedDomains',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('getDomainDetails', {
@@ -283,7 +288,7 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/cluster/GetDomainDetails.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/cluster/GetDomainDetailsResp.vtl'
@@ -297,7 +302,7 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/cluster/GetDomainVpc.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('importDomain', {
@@ -306,7 +311,7 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/cluster/ImportDomain.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('removeDomain', {
@@ -315,7 +320,7 @@ export class ClusterStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/cluster/RemoveDomain.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('createProxyForOpenSearch', {
@@ -327,14 +332,14 @@ export class ClusterStack extends Construct {
           '../../graphql/vtl/proxy/CreateProxyForOpenSearch.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('deleteProxyForOpenSearch', {
       typeName: 'Mutation',
       fieldName: 'deleteProxyForOpenSearch',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('createAlarmForOpenSearch', {
@@ -346,29 +351,29 @@ export class ClusterStack extends Construct {
           '../../graphql/vtl/alarm/CreateAlarmForOpenSearch.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('deleteAlarmForOpenSearch', {
       typeName: 'Mutation',
       fieldName: 'deleteAlarmForOpenSearch',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     // Set resolver for CIDR validation API methods
     clusterLambdaDS.createResolver('validateVpcCidr', {
       typeName: 'Query',
       fieldName: 'validateVpcCidr',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     clusterLambdaDS.createResolver('domainStatusCheck', {
       typeName: 'Query',
       fieldName: 'domainStatusCheck',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     const enableMetricsCondition = new CfnCondition(

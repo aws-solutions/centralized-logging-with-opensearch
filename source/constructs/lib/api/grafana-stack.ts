@@ -20,6 +20,11 @@ import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { constructWithFixedLogicalId } from '../util/stack-helper';
 import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface GrafanaStackProps {
   /**
@@ -129,7 +134,7 @@ export class GrafanaStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/grafana/CreateGrafana.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     grafanaLambdaDS.createResolver('listGrafanas', {
@@ -138,7 +143,7 @@ export class GrafanaStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/grafana/ListGrafanas.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(__dirname, '../../graphql/vtl/grafana/ListGrafanaResp.vtl')
       ),
     });
@@ -146,8 +151,8 @@ export class GrafanaStack extends Construct {
     grafanaLambdaDS.createResolver('getGrafana', {
       typeName: 'Query',
       fieldName: 'getGrafana',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(__dirname, '../../graphql/vtl/grafana/GetGrafanaResp.vtl')
       ),
     });
@@ -155,8 +160,8 @@ export class GrafanaStack extends Construct {
     grafanaLambdaDS.createResolver('deleteGrafana', {
       typeName: 'Mutation',
       fieldName: 'deleteGrafana',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     grafanaLambdaDS.createResolver('updateGrafana', {
@@ -165,14 +170,14 @@ export class GrafanaStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(__dirname, '../../graphql/vtl/grafana/UpdateGrafana.vtl')
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     grafanaLambdaDS.createResolver('checkGrafana', {
       typeName: 'Query',
       fieldName: 'checkGrafana',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
     
     Aspects.of(this).add(new CfnGuardSuppressResourceList({

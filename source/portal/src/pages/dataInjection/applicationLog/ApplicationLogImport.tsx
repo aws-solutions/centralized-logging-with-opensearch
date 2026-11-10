@@ -268,7 +268,7 @@ export const ApplicationLogImport = () => {
                   </AntTabs>
                   <List dense>
                     {findingsList.map((finding, index) => (
-                      <ListItem key={`${finding?.location?.path}-${finding?.issueCode}-${finding?.findingDetails}`}>
+                      <ListItem key={`${index}-${finding?.location?.path}-${finding?.issueCode}`}>
                         <ListItemIcon>{index + 1}</ListItemIcon>
                         <ListItemText
                           primary={finding?.findingDetails}

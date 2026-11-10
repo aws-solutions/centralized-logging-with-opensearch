@@ -1319,7 +1319,7 @@ def test_get_log_config(ddb_client):
     assert p.status == "ACTIVE"
     assert p.name == "spring-boot-conf-2"
 
-    with pytest.raises(Exception, match=r"Can not find"):
+    with pytest.raises(Exception, match=r"Item is not found"):
         dao.get_log_config("not-found", version=20000)
         dao = LogConfigDao(os.environ.get("LOGCONFIG_TABLE"))
         dao.delete_log_config("47b23378-4ec6-4584-b264-079c75ab2e5f")
@@ -1502,12 +1502,13 @@ def test_validate_duplicated_index_prefix(ddb_client):
         ),
     )
 
-    with pytest.raises(APIException, match=r"DUPLICATED_INDEX_PREFIX"):
+    with pytest.raises(APIException, match=r"DUPLICATED_INDEX_PREFIX") as exc_info:
         dao.validate_duplicated_index_prefix(
             index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
             domain_name=p.aosParams.domainName,
             force=False,
         )
+    assert p.aosParams.indexPrefix not in exc_info.value.message
 
     dao.validate_duplicated_index_prefix(
         index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
@@ -1570,11 +1571,12 @@ def test_validate_index_prefix_overlap(ddb_client):
         ),
     )
 
-    with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX"):
+    with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX") as exc_info:
         dao.validate_index_prefix_overlap(
             index_prefix=p.indexPrefix or p.aosParams.indexPrefix,
             domain_name=p.aosParams.domainName,
         )
+    assert "syslog-dev" not in exc_info.value.message
 
     with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX"):
         dao.validate_index_prefix_overlap(
@@ -2390,11 +2392,12 @@ def test_app_pipeline_dao_validate_buffer_params(ddb_client):
     p.bufferType = BufferTypeEnum.KDS
     dao.validate_buffer_params(buffer_type=p.bufferType, buffer_params=p.bufferParams)
 
-    with pytest.raises(APIException, match=r"Missing buffer parameters"):
+    with pytest.raises(APIException, match=r"Missing buffer parameters") as exc_info:
         p.bufferType = BufferTypeEnum.S3
         dao.validate_buffer_params(
             buffer_type=p.bufferType, buffer_params=p.bufferParams
         )
+    assert "for buffer type" not in exc_info.value.message
 
 
 def test_app_pipeline_dao_validate(ddb_client):
@@ -2479,7 +2482,7 @@ def test_app_pipeline_dao_get_app_pipeline(ddb_client):
     p = dao.get_app_pipeline("222222222222222")
     assert p.logStructure == LogStructure.FLUENT_BIT_PARSED_JSON
 
-    with pytest.raises(Exception, match=r"Can not find"):
+    with pytest.raises(Exception, match=r"Item is not found"):
         dao.get_app_pipeline("not-found")
 
 
@@ -2555,7 +2558,7 @@ def test_pipeline_alarm_dao_update_pipeline_alarm_status(ddb_client):
 
     assert p["pipelineAlarmStatus"] == "ENABLED"
 
-    with pytest.raises(Exception, match=r"Can not find"):
+    with pytest.raises(Exception, match=r"Item is not found"):
         dao.get_pipeline_alarm_status(
             "not-found",
             id_key="pipelineId",
@@ -2681,7 +2684,7 @@ def test_get_app_log_ingestion(ddb_client):
     assert p.status == "ACTIVE"
     # fmt: on
 
-    with pytest.raises(Exception, match=r"Can not find"):
+    with pytest.raises(Exception, match=r"Item is not found"):
         dao.get_app_log_ingestion("not-found")
 
 

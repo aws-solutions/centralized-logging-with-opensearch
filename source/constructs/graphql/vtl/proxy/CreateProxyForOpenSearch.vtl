@@ -8,4 +8,4 @@ $util.validate($util.matches("^vpc-[a-z0-9]{8,1020}$", $ctx.args.input.vpc.vpcId
 $util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})+$", $ctx.args.input.vpc.privateSubnetIds), "Invalid Subnet IDs")
 $util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})+$", $ctx.args.input.vpc.publicSubnetIds), "Invalid Subnet IDs")
 $util.validate($util.matches("^sg-[a-z0-9]{8,1021}$", $ctx.args.input.vpc.securityGroupId), "Invalid Security Group ID")
-{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}
+{"version": "2018-05-29", "operation": "Invoke", "payload": $util.toJson($ctx)}

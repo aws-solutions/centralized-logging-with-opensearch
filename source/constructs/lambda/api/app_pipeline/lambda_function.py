@@ -517,10 +517,15 @@ def try_index_template(
         if r.status_code == 403:
             fallback_method_fn()
         elif r.status_code >= 400:
-            err = r.json()["error"]
+            logger.warning(
+                "Index template check failed with status_code %s: %s",
+                r.status_code,
+                r.text,
+            )
             raise APIException(
                 ErrorCode.VALUE_ERROR,
-                f"status_code: {r.status_code} reason: {err['reason']}",
+                "The index template check on the OpenSearch domain failed, "
+                "please check the indexPrefix and the domain status.",
             )
 
 
@@ -755,25 +760,25 @@ class AppPipelineAnalyzer:
         if data_type == "integer" and not self._is_numeric(value):
             self.add_finding(
                 issue=IssueCode.MISMATCH_DATA_TYPE,
-                finding_detail_args={"value": value, "data_type": "integer"},
+                finding_detail_args={"data_type": "integer"},
                 path=element_path,
             )
         elif data_type == "boolean" and not self._is_boolean(value):
             self.add_finding(
                 issue=IssueCode.MISMATCH_DATA_TYPE,
-                finding_detail_args={"value": value, "data_type": "boolean"},
+                finding_detail_args={"data_type": "boolean"},
                 path=element_path,
             )
         elif data_type == "time" and not self._is_time(value):
             self.add_finding(
                 issue=IssueCode.MISMATCH_DATA_TYPE,
-                finding_detail_args={"value": value, "data_type": "time"},
+                finding_detail_args={"data_type": "time"},
                 path=element_path,
             )
         elif data_type == "bytes" and not self._is_bytes(value):
             self.add_finding(
                 issue=IssueCode.MISMATCH_DATA_TYPE,
-                finding_detail_args={"value": value, "data_type": "bytes"},
+                finding_detail_args={"data_type": "bytes"},
                 path=element_path,
             )
 
@@ -807,9 +812,7 @@ class AppPipelineAnalyzer:
             if not items:
                 self.add_finding(
                     issue=IssueCode.INVALID_RESOURCE,
-                    finding_detail_args={
-                        "resource": f"logConfigName: {app_pipeline['logConfigName']}"
-                    },
+                    finding_detail_args={"key": "logConfigName"},
                     path=f"{path}.logConfigName",
                 )
 
@@ -822,10 +825,7 @@ class AppPipelineAnalyzer:
         elif not self._is_numeric(app_pipeline.get("logConfigVersionNumber", 0)):
             self.add_finding(
                 issue=IssueCode.MISMATCH_DATA_TYPE,
-                finding_detail_args={
-                    "value": app_pipeline["logConfigVersionNumber"],
-                    "data_type": "integer",
-                },
+                finding_detail_args={"data_type": "integer"},
                 path=f"{path}.logConfigVersionNumber",
             )
         elif (
@@ -842,10 +842,7 @@ class AppPipelineAnalyzer:
         ):
             self.add_finding(
                 issue=IssueCode.INVALID_VALUE,
-                finding_detail_args={
-                    "value": app_pipeline["logConfigVersionNumber"],
-                    "key": "logConfigVersionNumber",
-                },
+                finding_detail_args={"key": "logConfigVersionNumber"},
                 path=f"{path}.logConfigVersionNumber",
             )
 
@@ -865,7 +862,6 @@ class AppPipelineAnalyzer:
             except Exception:
                 self.add_finding(
                     issue=IssueCode.INVALID_BUCKET,
-                    finding_detail_args={"bucket": buffer_params["logBucketName"]},
                     path=f"{path}.logBucketName",
                 )
 
@@ -904,7 +900,6 @@ class AppPipelineAnalyzer:
             self.add_finding(
                 issue=IssueCode.INVALID_ENUM,
                 finding_detail_args={
-                    "value": buffer_params["compressionType"],
                     "enum": "bufferType",
                     "values": ", ".join(supported_compression_type),
                 },
@@ -924,7 +919,6 @@ class AppPipelineAnalyzer:
             self.add_finding(
                 issue=IssueCode.INVALID_ENUM,
                 finding_detail_args={
-                    "value": buffer_params["s3StorageClass"],
                     "enum": "bufferType",
                     "values": ", ".join(supported_s3_storage_class),
                 },
@@ -964,10 +958,7 @@ class AppPipelineAnalyzer:
         ):
             self.add_finding(
                 issue=IssueCode.INVALID_VALUE,
-                finding_detail_args={
-                    "value": buffer_params["maxCapacity"],
-                    "key": "maxCapacity",
-                },
+                finding_detail_args={"key": "maxCapacity"},
                 path=f"{path}.maxCapacity",
             )
 
@@ -990,7 +981,6 @@ class AppPipelineAnalyzer:
             self.add_finding(
                 issue=IssueCode.INVALID_ENUM,
                 finding_detail_args={
-                    "value": buffer_type,
                     "enum": "bufferType",
                     "values": ", ".join(supported_buffer_type),
                 },
@@ -1022,7 +1012,7 @@ class AppPipelineAnalyzer:
         if not domain:
             self.add_finding(
                 issue=IssueCode.INVALID_RESOURCE,
-                finding_detail_args={"resource": f"domainName: {domain_name}"},
+                finding_detail_args={"key": "domainName"},
                 path=f"{path}.domainName",
             )
             return
@@ -1035,7 +1025,7 @@ class AppPipelineAnalyzer:
         except Exception as e:
             self.add_finding(
                 issue=IssueCode.INVALID_RESOURCE_STATUS,
-                finding_detail_args={"resource": f"domainName: {domain_name}"},
+                finding_detail_args={"key": "domainName"},
                 path=f"{path}.domainName",
             )
 
@@ -1049,7 +1039,7 @@ class AppPipelineAnalyzer:
         ):
             self.add_finding(
                 issue=IssueCode.INVALID_RESOURCE_STATUS,
-                finding_detail_args={"resource": f"domainName: {domain_name}"},
+                finding_detail_args={"key": "domainName"},
                 path=f"{path}.domainName",
             )
 
@@ -1058,9 +1048,9 @@ class AppPipelineAnalyzer:
                 index_prefix=index_prefix, domain_name=domain_name
             )
         except APIException as e:
+            logger.warning("Index prefix overlap: %s", e.message)
             self.add_finding(
                 issue=IssueCode.OPENSEARCH_INDEX_OVERLAP,
-                finding_detail_args={"msg": e.message},
                 path=f"{path}.indexPrefix",
             )
 
@@ -1091,18 +1081,20 @@ class AppPipelineAnalyzer:
                     index_template=index_template,
                 )
             except Exception as e:
+                logger.warning("Index template simulation failed: %s", e)
                 self.add_finding(
                     issue=IssueCode.HTTP_REQUEST_ERROR,
-                    finding_detail_args={"msg": e},
                     path=f"{path}.domainName",
                 )
             else:
                 if r.status_code >= 400:
+                    logger.warning(
+                        "Index template simulation returned %s: %s",
+                        r.status_code,
+                        r.text,
+                    )
                     self.add_finding(
                         issue=IssueCode.HTTP_REQUEST_ERROR,
-                        finding_detail_args={
-                            "msg": r.json().get("error", {}).get("reason", "")
-                        },
                         path=f"{path}.indexPrefix",
                     )
 
@@ -1120,7 +1112,6 @@ class AppPipelineAnalyzer:
             self.add_finding(
                 issue=IssueCode.INVALID_ENUM,
                 finding_detail_args={
-                    "value": params["indexSuffix"],
                     "enum": "indexSuffix",
                     "values": ", ".join(list(IndexSuffix.__members__.values())),
                 },
@@ -1133,7 +1124,6 @@ class AppPipelineAnalyzer:
             self.add_finding(
                 issue=IssueCode.INVALID_ENUM,
                 finding_detail_args={
-                    "value": params["codec"],
                     "enum": "CodecEnum",
                     "values": ", ".join(list(CodecEnum.__members__.values())),
                 },
@@ -1187,9 +1177,7 @@ class AppPipelineAnalyzer:
                 except Exception:
                     self.add_finding(
                         issue=IssueCode.INVALID_RESOURCE,
-                        finding_detail_args={
-                            "resource": f"snsTopicArn: {params['snsTopicArn']}"
-                        },
+                        finding_detail_args={"key": "snsTopicArn"},
                         path=f"{path}.snsTopicArn",
                     )
 
@@ -1230,7 +1218,7 @@ class AppPipelineAnalyzer:
                 if not log_source:
                     self.add_finding(
                         issue=IssueCode.INVALID_RESOURCE,
-                        finding_detail_args={"resource": f"name: {source['name']}"},
+                        finding_detail_args={"key": "name"},
                         path=f"{element_path}.name",
                     )
 

@@ -9,6 +9,8 @@ import boto3
 import io
 import zipfile
 
+from botocore.exceptions import ClientError
+
 
 from moto import (
     mock_sts,
@@ -126,10 +128,70 @@ def test_lambda_handler(test_event, s3_client, ddb_client):
 @mock_sts
 def test_lambda_handler_with_exception(test_invalid_event, s3_client):
     import lambda_function
+    from commonlib.exception import APIException
 
-    # assert function excute with a result.
-    with pytest.raises(RuntimeError):
+    with pytest.raises(APIException) as exc_info:
         lambda_function.lambda_handler(test_invalid_event, None)
+
+    assert str(exc_info.value) == "[UNSUPPORTED_ACTION] Unsupported resource type"
+    assert "Unknown" not in str(exc_info.value)
+
+
+@mock_sts
+def test_lambda_handler_hides_unexpected_error_details(
+    test_invalid_event, s3_client, monkeypatch
+):
+    import lambda_function
+
+    def fail(*_args, **_kwargs):
+        raise ClientError(
+            {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "arn:aws:iam::123456789012:role/internal is not authorized",
+                }
+            },
+            "GetBucketLogging",
+        )
+
+    monkeypatch.setattr(lambda_function.S3Bucket, "get_logging_bucket", fail)
+    test_invalid_event["arguments"]["type"] = "S3Bucket"
+    test_invalid_event["arguments"]["resourceName"] = "test-bucket1"
+    test_invalid_event["info"]["fieldName"] = "getResourceLoggingBucket"
+
+    with pytest.raises(RuntimeError) as exc_info:
+        lambda_function.lambda_handler(test_invalid_event, None)
+
+    assert (
+        str(exc_info.value)
+        == "Unknown exception, please check Lambda log for more details"
+    )
+
+
+@mock_sts
+def test_lambda_handler_unsupported_destination_does_not_echo_input(
+    test_invalid_event, s3_client
+):
+    import lambda_function
+    from commonlib.exception import APIException
+
+    test_invalid_event["arguments"].update(
+        {
+            "type": "WAF",
+            "resourceName": "arn:aws:wafv2:us-east-1:123456789012:regional/webacl/a/b",
+            "destinationType": "<script>alert(1)</script>",
+            "destinationName": "test",
+        }
+    )
+    test_invalid_event["info"]["fieldName"] = "putResourceLogConfig"
+
+    with pytest.raises(APIException) as exc_info:
+        lambda_function.lambda_handler(test_invalid_event, None)
+
+    assert (
+        str(exc_info.value)
+        == "[UNSUPPORTED_ACTION] Unsupported destination type for WAF Logs"
+    )
 
 
 class TestS3Bucket:
@@ -818,3 +880,195 @@ class TestWAFSampled:
     def test_get_resource_log_config(self, s3_client):
         result = self._waf.get_resource_log_config(self._arn)
         assert len(result) == 1
+
+
+def _fail(*_args, **_kwargs):
+    raise ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "denied"}}, "Operation"
+    )
+
+
+class _FakeClient:
+    """Stands in for a boto3 client, with each named method returning or raising."""
+
+    def __init__(self, **methods):
+        self.__dict__.update(methods)
+
+
+def _unsuccessful_flow_logs(**_kwargs):
+    return {"Unsuccessful": [{"Error": {"Message": "arn:aws:ec2:internal detail"}}]}
+
+
+class TestErrorMessages:
+    """Each error branch raises a coded APIException with a fixed message."""
+
+    @staticmethod
+    def _raises(func, *args):
+        from commonlib.exception import APIException
+
+        with pytest.raises(APIException) as exc_info:
+            func(*args)
+        return str(exc_info.value)
+
+    @mock_sts
+    def test_unsupported_action(self, test_invalid_event, ddb_client):
+        import lambda_function
+
+        test_invalid_event["arguments"]["type"] = "S3Bucket"
+        test_invalid_event["info"]["fieldName"] = "unknownAction"
+
+        assert (
+            self._raises(lambda_function.lambda_handler, test_invalid_event, None)
+            == "[UNSUPPORTED_ACTION] Unsupported action specified"
+        )
+
+    @mock_sts
+    def test_get_resource_log_config_not_implemented(
+        self, test_invalid_event, ddb_client
+    ):
+        import lambda_function
+
+        test_invalid_event["arguments"].update(
+            {"type": "S3Bucket", "resourceName": "test-bucket1"}
+        )
+        test_invalid_event["info"]["fieldName"] = "getResourceLogConfigs"
+
+        with pytest.raises(RuntimeError) as exc_info:
+            lambda_function.lambda_handler(test_invalid_event, None)
+        assert (
+            str(exc_info.value)
+            == "Unknown exception, please check Lambda log for more details"
+        )
+
+    @mock_sts
+    def test_s3_put_logging_bucket_failure(self, ddb_client):
+        from lambda_function import S3Bucket
+
+        bucket = S3Bucket()
+        bucket._s3 = _FakeClient(put_bucket_logging=_fail)
+
+        assert self._raises(bucket.put_logging_bucket, "test-bucket1") == (
+            "[RESOURCE_LOGGING_FAILED] Unable to add logging to service, please try it manually"
+        )
+
+    @mock_sts
+    def test_vpc_s3_flow_logs_unsuccessful(self, ddb_client):
+        from lambda_function import VPC
+
+        vpc = VPC()
+        vpc._ec2 = _FakeClient(create_flow_logs=_unsuccessful_flow_logs)
+
+        assert self._raises(
+            vpc.put_resource_log_config, "vpc-1", "S3", "s3://bucket/", ""
+        ) == ("[RESOURCE_LOGGING_FAILED] Unable to create the VPC Flow Logs")
+
+    @mock_sts
+    def test_vpc_cloudwatch_flow_logs_unsuccessful(self, ddb_client, monkeypatch):
+        import lambda_function
+
+        monkeypatch.setattr(lambda_function, "create_log_group", lambda *_: None)
+        vpc = lambda_function.VPC()
+        vpc._create_iam_role = lambda *_: "arn:aws:iam::123456789012:role/test"
+        vpc._create_flow_logs = lambda *_: _unsuccessful_flow_logs()
+
+        assert self._raises(
+            vpc.put_resource_log_config, "vpc-1", "CloudWatch", "group", ""
+        ) == ("[RESOURCE_LOGGING_FAILED] Unable to create the VPC Flow Logs")
+
+    @mock_sts
+    def test_vpc_unsupported_destination(self, ddb_client):
+        from lambda_function import VPC
+
+        assert self._raises(
+            VPC().put_resource_log_config, "vpc-1", "KDS", "stream", ""
+        ) == ("[UNSUPPORTED_ACTION] Unsupported destination type for VPC Flow Logs")
+
+    @mock_sts
+    def test_vpc_create_iam_role_failure(self, ddb_client, monkeypatch):
+        import lambda_function
+
+        monkeypatch.setattr(lambda_function, "create_service_role", _fail)
+
+        assert self._raises(
+            lambda_function.VPC()._create_iam_role, "role", "arn"
+        ) == (
+            "[RESOURCE_LOGGING_FAILED] Unable to create role for CloudTrail to access CloudWatch Logs"
+        )
+
+    @mock_sts
+    def test_trail_get_resource_log_config_failure(self, ddb_client):
+        from lambda_function import Trail
+
+        trail = Trail()
+        trail._cloudtrail = _FakeClient(get_trail=_fail)
+
+        assert self._raises(trail.get_resource_log_config, "trail") == (
+            "[RESOURCE_LOGGING_FAILED] Unable to detect the logging bucket for this trail"
+        )
+
+    @mock_sts
+    def test_trail_unsupported_destination(self, ddb_client):
+        from lambda_function import Trail
+
+        assert self._raises(
+            Trail().put_resource_log_config, "trail", "S3", "bucket", ""
+        ) == ("[UNSUPPORTED_ACTION] Unsupported destination type for CloudTrail Logs")
+
+    @mock_sts
+    def test_trail_cloudwatch_not_enabled(self, ddb_client, monkeypatch):
+        import lambda_function
+
+        monkeypatch.setattr(lambda_function, "create_log_group", lambda *_: None)
+        trail = lambda_function.Trail()
+        trail._create_iam_role = lambda *_: "arn:aws:iam::123456789012:role/test"
+        trail._cloudtrail = _FakeClient(update_trail=lambda **_: {})
+
+        assert self._raises(
+            trail.put_resource_log_config, "trail", "CloudWatch", "group", ""
+        ) == (
+            "[RESOURCE_LOGGING_FAILED] Unable to enable the CloudWatch logging for this trail"
+        )
+
+    @mock_sts
+    def test_trail_create_iam_role_failure(self, ddb_client, monkeypatch):
+        import lambda_function
+
+        monkeypatch.setattr(lambda_function, "create_service_role", _fail)
+
+        assert self._raises(
+            lambda_function.Trail()._create_iam_role, "role", "arn"
+        ) == (
+            "[RESOURCE_LOGGING_FAILED] Unable to create role for CloudTrail to access CloudWatch Logs"
+        )
+
+    @mock_sts
+    def test_config_get_logging_bucket_failure(self, ddb_client):
+        from lambda_function import Config
+
+        config = Config()
+        config._config = _FakeClient(describe_delivery_channels=_fail)
+
+        assert self._raises(config.get_logging_bucket, "") == (
+            "[RESOURCE_LOGGING_FAILED] Unable to find the logging bucket for the aws config, "
+            "or aws config is not enabled"
+        )
+
+    @mock_sts
+    def test_elb_invalid_load_balancer_arn(self, ddb_client):
+        from lambda_function import ELB
+
+        assert self._raises(ELB()._get_load_balancer_name, "no-slash") == (
+            "[RESOURCE_LOGGING_FAILED] Unable to get load balancer name"
+        )
+
+    @mock_sts
+    def test_elb_put_logging_bucket_failure(self, ddb_client):
+        from lambda_function import ELB
+
+        elb = ELB()
+        elb.get_logging_bucket = _fail
+        arn = "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/test/1"
+
+        assert self._raises(elb.put_logging_bucket, arn) == (
+            "[RESOURCE_LOGGING_FAILED] Unable to add logging to service, please try it manually"
+        )

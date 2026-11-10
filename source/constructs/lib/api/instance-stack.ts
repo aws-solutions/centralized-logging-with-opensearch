@@ -14,6 +14,10 @@ import {
 import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import { SharedPythonLayer } from '../layer/layer';
+import {
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface InstanceStackProps {
   /**
@@ -409,7 +413,7 @@ export class InstanceStack extends Construct {
           '../../graphql/vtl/instance_status/GetInstanceAgentStatus.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/instance_status/GetInstanceAgentStatusResp.vtl'
@@ -426,7 +430,7 @@ export class InstanceStack extends Construct {
           '../../graphql/vtl/instance_status/RequestInstallLogAgent.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     instanceDS.createResolver('listInstances', {
@@ -438,7 +442,7 @@ export class InstanceStack extends Construct {
           '../../graphql/vtl/instance_status/ListInstances.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

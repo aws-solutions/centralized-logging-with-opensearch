@@ -13,8 +13,9 @@ from datetime import datetime
 
 from botocore.exceptions import ClientError
 
-from commonlib import AWSConnection, LinkAccountHelper, retry
+from commonlib import AWSConnection, LinkAccountHelper, handle_error, retry
 from commonlib import get_bucket_location, create_log_group
+from commonlib.exception import APIException, ErrorCode
 from commonlib.utils import get_partition, get_name_from_tags, get_resource_from_arn
 
 logger = get_logger(__name__)
@@ -33,6 +34,7 @@ account_helper = LinkAccountHelper(sub_account_link_table_name)
 GLOBAL_IDENTIFIER = ":global/"
 
 
+@handle_error
 def lambda_handler(event, _):
     """
     This lambda handles request such as listing resources or getting logging bucket for resource
@@ -47,43 +49,39 @@ def lambda_handler(event, _):
     Note that the new type should also exist in the GraphQL Schema
     """
 
-    try:
-        action = event["info"]["fieldName"]
-        args = event["arguments"]
-        resource_type = args["type"]
-        region = args.get("region")
-        account_id = args.get("accountId")
+    action = event["info"]["fieldName"]
+    args = event["arguments"]
+    resource_type = args["type"]
+    region = args.get("region")
+    account_id = args.get("accountId")
 
-        resource = getattr(sys.modules[__name__], resource_type, None)
-        if not resource:
-            raise RuntimeError(f"Unsupported Resource Type {resource_type}")
+    resource = getattr(sys.modules[__name__], resource_type, None)
+    if not resource:
+        raise APIException(ErrorCode.UNSUPPORTED_ACTION, "Unsupported resource type")
 
-        if action == "listResources":
-            parent_id = args.get("parentId", "")
-            return resource(account_id, region).list(parent_id)
-        elif action == "getResourceLoggingBucket":
-            resource_name = args["resourceName"]
-            return resource(account_id, region).get_logging_bucket(resource_name)
-        elif action == "putResourceLoggingBucket":
-            resource_name = args["resourceName"]
-            return resource(account_id, region).put_logging_bucket(resource_name)
-        elif action == "getResourceLogConfigs":
-            resource_name = args["resourceName"]
-            return resource(account_id, region).get_resource_log_config(resource_name)
-        elif action == "putResourceLogConfig":
-            resource_name = args["resourceName"]
-            dest_type = args["destinationType"]
-            dest_name = args["destinationName"]
-            log_format = args.get("LogFormat", "")
+    if action == "listResources":
+        parent_id = args.get("parentId", "")
+        return resource(account_id, region).list(parent_id)
+    elif action == "getResourceLoggingBucket":
+        resource_name = args["resourceName"]
+        return resource(account_id, region).get_logging_bucket(resource_name)
+    elif action == "putResourceLoggingBucket":
+        resource_name = args["resourceName"]
+        return resource(account_id, region).put_logging_bucket(resource_name)
+    elif action == "getResourceLogConfigs":
+        resource_name = args["resourceName"]
+        return resource(account_id, region).get_resource_log_config(resource_name)
+    elif action == "putResourceLogConfig":
+        resource_name = args["resourceName"]
+        dest_type = args["destinationType"]
+        dest_name = args["destinationName"]
+        log_format = args.get("LogFormat", "")
 
-            return resource(account_id, region).put_resource_log_config(
-                resource_name, dest_type, dest_name, log_format
-            )
-        else:
-            raise RuntimeError(f"Unsupported Action {action}")
-    except Exception as e:
-        logger.error(e, exc_info=True)
-        raise e
+        return resource(account_id, region).put_resource_log_config(
+            resource_name, dest_type, dest_name, log_format
+        )
+    else:
+        raise APIException(ErrorCode.UNSUPPORTED_ACTION)
 
 
 class Resource:
@@ -224,7 +222,9 @@ class S3Bucket(Resource):
             )
         except Exception as e:
             logger.error(e)
-            raise RuntimeError(UNABLE_TO_ENABLE_LOGGING_ERROR)
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED, UNABLE_TO_ENABLE_LOGGING_ERROR
+            )
 
         return {
             "enabled": True,
@@ -432,7 +432,10 @@ class VPC(Resource):
             )
             if resp.get("Unsuccessful", []):
                 logger.error(resp["Unsuccessful"])
-                raise RuntimeError(resp["Unsuccessful"][0]["Error"]["Message"])
+                raise APIException(
+                    ErrorCode.RESOURCE_LOGGING_FAILED,
+                    "Unable to create the VPC Flow Logs",
+                )
             else:
                 return {
                     "destinationType": "S3",
@@ -460,7 +463,10 @@ class VPC(Resource):
             )
             if resp.get("Unsuccessful", []):
                 logger.error(resp["Unsuccessful"])
-                raise RuntimeError(resp["Unsuccessful"][0]["Error"]["Message"])
+                raise APIException(
+                    ErrorCode.RESOURCE_LOGGING_FAILED,
+                    "Unable to create the VPC Flow Logs",
+                )
             else:
                 return {
                     "destinationType": "CloudWatch",
@@ -471,8 +477,9 @@ class VPC(Resource):
                 }
 
         else:
-            raise RuntimeError(
-                f"Unsupported destination type {dest_type} for VPC Flow Logs"
+            raise APIException(
+                ErrorCode.UNSUPPORTED_ACTION,
+                "Unsupported destination type for VPC Flow Logs",
             )
 
     @retry
@@ -509,8 +516,9 @@ class VPC(Resource):
 
         except Exception as e:
             logger.error(e)
-            raise RuntimeError(
-                "Unable to create role for CloudTrail to access CloudWatch Logs"
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED,
+                "Unable to create role for CloudTrail to access CloudWatch Logs",
             )
         return role["Role"]["Arn"]
 
@@ -666,7 +674,10 @@ class Trail(Resource):
 
         except Exception as e:
             logger.error(e)
-            raise RuntimeError("Unable to detect the logging bucket for this trail")
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED,
+                "Unable to detect the logging bucket for this trail",
+            )
 
         return log_confs
 
@@ -676,8 +687,9 @@ class Trail(Resource):
         The resource_name could be a name or an ID.
         """
         if dest_type != "CloudWatch":
-            raise RuntimeError(
-                f"Unsupported destination type {dest_type} for CloudTrail Logs"
+            raise APIException(
+                ErrorCode.UNSUPPORTED_ACTION,
+                "Unsupported destination type for CloudTrail Logs",
             )
 
         log_group_name = dest_name
@@ -705,7 +717,10 @@ class Trail(Resource):
                 "region": self._region,
             }
         else:
-            raise RuntimeError("Unable to enable the CloudWatch logging for this trail")
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED,
+                "Unable to enable the CloudWatch logging for this trail",
+            )
 
     def _create_iam_role(self, role_name, log_group_arn):
         try:
@@ -720,8 +735,9 @@ class Trail(Resource):
 
         except Exception as e:
             logger.error(e)
-            raise RuntimeError(
-                "Unable to create role for CloudTrail to access CloudWatch Logs"
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED,
+                "Unable to create role for CloudTrail to access CloudWatch Logs",
             )
         return resp["Role"]["Arn"]
 
@@ -757,8 +773,9 @@ class Config(Resource):
             }
         except Exception as e:
             logger.error(e)
-            raise RuntimeError(
-                "Unable to find the logging bucket for the aws config, or aws config is not enabled"
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED,
+                "Unable to find the logging bucket for the aws config, or aws config is not enabled",
             )
 
 
@@ -1051,7 +1068,9 @@ class ELB(Resource):
         if m:
             return m.group(1)
         else:
-            raise RuntimeError("Unable to get load balancer name")
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED, "Unable to get load balancer name"
+            )
 
     def _default_prefix(self):
         return f"AWSLogs/{self._account_id}/elasticloadbalancing/{self._region}"
@@ -1121,7 +1140,9 @@ class ELB(Resource):
                 }
         except Exception as e:
             logger.error(e)
-            raise RuntimeError(UNABLE_TO_ENABLE_LOGGING_ERROR)
+            raise APIException(
+                ErrorCode.RESOURCE_LOGGING_FAILED, UNABLE_TO_ENABLE_LOGGING_ERROR
+            )
 
 
 class WAF(Resource):
@@ -1215,7 +1236,10 @@ class WAF(Resource):
 
     def put_resource_log_config(self, acl_arn, dest_type, dest_name, log_format):
         if dest_type != "S3":
-            raise RuntimeError(f"Unsupported destination type {dest_type} for WAF Logs")
+            raise APIException(
+                ErrorCode.UNSUPPORTED_ACTION,
+                "Unsupported destination type for WAF Logs",
+            )
 
         scope = self._get_scope(acl_arn)
         waf_client = self._get_waf_client(scope)

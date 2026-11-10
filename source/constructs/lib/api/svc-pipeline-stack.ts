@@ -22,6 +22,11 @@ import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 import { CfnGuardSuppressResourceList } from '../util/add-cfn-guard-suppression';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+  responseTemplateWithErrorHandling,
+} from './resolver-error';
 
 export interface SvcPipelineStackProps {
   /**
@@ -245,7 +250,7 @@ export class SvcPipelineStack extends Construct {
           '../../graphql/vtl/pipeline/ListServicePipelines.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/pipeline/ListServicePipelinesResp.vtl'
@@ -256,8 +261,8 @@ export class SvcPipelineStack extends Construct {
     pipeLambdaDS.createResolver('getServicePipeline', {
       typeName: 'Query',
       fieldName: 'getServicePipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: responseTemplateWithErrorHandling(
         path.join(
           __dirname,
           '../../graphql/vtl/pipeline/GetServicePipelineResp.vtl'
@@ -274,7 +279,7 @@ export class SvcPipelineStack extends Construct {
           '../../graphql/vtl/pipeline/CreateServicePipeline.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     pipeLambdaDS.createResolver('createLightEngineServicePipeline', {
@@ -286,14 +291,14 @@ export class SvcPipelineStack extends Construct {
           '../../graphql/vtl/pipeline/CreateLightEngineServicePipeline.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     pipeLambdaDS.createResolver('deleteServicePipeline', {
       typeName: 'Mutation',
       fieldName: 'deleteServicePipeline',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     pipeLambdaDS.createResolver('getLightEngineServicePipelineDetail', {
@@ -305,7 +310,7 @@ export class SvcPipelineStack extends Construct {
           '../../graphql/vtl/pipeline/GetLightEngineServicePipelineDetail.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     pipeLambdaDS.createResolver('getLightEngineServicePipelineExecutionLogs', {
@@ -317,7 +322,7 @@ export class SvcPipelineStack extends Construct {
           '../../graphql/vtl/pipeline/GetLightEngineServicePipelineExecutionLogs.vtl'
         )
       ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }

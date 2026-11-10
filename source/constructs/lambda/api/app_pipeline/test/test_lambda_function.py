@@ -1315,6 +1315,23 @@ def test_list_app_pipelines(
     assert res["total"] == 2
 
 
+def test_try_index_template_hides_opensearch_reason(mocker):
+    from lambda_function import try_index_template
+
+    response = mocker.Mock(status_code=400, text='{"error": {"reason": "bad"}}')
+    response.json.return_value = {
+        "error": {"reason": "invalid index pattern [<script>x</script>-*]"}
+    }
+    mocker.patch(
+        "lambda_function.post_simulate_index_template", return_value=response
+    )
+
+    with pytest.raises(APIException, match=r"VALUE_ERROR") as exc_info:
+        try_index_template("endpoint", "<script>x</script>", {})
+
+    assert "<script>" not in exc_info.value.message
+
+
 def test_create_app_pipeline(
     mocker,
     kinesis_client,
@@ -2383,7 +2400,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value a does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "path.int"},
@@ -2408,7 +2425,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value T does not match the expected data type boolean.",
+                    "findingDetails": "The value does not match the expected data type boolean.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "path.bool"},
@@ -2433,7 +2450,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value xxx does not match the expected data type time.",
+                    "findingDetails": "The value does not match the expected data type time.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "path.time"},
@@ -2458,7 +2475,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value xxx does not match the expected data type bytes.",
+                    "findingDetails": "The value does not match the expected data type bytes.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "path.bytes"},
@@ -2558,7 +2575,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource logConfigName: do-not-exists is not found.",
+                    "findingDetails": "The resource for logConfigName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].logConfigName"},
@@ -2574,7 +2591,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource logConfigName: do-not-exists is not found.",
+                    "findingDetails": "The resource for logConfigName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": ".logConfigName"},
@@ -2593,13 +2610,13 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource logConfigName: do-not-exists is not found.",
+                    "findingDetails": "The resource for logConfigName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": ".logConfigName"},
                 },
                 {
-                    "findingDetails": "The value a does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": ".logConfigVersionNumber"},
@@ -2635,7 +2652,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value a does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].logConfigVersionNumber"},
@@ -2700,19 +2717,19 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value 10MiB does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].bufferParams.maxFileSize"},
                 },
                 {
-                    "findingDetails": "The value 60s does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].bufferParams.uploadTimeout"},
                 },
                 {
-                    "findingDetails": "The Value do-not-supported is not valid for the bufferType, Supported values: GZIP, NONE.",
+                    "findingDetails": "The value is not valid for the bufferType, Supported values: GZIP, NONE.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_ENUM",
                     "location": {
@@ -2720,7 +2737,7 @@ class TestAppPipelineAnalyzer:
                     },
                 },
                 {
-                    "findingDetails": "The Value do-not-supported is not valid for the bufferType, Supported values: STANDARD, STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING.",
+                    "findingDetails": "The value is not valid for the bufferType, Supported values: STANDARD, STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_ENUM",
                     "location": {"path": "appPipelines[0].bufferParams.s3StorageClass"},
@@ -2857,7 +2874,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The value a does not match the expected data type boolean.",
+                    "findingDetails": "The value does not match the expected data type boolean.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {
@@ -2865,7 +2882,7 @@ class TestAppPipelineAnalyzer:
                     },
                 },
                 {
-                    "findingDetails": "The Value 1 is not valid for the maxCapacity.",
+                    "findingDetails": "The value is not valid for the maxCapacity.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_VALUE",
                     "location": {"path": "appPipelines[0].bufferParams.maxCapacity"},
@@ -2903,7 +2920,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The Value do-not-supported is not valid for the bufferType, Supported values: None, S3, KDS.",
+                    "findingDetails": "The value is not valid for the bufferType, Supported values: None, S3, KDS.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_ENUM",
                     "location": {"path": "appPipelines[0].bufferType"},
@@ -2999,7 +3016,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource domainName:  is not found.",
+                    "findingDetails": "The resource for domainName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].aosParams.domainName"},
@@ -3017,7 +3034,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource domainName: do-not-exists is not found.",
+                    "findingDetails": "The resource for domainName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].aosParams.domainName"},
@@ -3033,7 +3050,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource domainName: deleted-aos is not found.",
+                    "findingDetails": "The resource for domainName is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].aosParams.domainName"},
@@ -3058,7 +3075,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "exception",
+                    "findingDetails": "The index template check on the OpenSearch domain failed, please check the indexPrefix and the domain status.",
                     "findingType": "ERROR",
                     "issueCode": "HTTP_REQUEST_ERROR",
                     "location": {"path": "appPipelines[0].aosParams.indexPrefix"},
@@ -3140,37 +3157,37 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The Value error is not valid for the indexSuffix, Supported values: yyyy_MM_dd, yyyy_MM_dd_HH, yyyy_MM, yyyy.",
+                    "findingDetails": "The value is not valid for the indexSuffix, Supported values: yyyy_MM_dd, yyyy_MM_dd_HH, yyyy_MM, yyyy.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_ENUM",
                     "location": {"path": "appPipelines[0].aosParams.indexSuffix"},
                 },
                 {
-                    "findingDetails": "The Value  is not valid for the CodecEnum, Supported values: best_compression, default.",
+                    "findingDetails": "The value is not valid for the CodecEnum, Supported values: best_compression, default.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_ENUM",
                     "location": {"path": "appPipelines[0].aosParams.codec"},
                 },
                 {
-                    "findingDetails": "The value x does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].aosParams.shardNumbers"},
                 },
                 {
-                    "findingDetails": "The value x does not match the expected data type integer.",
+                    "findingDetails": "The value does not match the expected data type integer.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].aosParams.replicaNumbers"},
                 },
                 {
-                    "findingDetails": "The value x does not match the expected data type bytes.",
+                    "findingDetails": "The value does not match the expected data type bytes.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].aosParams.rolloverSize"},
                 },
                 {
-                    "findingDetails": "The value x does not match the expected data type time.",
+                    "findingDetails": "The value does not match the expected data type time.",
                     "findingType": "ERROR",
                     "issueCode": "MISMATCH_DATA_TYPE",
                     "location": {"path": "appPipelines[0].aosParams.refreshInterval"},
@@ -3263,7 +3280,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": f"The resource snsTopicArn: arn:aws:sns:{region}:{account_id}:do-not-exists is not found.",
+                    "findingDetails": "The resource for snsTopicArn is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].monitor.snsTopicArn"},
@@ -3357,7 +3374,7 @@ class TestAppPipelineAnalyzer:
         assert analyzer.response == {
             "findings": [
                 {
-                    "findingDetails": "The resource name: do-not-exists is not found.",
+                    "findingDetails": "The resource for name is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].logSources[1].name"},
@@ -3395,7 +3412,7 @@ class TestAppPipelineAnalyzer:
                     "location": {"path": "appPipelines[0].logSources[0].name"},
                 },
                 {
-                    "findingDetails": "The resource name: do-not-exists is not found.",
+                    "findingDetails": "The resource for name is not found.",
                     "findingType": "ERROR",
                     "issueCode": "INVALID_RESOURCE",
                     "location": {"path": "appPipelines[0].logSources[1].name"},

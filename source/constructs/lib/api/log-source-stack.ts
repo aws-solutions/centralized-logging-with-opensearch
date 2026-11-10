@@ -11,6 +11,10 @@ import {
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { SharedPythonLayer } from '../layer/layer';
+import {
+  lambdaRequestWithErrorHandling,
+  lambdaResultWithErrorHandling,
+} from './resolver-error';
 
 export interface LogSourceStackProps {
   /**
@@ -137,43 +141,43 @@ export class LogSourceStack extends Construct {
     LogSourceLambdaDS.createResolver('createLogSource', {
       typeName: 'Mutation',
       fieldName: 'createLogSource',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogSourceLambdaDS.createResolver('updateLogSource', {
       typeName: 'Mutation',
       fieldName: 'updateLogSource',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogSourceLambdaDS.createResolver('getLogSource', {
       typeName: 'Query',
       fieldName: 'getLogSource',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogSourceLambdaDS.createResolver('listLogSources', {
       typeName: 'Query',
       fieldName: 'listLogSources',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogSourceLambdaDS.createResolver('deleteLogSource', {
       typeName: 'Mutation',
       fieldName: 'deleteLogSource',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
 
     LogSourceLambdaDS.createResolver('checkCustomPort', {
       typeName: 'Query',
       fieldName: 'checkCustomPort',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: lambdaRequestWithErrorHandling(),
+      responseMappingTemplate: lambdaResultWithErrorHandling(),
     });
   }
 }
